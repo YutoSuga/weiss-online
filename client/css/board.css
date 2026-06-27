@@ -1,0 +1,38 @@
+body {
+  margin: 0;
+  background: #111827;
+  color: #ffffff;
+  font-family: sans-serif;
+}
+
+h1 {
+  margin: 16px;
+  font-size: 24px;
+}
+
+main {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+}
+
+section {
+  border: 2px solid #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+section:first-child {
+  background: #3b0f0f;
+}
+
+section:last-child {
+  background: #0f1f3b;
+}
+
+section div {
+  border: 1px solid #ffffff;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+}
