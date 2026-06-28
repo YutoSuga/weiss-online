@@ -1,40 +1,213 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>weiss-online</title>
   <link rel="stylesheet" href="./css/board.css" />
 </head>
+
 <body>
-  <h1>weiss-online</h1>
+  <header class="app-header">
+    <h1>weiss-online</h1>
+  </header>
 
-  <main>
-    <section>
-      <h2>相手エリア</h2>
-      <div>相手の手札</div>
-      <div>控え室</div>
-      <div>山札</div>
-      <div>思い出</div>
-      <div>クロック</div>
-      <div>レベル</div>
-      <div>クライマックス</div>
-      <div>舞台</div>
-      <div>ストック</div>
-    </section>
+  <div class="app-layout">
+    <aside class="left-sidebar">
+      <section class="info-panel opponent-info">
+        <h2>相手の情報</h2>
+        <p>名前：Player 2</p>
+        <p>手札：5枚</p>
+      </section>
 
-    <section>
-      <h2>自分エリア</h2>
-      <div>ストック</div>
-      <div>クライマックス</div>
-      <div>レベル</div>
-      <div>舞台</div>
-      <div>思い出</div>
-      <div>山札</div>
-      <div>控え室</div>
-      <div>クロック</div>
-      <div>手札</div>
-    </section>
-  </main>
+      <section class="info-panel room-info">
+        <h2>対戦ルーム情報</h2>
+        <p>ルームID：未設定</p>
+        <p>状態：待機中</p>
+      </section>
+
+      <section class="info-panel log-panel">
+        <h2>ログ</h2>
+        <ul>
+          <li>ゲーム開始待機中</li>
+        </ul>
+      </section>
+    </aside>
+
+    <main class="game-board">
+      <section class="player-section opponent-section" aria-label="相手エリア">
+        <section class="hand-area opponent-hand">
+          <h2>相手の手札</h2>
+          <div class="card-row">
+            <article class="card-slot is-face-down"></article>
+            <article class="card-slot is-face-down"></article>
+            <article class="card-slot is-face-down"></article>
+            <article class="card-slot is-face-down"></article>
+            <article class="card-slot is-face-down"></article>
+          </div>
+        </section>
+
+        <div class="playmat opponent-playmat">
+          <aside class="side-zones opponent-left-zones">
+            <section class="zone waiting-room-zone">
+              <h3>控え室</h3>
+              <article class="card-slot is-face-up"></article>
+              <span class="count">0枚</span>
+            </section>
+
+            <section class="zone deck-zone">
+              <h3>山札</h3>
+              <article class="card-slot is-face-down"></article>
+              <span class="count">0枚</span>
+            </section>
+
+            <section class="zone memory-zone">
+              <h3>思い出</h3>
+              <article class="card-slot is-face-up is-horizontal"></article>
+              <span class="count">0枚</span>
+            </section>
+          </aside>
+
+          <section class="stage-area opponent-stage">
+            <article class="card-slot stage-slot back-right">後列 右</article>
+            <article class="card-slot stage-slot back-left">後列 左</article>
+            <article class="card-slot stage-slot front-right">前列 右</article>
+            <article class="card-slot stage-slot front-center">前列 中央</article>
+            <article class="card-slot stage-slot front-left">前列 左</article>
+          </section>
+
+          <section class="clock-zone opponent-clock">
+            <h3>クロック</h3>
+            <div class="card-row">
+              <article class="card-slot is-face-up">6</article>
+              <article class="card-slot is-face-up">5</article>
+              <article class="card-slot is-face-up">4</article>
+              <article class="card-slot is-face-up">3</article>
+              <article class="card-slot is-face-up">2</article>
+              <article class="card-slot is-face-up">1</article>
+            </div>
+          </section>
+
+          <aside class="opponent-right-middle-zones">
+            <section class="zone level-zone">
+              <h3>レベル</h3>
+              <div class="level-slots">
+                <article class="card-slot is-face-up">0</article>
+                <article class="card-slot is-face-up">1</article>
+                <article class="card-slot is-face-up">2</article>
+                <article class="card-slot is-face-up">3</article>
+              </div>
+            </section>
+
+            <section class="zone climax-zone">
+              <h3>クライマックス</h3>
+              <article class="card-slot is-face-up is-horizontal"></article>
+            </section>
+          </aside>
+
+          <section class="zone stock-zone opponent-stock">
+            <h3>ストック</h3>
+            <article class="card-slot is-face-down is-horizontal"></article>
+            <span class="count">0枚</span>
+          </section>
+        </div>
+      </section>
+
+      <section class="player-section self-section" aria-label="自分エリア">
+        <div class="playmat self-playmat">
+          <section class="zone stock-zone self-stock">
+            <h3>ストック</h3>
+            <article class="card-slot is-face-down is-horizontal"></article>
+            <span class="count">0枚</span>
+          </section>
+
+          <aside class="self-left-middle-zones">
+            <section class="zone climax-zone">
+              <h3>クライマックス</h3>
+              <article class="card-slot is-face-up is-horizontal"></article>
+            </section>
+
+            <section class="zone level-zone">
+              <h3>レベル</h3>
+              <div class="level-slots">
+                <article class="card-slot is-face-up">3</article>
+                <article class="card-slot is-face-up">2</article>
+                <article class="card-slot is-face-up">1</article>
+                <article class="card-slot is-face-up">0</article>
+              </div>
+            </section>
+          </aside>
+
+          <section class="stage-area self-stage">
+            <article class="card-slot stage-slot front-left">前列 左</article>
+            <article class="card-slot stage-slot front-center">前列 中央</article>
+            <article class="card-slot stage-slot front-right">前列 右</article>
+            <article class="card-slot stage-slot back-left">後列 左</article>
+            <article class="card-slot stage-slot back-right">後列 右</article>
+          </section>
+
+          <section class="clock-zone self-clock">
+            <h3>クロック</h3>
+            <div class="card-row">
+              <article class="card-slot is-face-up">1</article>
+              <article class="card-slot is-face-up">2</article>
+              <article class="card-slot is-face-up">3</article>
+              <article class="card-slot is-face-up">4</article>
+              <article class="card-slot is-face-up">5</article>
+              <article class="card-slot is-face-up">6</article>
+            </div>
+          </section>
+
+          <aside class="side-zones self-right-zones">
+            <section class="zone memory-zone">
+              <h3>思い出</h3>
+              <article class="card-slot is-face-up is-horizontal"></article>
+              <span class="count">0枚</span>
+            </section>
+
+            <section class="zone deck-zone">
+              <h3>山札</h3>
+              <article class="card-slot is-face-down"></article>
+              <span class="count">0枚</span>
+            </section>
+
+            <section class="zone waiting-room-zone">
+              <h3>控え室</h3>
+              <article class="card-slot is-face-up"></article>
+              <span class="count">0枚</span>
+            </section>
+          </aside>
+        </div>
+
+        <section class="hand-area self-hand">
+          <h2>手札</h2>
+          <div class="card-row">
+            <article class="card-slot is-face-up"></article>
+            <article class="card-slot is-face-up"></article>
+            <article class="card-slot is-face-up"></article>
+            <article class="card-slot is-face-up"></article>
+            <article class="card-slot is-face-up"></article>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <aside class="right-sidebar">
+      <section class="info-panel card-detail-panel">
+        <h2>カード説明</h2>
+        <p>カードを選択すると詳細を表示します。</p>
+      </section>
+
+      <button class="end-turn-button" type="button">ターン終了</button>
+
+      <section class="info-panel self-info">
+        <h2>自分の情報</h2>
+        <p>名前：Player 1</p>
+        <p>手札：5枚</p>
+      </section>
+    </aside>
+  </div>
 </body>
+
 </html>
