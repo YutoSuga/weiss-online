@@ -1,10 +1,7 @@
 /* =========================================================
-   weiss-online board.css v1
-   目的: レイアウト配置の土台を作る
+   weiss-online board.css v2
+   目的: 配置 + カードの向き・重なりを調整
    ========================================================= */
-/* ------------------------------
-   Reset / Base
------------------------------- */
 * {
   box-sizing: border-box;
 }
@@ -25,9 +22,6 @@ ul {
 ul {
   padding-left: 20px;
 }
-/* ------------------------------
-   App Layout
------------------------------- */
 .app-header {
   height: 48px;
   padding: 8px 16px;
@@ -44,9 +38,6 @@ ul {
   height: calc(100vh - 48px);
   padding: 12px;
 }
-/* ------------------------------
-   Sidebar
------------------------------- */
 .left-sidebar,
 .right-sidebar {
   display: flex;
@@ -64,10 +55,7 @@ ul {
   margin-bottom: 8px;
   font-size: 16px;
 }
-.log-panel {
-  flex: 1;
-  min-height: 0;
-}
+.log-panel,
 .card-detail-panel {
   flex: 1;
 }
@@ -82,9 +70,6 @@ ul {
   font-weight: bold;
   cursor: pointer;
 }
-/* ------------------------------
-   Game Board
------------------------------- */
 .game-board {
   display: grid;
   grid-template-rows: 1fr 1fr;
@@ -110,9 +95,6 @@ ul {
   background: rgba(30, 64, 175, 0.35);
   border-color: #1d4ed8;
 }
-/* ------------------------------
-   Hand Area
------------------------------- */
 .hand-area {
   display: flex;
   flex-direction: column;
@@ -121,12 +103,11 @@ ul {
 }
 .card-row {
   display: flex;
-  gap: 8px;
   align-items: center;
 }
-/* ------------------------------
-   Playmat Layout
------------------------------- */
+.hand-area .card-row {
+  gap: 8px;
+}
 .playmat {
   display: grid;
   gap: 8px;
@@ -176,9 +157,6 @@ ul {
 .self-right-zones {
   grid-area: rightZones;
 }
-/* ------------------------------
-   Zones
------------------------------- */
 .zone,
 .clock-zone,
 .stage-area {
@@ -225,10 +203,7 @@ ul {
   align-content: center;
   justify-content: center;
 }
-.self-stage {
-  grid-template-columns: repeat(3, 92px);
-  grid-template-rows: auto 128px 128px;
-}
+.self-stage,
 .opponent-stage {
   grid-template-columns: repeat(3, 92px);
   grid-template-rows: auto 128px 128px;
@@ -265,7 +240,7 @@ ul {
   grid-column: 3;
 }
 /* ------------------------------
-   Card Slot
+   Card Slot Base
 ------------------------------ */
 .card-slot {
   display: flex;
@@ -279,14 +254,28 @@ ul {
   color: #111827;
   font-size: 12px;
   text-align: center;
+  flex-shrink: 0;
 }
 .stage-slot {
   width: 92px;
   height: 128px;
 }
 [data-face="down"] {
-  background: #374151;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      #1f2937,
+      #1f2937 8px,
+      #374151 8px,
+      #374151 16px
+    );
   color: #f9fafb;
+}
+/* ------------------------------
+   Card Position
+------------------------------ */
+[data-position="stand"] {
+  transform: rotate(0deg);
 }
 [data-position="rest"] {
   transform: rotate(90deg);
@@ -295,41 +284,100 @@ ul {
   transform: rotate(180deg);
 }
 /* ------------------------------
-   Zone-specific card size
+   Hand
 ------------------------------ */
-.climax-zone .card-slot,
-.stock-zone .card-slot,
-.memory-zone .card-slot {
-  width: 100px;
-  height: 72px;
+.hand-area .card-slot {
+  width: 64px;
+  height: 90px;
 }
-.clock-zone .card-row,
-.hand-area .card-row {
+/* ------------------------------
+   Clock
+   縦向きカードを横方向に重ねる
+------------------------------ */
+.clock-zone {
   overflow: hidden;
+}
+.clock-zone .card-row {
+  position: relative;
+  height: 78px;
 }
 .clock-zone .card-slot {
   width: 56px;
   height: 78px;
+  margin-right: -22px;
 }
+.clock-zone .card-slot:last-child {
+  margin-right: 0;
+}
+/* ------------------------------
+   Level
+   縦向きカードを縦方向に重ねる
+------------------------------ */
 .level-slots {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  position: relative;
+  height: 112px;
 }
 .level-slots .card-slot {
+  position: absolute;
   width: 56px;
   height: 78px;
 }
+.level-slots .card-slot:nth-child(1) {
+  top: 0;
+  left: 0;
+}
+.level-slots .card-slot:nth-child(2) {
+  top: 12px;
+  left: 0;
+}
+.level-slots .card-slot:nth-child(3) {
+  top: 24px;
+  left: 0;
+}
+.level-slots .card-slot:nth-child(4) {
+  top: 36px;
+  left: 0;
+}
+/* ------------------------------
+   Climax
+   横向き1枚
+------------------------------ */
+.climax-zone .card-slot {
+  width: 100px;
+  height: 72px;
+}
+/* ------------------------------
+   Stock
+   横向きカードを縦方向に重ねる
+------------------------------ */
+.stock-zone {
+  overflow: hidden;
+}
+.stock-zone .card-slot {
+  width: 100px;
+  height: 72px;
+}
+/* ------------------------------
+   Memory
+   横向きカード
+------------------------------ */
+.memory-zone .card-slot {
+  width: 100px;
+  height: 72px;
+}
+/* ------------------------------
+   Deck / Waiting Room
+------------------------------ */
 .deck-zone .card-slot,
 .waiting-room-zone .card-slot {
   width: 64px;
   height: 90px;
 }
 /* ------------------------------
-   Temporary debug visibility
+   Debug Text
 ------------------------------ */
 .card-slot:empty::after {
   content: attr(data-zone) " " attr(data-index);
   font-size: 10px;
-  opacity: 0.7;
+  opacity: 0.65;
 }
