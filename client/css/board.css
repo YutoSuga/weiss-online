@@ -1,38 +1,335 @@
+/* =========================================================
+   weiss-online board.css v1
+   目的: レイアウト配置の土台を作る
+   ========================================================= */
+/* ------------------------------
+   Reset / Base
+------------------------------ */
+* {
+  box-sizing: border-box;
+}
 body {
   margin: 0;
+  min-width: 1440px;
   background: #111827;
-  color: #ffffff;
-  font-family: sans-serif;
+  color: #f9fafb;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
-
-h1 {
-  margin: 16px;
-  font-size: 24px;
+h1,
+h2,
+h3,
+p,
+ul {
+  margin: 0;
 }
-
-main {
+ul {
+  padding-left: 20px;
+}
+/* ------------------------------
+   App Layout
+------------------------------ */
+.app-header {
+  height: 48px;
+  padding: 8px 16px;
+  border-bottom: 1px solid #374151;
+  background: #020617;
+}
+.app-header h1 {
+  font-size: 20px;
+}
+.app-layout {
   display: grid;
-  gap: 16px;
-  padding: 16px;
-}
-
-section {
-  border: 2px solid #ffffff;
-  border-radius: 12px;
-  padding: 16px;
-}
-
-section:first-child {
-  background: #3b0f0f;
-}
-
-section:last-child {
-  background: #0f1f3b;
-}
-
-section div {
-  border: 1px solid #ffffff;
-  border-radius: 8px;
+  grid-template-columns: 260px 1fr 300px;
+  gap: 12px;
+  height: calc(100vh - 48px);
   padding: 12px;
-  margin: 8px 0;
+}
+/* ------------------------------
+   Sidebar
+------------------------------ */
+.left-sidebar,
+.right-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+.info-panel {
+  padding: 12px;
+  border: 1px solid #4b5563;
+  border-radius: 8px;
+  background: #1f2937;
+}
+.info-panel h2 {
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+.log-panel {
+  flex: 1;
+  min-height: 0;
+}
+.card-detail-panel {
+  flex: 1;
+}
+.end-turn-button {
+  width: 100%;
+  height: 56px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+}
+/* ------------------------------
+   Game Board
+------------------------------ */
+.game-board {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 12px;
+  min-width: 0;
+  min-height: 0;
+}
+.player-section {
+  display: grid;
+  gap: 8px;
+  min-height: 0;
+  padding: 10px;
+  border-radius: 12px;
+  border: 2px solid #4b5563;
+}
+.opponent-section {
+  grid-template-rows: 72px 1fr;
+  background: rgba(127, 29, 29, 0.35);
+  border-color: #991b1b;
+}
+.self-section {
+  grid-template-rows: 1fr 92px;
+  background: rgba(30, 64, 175, 0.35);
+  border-color: #1d4ed8;
+}
+/* ------------------------------
+   Hand Area
+------------------------------ */
+.hand-area {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+}
+.card-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+/* ------------------------------
+   Playmat Layout
+------------------------------ */
+.playmat {
+  display: grid;
+  gap: 8px;
+  min-height: 0;
+}
+.opponent-playmat {
+  grid-template-columns: 110px 1fr 170px 90px;
+  grid-template-rows: 1fr 68px;
+  grid-template-areas:
+    "leftZones stage middleZones stock"
+    "leftZones clock middleZones stock";
+}
+.self-playmat {
+  grid-template-columns: 90px 170px 1fr 110px;
+  grid-template-rows: 1fr 68px;
+  grid-template-areas:
+    "stock middleZones stage rightZones"
+    "stock middleZones clock rightZones";
+}
+.opponent-left-zones {
+  grid-area: leftZones;
+}
+.opponent-stage {
+  grid-area: stage;
+}
+.opponent-clock {
+  grid-area: clock;
+}
+.opponent-right-middle-zones {
+  grid-area: middleZones;
+}
+.opponent-stock {
+  grid-area: stock;
+}
+.self-stock {
+  grid-area: stock;
+}
+.self-left-middle-zones {
+  grid-area: middleZones;
+}
+.self-stage {
+  grid-area: stage;
+}
+.self-clock {
+  grid-area: clock;
+}
+.self-right-zones {
+  grid-area: rightZones;
+}
+/* ------------------------------
+   Zones
+------------------------------ */
+.zone,
+.clock-zone,
+.stage-area {
+  position: relative;
+  min-height: 0;
+  padding: 8px;
+  border: 1px solid #6b7280;
+  border-radius: 8px;
+  background: rgba(17, 24, 39, 0.75);
+}
+.zone-title {
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #e5e7eb;
+}
+.side-zones,
+.opponent-right-middle-zones,
+.self-left-middle-zones {
+  display: grid;
+  gap: 8px;
+  min-height: 0;
+}
+.side-zones {
+  grid-template-rows: 1fr 1fr 1fr;
+}
+.opponent-right-middle-zones,
+.self-left-middle-zones {
+  grid-template-rows: 1fr 1fr;
+}
+.count {
+  position: absolute;
+  right: 6px;
+  bottom: 4px;
+  font-size: 12px;
+  color: #d1d5db;
+}
+/* ------------------------------
+   Stage
+------------------------------ */
+.stage-area {
+  display: grid;
+  gap: 8px;
+  align-content: center;
+  justify-content: center;
+}
+.self-stage {
+  grid-template-columns: repeat(3, 92px);
+  grid-template-rows: auto 128px 128px;
+}
+.opponent-stage {
+  grid-template-columns: repeat(3, 92px);
+  grid-template-rows: auto 128px 128px;
+}
+.self-stage .zone-title,
+.opponent-stage .zone-title {
+  grid-column: 1 / -1;
+}
+.self-stage [data-row="front"] {
+  grid-row: 2;
+}
+.self-stage [data-row="back"] {
+  grid-row: 3;
+}
+.opponent-stage [data-row="back"] {
+  grid-row: 2;
+}
+.opponent-stage [data-row="front"] {
+  grid-row: 3;
+}
+.stage-slot[data-index="1"] {
+  grid-column: 1;
+}
+.stage-slot[data-index="2"] {
+  grid-column: 2;
+}
+.stage-slot[data-index="3"] {
+  grid-column: 3;
+}
+.stage-slot[data-row="back"][data-index="1"] {
+  grid-column: 1;
+}
+.stage-slot[data-row="back"][data-index="2"] {
+  grid-column: 3;
+}
+/* ------------------------------
+   Card Slot
+------------------------------ */
+.card-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 100px;
+  border: 1px solid #9ca3af;
+  border-radius: 6px;
+  background: #f9fafb;
+  color: #111827;
+  font-size: 12px;
+  text-align: center;
+}
+.stage-slot {
+  width: 92px;
+  height: 128px;
+}
+[data-face="down"] {
+  background: #374151;
+  color: #f9fafb;
+}
+[data-position="rest"] {
+  transform: rotate(90deg);
+}
+[data-position="reverse"] {
+  transform: rotate(180deg);
+}
+/* ------------------------------
+   Zone-specific card size
+------------------------------ */
+.climax-zone .card-slot,
+.stock-zone .card-slot,
+.memory-zone .card-slot {
+  width: 100px;
+  height: 72px;
+}
+.clock-zone .card-row,
+.hand-area .card-row {
+  overflow: hidden;
+}
+.clock-zone .card-slot {
+  width: 56px;
+  height: 78px;
+}
+.level-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.level-slots .card-slot {
+  width: 56px;
+  height: 78px;
+}
+.deck-zone .card-slot,
+.waiting-room-zone .card-slot {
+  width: 64px;
+  height: 90px;
+}
+/* ------------------------------
+   Temporary debug visibility
+------------------------------ */
+.card-slot:empty::after {
+  content: attr(data-zone) " " attr(data-index);
+  font-size: 10px;
+  opacity: 0.7;
 }
