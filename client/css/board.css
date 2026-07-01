@@ -1,6 +1,6 @@
 /* =========================================================
-   weiss-online board.css v2.1
-   目的: 配置・カード向き・重なりの整理
+   weiss-online board.css v3
+   目的: 盤面配置の修正・カードサイズ統一・背景枠調整
    ========================================================= */
 /* ------------------------------
    Variables
@@ -18,14 +18,9 @@
   --opponent-color: #991b1b;
   --card-w: 72px;
   --card-h: 100px;
-  --card-landscape-w: 100px;
-  --card-landscape-h: 72px;
   --hand-card-w: 64px;
   --hand-card-h: 90px;
-  --stage-card-w: 92px;
-  --stage-card-h: 128px;
-  --small-card-w: 56px;
-  --small-card-h: 78px;
+  --side-zone-w: 120px;
   --sidebar-left-w: 260px;
   --sidebar-right-w: 300px;
   --header-h: 48px;
@@ -144,15 +139,29 @@ ul {
   gap: 8px;
   min-height: 0;
 }
+/*
+   相手側:
+   手札
+   クロック
+   舞台
+   中央
+*/
 .opponent-playmat {
-  grid-template-columns: 110px 1fr 170px 90px;
-  grid-template-rows: 1fr 68px;
+  grid-template-columns: 110px 1fr var(--side-zone-w) var(--side-zone-w);
+  grid-template-rows: 68px 1fr;
   grid-template-areas:
-    "leftZones stage middleZones stock"
-    "leftZones clock middleZones stock";
+    "leftZones clock middleZones stock"
+    "leftZones stage middleZones stock";
 }
+/*
+   自分側:
+   中央
+   舞台
+   クロック
+   手札
+*/
 .self-playmat {
-  grid-template-columns: 90px 170px 1fr 110px;
+  grid-template-columns: var(--side-zone-w) var(--side-zone-w) 1fr 110px;
   grid-template-rows: 1fr 68px;
   grid-template-areas:
     "stock middleZones stage rightZones"
@@ -288,6 +297,7 @@ ul {
 }
 /* ------------------------------
    Stage
+   舞台カードは通常カードサイズ
 ------------------------------ */
 .stage-area {
   display: grid;
@@ -297,8 +307,8 @@ ul {
 }
 .self-stage,
 .opponent-stage {
-  grid-template-columns: repeat(3, var(--stage-card-w));
-  grid-template-rows: auto var(--stage-card-h) var(--stage-card-h);
+  grid-template-columns: repeat(3, var(--card-w));
+  grid-template-rows: auto var(--card-h) var(--card-h);
 }
 .self-stage .zone-title,
 .opponent-stage .zone-title {
@@ -317,8 +327,8 @@ ul {
   grid-row: 3;
 }
 .stage-slot {
-  width: var(--stage-card-w);
-  height: var(--stage-card-h);
+  width: var(--card-w);
+  height: var(--card-h);
 }
 .stage-slot[data-index="1"] {
   grid-column: 1;
@@ -344,27 +354,21 @@ ul {
 }
 .clock-zone .card-row {
   position: relative;
-  height: var(--small-card-h);
+  height: var(--card-h);
 }
 .clock-zone .card-slot {
-  width: var(--small-card-w);
-  height: var(--small-card-h);
-  margin-right: -22px;
+  width: var(--card-w);
+  height: var(--card-h);
+  margin-right: -32px;
 }
 .clock-zone .card-slot:last-child {
   margin-right: 0;
 }
 /* ------------------------------
-   Landscape Zones
+   Landscape Card Zones
    レベル / クライマックス / ストック / 思い出
 ------------------------------ */
-/* レベルは横向きサイズ */
-.level-slots .card-slot {
-  width: var(--card-landscape-w);
-  height: var(--card-landscape-h);
-}
-
-/* クライマックス / ストック / 思い出は縦カードを90度回転して横向きに見せる */
+.level-slots .card-slot,
 .climax-zone .card-slot,
 .stock-zone .card-slot,
 .memory-zone .card-slot {
@@ -378,33 +382,36 @@ ul {
 ------------------------------ */
 .level-slots {
   position: relative;
-  height: 116px;
+  height: 132px;
 }
 .level-slots .card-slot {
   position: absolute;
+  left: 14px;
 }
 .level-slots .card-slot:nth-child(1) {
   top: 0;
-  left: 0;
 }
 .level-slots .card-slot:nth-child(2) {
-  top: 14px;
-  left: 0;
+  top: 18px;
 }
 .level-slots .card-slot:nth-child(3) {
-  top: 28px;
-  left: 0;
+  top: 36px;
 }
 .level-slots .card-slot:nth-child(4) {
-  top: 42px;
-  left: 0;
+  top: 54px;
 }
 /* ------------------------------
-   Stock
-   横向きカードを縦方向に重ねる
+   Climax / Stock / Memory
 ------------------------------ */
-.stock-zone {
+.climax-zone,
+.stock-zone,
+.memory-zone {
   overflow: hidden;
+}
+.climax-zone .card-slot,
+.stock-zone .card-slot,
+.memory-zone .card-slot {
+  margin: 12px auto 0;
 }
 /* ------------------------------
    Deck / Waiting Room
@@ -413,6 +420,7 @@ ul {
 .waiting-room-zone .card-slot {
   width: 64px;
   height: 90px;
+  margin: 0 auto;
 }
 /* ------------------------------
    Debug Text
