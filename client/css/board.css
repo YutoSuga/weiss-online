@@ -665,3 +665,112 @@ body.play-mode .zone-footer {
   position: relative;
   z-index: 1;
 }
+/* =========================================================
+   board.css v4.5
+   レイアウトレビュー反映
+   ========================================================= */
+
+/* 1. 山札・控え室・思い出を縦並びへ戻す */
+.opponent-playmat .side-left,
+.self-playmat .side-right {
+  display: flex;
+  flex-direction: column;
+  width: var(--side-wide-w);
+}
+
+/* 相手：控え室 → 山札 → 思い出 */
+.opponent-playmat .side-left .waiting-room-zone {
+  order: 1;
+}
+
+.opponent-playmat .side-left .deck-zone {
+  order: 2;
+}
+
+.opponent-playmat .side-left .memory-zone {
+  order: 3;
+}
+
+/* 自分：思い出 → 山札 → 控え室 */
+.self-playmat .side-right .memory-zone {
+  order: 1;
+}
+
+.self-playmat .side-right .deck-zone {
+  order: 2;
+}
+
+.self-playmat .side-right .waiting-room-zone {
+  order: 3;
+}
+
+/* 2. 自分側の左エリアを少し左へ逃がす */
+.self-playmat {
+  column-gap: 24px;
+}
+
+/* TODO:
+   playmatの列幅を見直したら削除する */
+.self-playmat .side-left {
+  transform: translateX(-114px);
+}
+
+/* 3. 後列左右の間を詰める */
+.stage-grid {
+  grid-template-columns: repeat(3, var(--card-w));
+}
+
+/* 後列は左・右を隣接させる */
+.stage-slot[data-row="back"][data-index="1"] {
+  grid-column: 1;
+}
+
+.stage-slot[data-row="back"][data-index="2"] {
+  grid-column: 2;
+}
+
+/* 4. 自分レベル：0の上に1、1の上に2、2の上に3 */
+.self-playmat .level-slots .card-slot[data-index="1"] {
+  top: 54px;
+  z-index: 1;
+}
+
+.self-playmat .level-slots .card-slot[data-index="2"] {
+  top: 36px;
+  z-index: 2;
+}
+
+.self-playmat .level-slots .card-slot[data-index="3"] {
+  top: 18px;
+  z-index: 3;
+}
+
+.self-playmat .level-slots .card-slot[data-index="4"] {
+  top: 0;
+  z-index: 4;
+}
+
+/* 5. 相手クロック：1の上に2、2の上に3...6 */
+.opponent-clock .card-slot[data-index="1"] {
+  z-index: 1;
+}
+
+.opponent-clock .card-slot[data-index="2"] {
+  z-index: 2;
+}
+
+.opponent-clock .card-slot[data-index="3"] {
+  z-index: 3;
+}
+
+.opponent-clock .card-slot[data-index="4"] {
+  z-index: 4;
+}
+
+.opponent-clock .card-slot[data-index="5"] {
+  z-index: 5;
+}
+
+.opponent-clock .card-slot[data-index="6"] {
+  z-index: 6;
+}
