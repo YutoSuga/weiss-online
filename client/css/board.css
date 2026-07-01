@@ -774,3 +774,29 @@ body.play-mode .zone-footer {
 .opponent-clock .card-slot[data-index="6"] {
   z-index: 6;
 }
+
+/* =========================================================
+   board.css v4.6
+   レビュー反映：後列位置・ストック高さ・自分レベル下寄せ
+   ========================================================= */
+
+/* 後列：左・右で中央を挟む */
+.stage-slot[data-row="back"][data-index="1"] {
+  grid-column: 1;
+}
+
+.stage-slot[data-row="back"][data-index="2"] {
+  grid-column: 3;
+}
+
+/* ストックを縦長にする */
+.stock-zone {
+  min-height: 378px;
+}
+
+/* 自分のレベルを下寄せ */
+.self-playmat .level-zone {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
