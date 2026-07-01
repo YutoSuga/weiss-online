@@ -1,18 +1,13 @@
 /* =========================================================
-   weiss-online board.css v4.1
-   index.html v3 対応
-   目的: 全体レイアウト・playmat・zone構造の整理
+   weiss-online board.css v4.3
+   目的: 位置被りを解消し、各エリアを確認しやすくする
    ========================================================= */
-
-/* ------------------------------
-   Variables
------------------------------- */
 
 :root {
   --bg-app: #111827;
   --bg-header: #020617;
   --bg-panel: #1f2937;
-  --bg-zone: rgba(17, 24, 39, 0.78);
+  --bg-zone: rgba(17, 24, 39, 0.82);
 
   --text-main: #f9fafb;
   --text-muted: #d1d5db;
@@ -27,32 +22,27 @@
   --left-sidebar-w: 260px;
   --right-sidebar-w: 300px;
 
-  --gap-page: 12px;
-  --gap-board: 10px;
-  --gap-zone: 8px;
-
   --card-w: 72px;
   --card-h: 100px;
-
   --hand-card-w: 64px;
   --hand-card-h: 90px;
 
-  --side-narrow-w: 112px;
-  --side-wide-w: 128px;
+  --gap-page: 12px;
+  --gap-board: 12px;
+  --gap-zone: 10px;
 
-  --stage-w: calc(var(--card-w) * 3 + var(--gap-zone) * 2);
-  --stage-h: calc(var(--card-h) * 2 + var(--gap-zone) + 34px);
+  --side-narrow-w: 132px;
+  --side-wide-w: 146px;
+
+  --stage-w: calc(var(--card-w) * 3 + var(--gap-zone) * 2 + 24px);
+  --stage-h: calc(var(--card-h) * 2 + var(--gap-zone) + 44px);
 
   --clock-w: var(--stage-w);
-  --clock-h: calc(var(--card-h) + 34px);
+  --clock-h: calc(var(--card-h) + 44px);
 
-  --hand-w: calc(var(--hand-card-w) * 7 + 8px * 6 + 24px);
-  --hand-h: calc(var(--hand-card-h) + 34px);
+  --hand-w: calc(var(--hand-card-w) * 7 + 8px * 6 + 32px);
+  --hand-h: calc(var(--hand-card-h) + 44px);
 }
-
-/* ------------------------------
-   Reset / Base
------------------------------- */
 
 * {
   box-sizing: border-box;
@@ -79,7 +69,7 @@ ul {
 }
 
 /* ------------------------------
-   App Frame
+   App
 ------------------------------ */
 
 .app-header {
@@ -97,7 +87,7 @@ ul {
   display: grid;
   grid-template-columns: var(--left-sidebar-w) 1fr var(--right-sidebar-w);
   gap: var(--gap-page);
-  height: calc(100vh - var(--header-h));
+  min-height: calc(100vh - var(--header-h));
   padding: var(--gap-page);
 }
 
@@ -110,7 +100,6 @@ ul {
   display: flex;
   flex-direction: column;
   gap: var(--gap-page);
-  min-height: 0;
 }
 
 .info-panel {
@@ -127,8 +116,7 @@ ul {
 
 .log-panel,
 .card-detail-panel {
-  flex: 1;
-  min-height: 0;
+  min-height: 180px;
 }
 
 .end-turn-button {
@@ -144,50 +132,47 @@ ul {
 }
 
 /* ------------------------------
-   Game Board
+   Board
 ------------------------------ */
 
 .game-board {
-  display: grid;
-  grid-template-rows: 1fr 1fr;
-  gap: var(--gap-page);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-board);
   min-width: 0;
-  min-height: 0;
 }
 
 .player-section {
-  display: grid;
-  gap: 8px;
-  min-height: 0;
-  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-zone);
+  padding: 12px;
   border-radius: 12px;
   border: 2px solid var(--border-main);
 }
 
 .opponent-section {
-  grid-template-rows: var(--hand-h) 1fr;
   background: rgba(127, 29, 29, 0.34);
   border-color: var(--opponent-color);
 }
 
 .self-section {
-  grid-template-rows: 1fr var(--hand-h);
   background: rgba(30, 64, 175, 0.34);
   border-color: var(--self-color);
 }
 
 /* ------------------------------
-   Hand Area
+   Hand
 ------------------------------ */
 
 .hand-area {
   width: var(--hand-w);
   min-height: var(--hand-h);
-  justify-self: center;
+  align-self: center;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 6px 10px;
+  gap: 6px;
+  padding: 8px 12px;
   border: 1px solid var(--border-zone);
   border-radius: 8px;
   background: var(--bg-zone);
@@ -206,42 +191,22 @@ ul {
 
 .playmat {
   display: grid;
-  grid-template-columns: var(--side-narrow-w) var(--stage-w) var(--side-wide-w);
+  grid-template-columns: var(--side-wide-w) var(--stage-w) var(--side-wide-w);
   gap: var(--gap-board);
   justify-content: center;
-  align-items: stretch;
-  min-height: 0;
+  align-items: start;
 }
 
 .playmat-side {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--gap-zone);
-  min-height: 0;
-}
-
-.opponent-playmat .side-left,
-.self-playmat .side-right {
-  grid-template-rows: 1fr 1fr 1fr;
-}
-
-.opponent-playmat .side-right,
-.self-playmat .side-left {
-  grid-template-rows: 1fr 1fr 1fr;
 }
 
 .playmat-center {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--gap-zone);
-  justify-content: center;
-  min-height: 0;
-}
-
-.opponent-playmat .playmat-center {
-  grid-template-rows: var(--clock-h) var(--stage-h);
-}
-
-.self-playmat .playmat-center {
-  grid-template-rows: var(--stage-h) var(--clock-h);
 }
 
 /* ------------------------------
@@ -251,8 +216,7 @@ ul {
 .zone {
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  padding: 6px;
+  padding: 8px;
   border: 1px solid var(--border-zone);
   border-radius: 8px;
   background: var(--bg-zone);
@@ -260,7 +224,7 @@ ul {
 
 .zone-title {
   min-height: 16px;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   font-size: 12px;
   font-weight: bold;
   color: #e5e7eb;
@@ -268,23 +232,54 @@ ul {
 }
 
 .zone-body {
-  flex: 1;
-  min-height: 0;
   display: flex;
   justify-content: center;
   align-items: center;
+  min-height: 0;
 }
 
 .zone-footer {
   min-height: 14px;
-  margin-top: 4px;
+  margin-top: 6px;
   font-size: 12px;
   color: var(--text-muted);
   text-align: right;
 }
 
 /* ------------------------------
-   Card Slot Base
+   Zone Size
+------------------------------ */
+
+.stage-area {
+  width: var(--stage-w);
+  min-height: var(--stage-h);
+}
+
+.clock-zone {
+  width: var(--clock-w);
+  min-height: var(--clock-h);
+}
+
+.stock-zone,
+.climax-zone,
+.level-zone {
+  width: var(--side-narrow-w);
+  min-height: 126px;
+}
+
+.memory-zone {
+  width: var(--side-wide-w);
+  min-height: 126px;
+}
+
+.deck-zone,
+.waiting-room-zone {
+  width: var(--side-wide-w);
+  min-height: 134px;
+}
+
+/* ------------------------------
+   Card Slot
 ------------------------------ */
 
 .card-slot {
@@ -320,22 +315,8 @@ ul {
 }
 
 /* ------------------------------
-   Debug Text
------------------------------- */
-
-.card-slot:empty::after {
-  content: attr(data-zone) " " attr(data-index);
-  font-size: 10px;
-  opacity: 0.65;
-}
-/* ------------------------------
    Stage
 ------------------------------ */
-
-.stage-area {
-  width: var(--stage-w);
-  height: var(--stage-h);
-}
 
 .stage-grid {
   display: grid;
@@ -382,7 +363,6 @@ ul {
   grid-column: 3;
 }
 
-/* 舞台カードだけ data-position を反映 */
 .stage-slot[data-position="stand"] {
   transform: rotate(0deg);
 }
@@ -399,13 +379,10 @@ ul {
    Clock
 ------------------------------ */
 
-.clock-zone {
-  width: var(--clock-w);
-  height: var(--clock-h);
-}
-
 .clock-zone .card-row {
+  display: flex;
   justify-content: center;
+  align-items: center;
 }
 
 .clock-zone .card-slot {
@@ -417,16 +394,13 @@ ul {
 }
 
 /* ------------------------------
-   Landscape fixed zones
-   ストック / クライマックス / レベル / 思い出
+   Landscape Zones
 ------------------------------ */
 
 .stock-zone .card-slot,
 .climax-zone .card-slot,
 .level-zone .card-slot,
 .memory-zone .card-slot {
-  width: var(--card-w);
-  height: var(--card-h);
   transform: rotate(90deg);
 }
 
@@ -436,11 +410,14 @@ ul {
 
 .level-slots {
   position: relative;
-  height: 130px;
+  width: 100%;
+  min-height: 96px;
 }
 
 .level-slots .card-slot {
   position: absolute;
+  left: 50%;
+  transform: translateX(-50%) rotate(90deg);
 }
 
 .level-slots .card-slot:nth-child(1) {
@@ -460,25 +437,8 @@ ul {
 }
 
 /* ------------------------------
-   Stock / Climax / Memory
------------------------------- */
-
-.stock-zone .zone-body,
-.climax-zone .zone-body,
-.memory-zone .zone-body {
-  justify-content: center;
-  align-items: center;
-}
-
-/* ------------------------------
    Deck / Waiting Room
 ------------------------------ */
-
-.deck-zone .zone-body,
-.waiting-room-zone .zone-body {
-  justify-content: center;
-  align-items: center;
-}
 
 .deck-zone .card-slot,
 .waiting-room-zone .card-slot {
@@ -487,15 +447,11 @@ ul {
 }
 
 /* ------------------------------
-   Side zone widths
+   Debug
 ------------------------------ */
 
-.stock-zone,
-.climax-zone,
-.level-zone {
-  width: var(--side-narrow-w);
-}
-
-.memory-zone {
-  width: var(--side-wide-w);
+.card-slot:empty::after {
+  content: attr(data-zone) " " attr(data-index);
+  font-size: 10px;
+  opacity: 0.65;
 }
