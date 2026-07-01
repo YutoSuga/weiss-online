@@ -455,3 +455,213 @@ ul {
   font-size: 10px;
   opacity: 0.65;
 }
+
+/* =========================================================
+   board.css v4.4 trial
+   目的: ストック位置変更・思い出高さ調整・山札/控え室横並び
+   ========================================================= */
+
+/* 思い出の高さを縮小 */
+.memory-zone {
+  min-height: 76px;
+}
+
+/* 相手側：左エリアを2列グリッド化 */
+.opponent-playmat .side-left {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 134px 86px;
+}
+
+/* 相手：控え室 左 / 山札 右 / 思い出 下段全幅 */
+.opponent-playmat .waiting-room-zone {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.opponent-playmat .deck-zone {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.opponent-playmat .memory-zone {
+  grid-column: 1 / span 2;
+  grid-row: 2;
+}
+
+/* 自分側：右エリアを2列グリッド化 */
+.self-playmat .side-right {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 86px 134px;
+}
+
+/* 自分：思い出 上段全幅 / 控え室 左 / 山札 右 */
+.self-playmat .memory-zone {
+  grid-column: 1 / span 2;
+  grid-row: 1;
+}
+
+.self-playmat .waiting-room-zone {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.self-playmat .deck-zone {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+/* 山札・控え室の横並び用に少し幅を調整 */
+.opponent-playmat .side-left,
+.self-playmat .side-right {
+  width: 250px;
+}
+
+/* 相手側：右エリアをクライマックス + ストック横並びにする */
+.opponent-playmat .side-right {
+  display: grid;
+  grid-template-columns: var(--side-narrow-w) var(--side-narrow-w);
+  grid-template-rows: 126px 126px;
+}
+
+/* 相手：レベル上段、クライマックス左下、ストック右下 */
+.opponent-playmat .side-right .level-zone {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.opponent-playmat .side-right .climax-zone {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.opponent-playmat .side-right .stock-zone {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+/* 自分側：左エリアをストック + クライマックス横並びにする */
+.self-playmat .side-left {
+  display: grid;
+  grid-template-columns: var(--side-narrow-w) var(--side-narrow-w);
+  grid-template-rows: 126px 126px;
+}
+
+/* 自分：ストック左上、クライマックス右上、レベル右下 */
+.self-playmat .side-left .stock-zone {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.self-playmat .side-left .climax-zone {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.self-playmat .side-left .level-zone {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+
+/* =========================================================
+   Display Mode
+   debug-mode / play-mode
+   ========================================================= */
+
+/* Debug Mode：開発用。ラベルや情報をしっかり表示 */
+body.debug-mode {
+  --zone-title-font-size: 12px;
+  --zone-title-opacity: 1;
+  --zone-title-height: 16px;
+  --zone-padding: 8px;
+  --zone-footer-display: block;
+}
+
+/* Play Mode：本番想定。盤面を広く使う */
+body.play-mode {
+  --zone-title-font-size: 9px;
+  --zone-title-opacity: 0.45;
+  --zone-title-height: 10px;
+  --zone-padding: 5px;
+  --zone-footer-display: block;
+}
+
+/* zone共通の上書き */
+body.debug-mode .zone,
+body.debug-mode .hand-area,
+body.play-mode .zone,
+body.play-mode .hand-area {
+  padding: var(--zone-padding);
+}
+
+body.debug-mode .zone-title,
+body.play-mode .zone-title {
+  height: var(--zone-title-height);
+  min-height: var(--zone-title-height);
+  margin-bottom: 2px;
+  font-size: var(--zone-title-font-size);
+  line-height: 1;
+  opacity: var(--zone-title-opacity);
+  overflow: hidden;
+}
+
+body.debug-mode .zone-footer,
+body.play-mode .zone-footer {
+  display: var(--zone-footer-display);
+  margin-top: 2px;
+}
+
+/* Play Modeではカードを主役にするため、枠線も少し控えめに */
+body.play-mode .zone,
+body.play-mode .hand-area {
+  border-color: rgba(156, 163, 175, 0.45);
+}
+
+/* Debug Modeでは確認しやすく枠線を強める */
+body.debug-mode .zone,
+body.debug-mode .hand-area {
+  border-color: rgba(229, 231, 235, 0.8);
+}
+
+/* Play Modeではデバッグ文字を少し薄くする */
+body.play-mode .card-slot:empty::after {
+  opacity: 0.35;
+}
+
+/* Debug Modeではデバッグ文字を見やすくする */
+body.debug-mode .card-slot:empty::after {
+  opacity: 0.8;
+}
+
+
+/* Play Mode: zone-titleを背景ラベル化 */
+body.play-mode .zone {
+  position: relative;
+}
+
+body.play-mode .zone-title {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  height: auto;
+  margin: 0;
+
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+}
+
+body.play-mode .zone-body,
+body.play-mode .zone-footer {
+  position: relative;
+  z-index: 1;
+}
