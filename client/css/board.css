@@ -358,12 +358,19 @@ ul {
    Landscape Zones
    レベル / クライマックス / ストック / 思い出
 ------------------------------ */
-.level-slots .card-slot,
+/* レベルは横向きサイズ */
+.level-slots .card-slot {
+  width: var(--card-landscape-w);
+  height: var(--card-landscape-h);
+}
+
+/* クライマックス / ストック / 思い出は縦カードを90度回転して横向きに見せる */
 .climax-zone .card-slot,
 .stock-zone .card-slot,
 .memory-zone .card-slot {
-  width: var(--card-landscape-w);
-  height: var(--card-landscape-h);
+  width: var(--card-w);
+  height: var(--card-h);
+  transform: rotate(90deg);
 }
 /* ------------------------------
    Level
