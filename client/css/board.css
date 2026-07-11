@@ -800,3 +800,97 @@ body.play-mode .zone-footer {
   flex-direction: column;
   justify-content: flex-end;
 }
+
+/* =========================================================
+   board.css v4.7
+   Layout Review
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   各エリアの高さを全体的に少し縮める
+   （Play Mode前提）
+--------------------------------------------------------- */
+
+body.play-mode .stock-zone,
+body.play-mode .climax-zone,
+body.play-mode .level-zone,
+body.play-mode .memory-zone,
+body.play-mode .deck-zone,
+body.play-mode .waiting-room-zone {
+    min-height: calc(100% - 16px);
+}
+
+/* 舞台・クロックも16px程度縮める */
+
+body.play-mode .stage-area {
+    min-height: calc(var(--stage-h) - 16px);
+}
+
+body.play-mode .clock-zone {
+    min-height: calc(var(--clock-h) - 16px);
+}
+
+/* ---------------------------------------------------------
+   クライマックス位置
+--------------------------------------------------------- */
+
+/* 自分：上中央 */
+
+.self-playmat .climax-zone .zone-body {
+    justify-content: center;
+    align-items: flex-start;
+}
+
+/* 相手：下中央 */
+
+.opponent-playmat .climax-zone .zone-body {
+    justify-content: center;
+    align-items: flex-end;
+}
+
+/* ---------------------------------------------------------
+   レベル位置
+--------------------------------------------------------- */
+
+/* 相手：上（外側） */
+
+.opponent-playmat .level-zone {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+/* 自分：下（外側） */
+
+.self-playmat .level-zone {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+/* ---------------------------------------------------------
+   相手側
+   思い出・舞台・クロックの下端を揃える
+--------------------------------------------------------- */
+
+.opponent-playmat {
+    align-items: end;
+}
+
+.opponent-playmat .memory-zone,
+.opponent-playmat .stage-area,
+.opponent-playmat .clock-zone {
+    align-self: end;
+}
+
+/* ---------------------------------------------------------
+   Play Modeは余白を少し詰める
+--------------------------------------------------------- */
+
+body.play-mode .zone {
+    padding: 4px;
+}
+
+body.play-mode .hand-area {
+    padding: 6px 10px;
+}
