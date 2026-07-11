@@ -2,47 +2,60 @@
    weiss-online board.css v5.0
    index.html v3.1 対応 UI完成版
    ========================================================= */
+
 /* =========================================================
    1. Variables
    ========================================================= */
+
 :root {
   /* Color */
   --color-bg-app: #111827;
   --color-bg-header: #020617;
   --color-bg-panel: #1f2937;
   --color-bg-zone: rgba(17, 24, 39, 0.82);
+
   --color-text-main: #f9fafb;
   --color-text-muted: #d1d5db;
+
   --color-border-main: #4b5563;
   --color-border-zone: #6b7280;
   --color-border-card: #9ca3af;
+
   --color-self: #1d4ed8;
   --color-self-bg: rgba(30, 64, 175, 0.34);
+
   --color-opponent: #991b1b;
   --color-opponent-bg: rgba(127, 29, 29, 0.34);
+
   /* App */
   --header-height: 48px;
   --left-sidebar-width: 260px;
   --right-sidebar-width: 300px;
+
   /* Card */
   --card-width: 72px;
   --card-height: 100px;
+
   --hand-card-width: 64px;
   --hand-card-height: 90px;
+
   /* Spacing */
   --page-gap: 12px;
   --board-gap: 14px;
   --zone-gap: 10px;
   --card-gap: 10px;
+
   /* Zone width */
   --resource-zone-width: 118px;
   --memory-zone-width: 126px;
+
   --utility-column-width: 112px;
   --utility-area-width:
     calc(
       var(--utility-column-width) * 2
       + var(--zone-gap)
     );
+
   /* Center zones */
   --stage-width:
     calc(
@@ -50,14 +63,17 @@
       + var(--card-gap) * 2
       + 20px
     );
+
   --stage-height:
     calc(
       var(--card-height) * 2
       + var(--card-gap)
       + 24px
     );
+
   --clock-width: var(--stage-width);
   --clock-height: calc(var(--card-height) + 24px);
+
   /* Hand */
   --hand-width:
     calc(
@@ -65,30 +81,39 @@
       + var(--card-gap) * 6
       + 24px
     );
+
   --hand-height: calc(var(--hand-card-height) + 24px);
+
   /* Overlap */
   --clock-overlap: 34px;
   --level-overlap: 20px;
   --stock-overlap: 18px;
 }
+
+
 /* =========================================================
    2. Reset / Base
    ========================================================= */
+
 * {
   box-sizing: border-box;
 }
+
 html {
   min-width: 1440px;
   background: var(--color-bg-app);
 }
+
 body {
   margin: 0;
   min-width: 1440px;
   min-height: 100vh;
   overflow-x: auto;
   overflow-y: auto;
+
   background: var(--color-bg-app);
   color: var(--color-text-main);
+
   font-family:
     system-ui,
     -apple-system,
@@ -96,6 +121,7 @@ body {
     "Segoe UI",
     sans-serif;
 }
+
 h1,
 h2,
 h3,
@@ -106,163 +132,218 @@ dl,
 dd {
   margin: 0;
 }
+
 ul,
 ol {
   padding-left: 20px;
 }
+
+
 /* =========================================================
    3. App Frame
    ========================================================= */
+
 .app-header {
   position: sticky;
   top: 0;
   z-index: 100;
+
   height: var(--header-height);
   padding: 8px 16px;
+
   border-bottom: 1px solid #374151;
   background: var(--color-bg-header);
 }
+
 .app-header h1 {
   font-size: 20px;
   line-height: 32px;
 }
+
 .app-layout {
   display: grid;
   grid-template-columns:
     var(--left-sidebar-width)
     minmax(760px, 1fr)
     var(--right-sidebar-width);
+
   gap: var(--page-gap);
   align-items: start;
+
   min-height: calc(100vh - var(--header-height));
   padding: var(--page-gap);
 }
+
+
 /* =========================================================
    4. Sidebars
    ========================================================= */
+
 .left-sidebar,
 .right-sidebar {
   display: flex;
   flex-direction: column;
   gap: var(--page-gap);
+
   min-width: 0;
 }
+
 .info-panel {
   padding: 12px;
+
   border: 1px solid var(--color-border-main);
   border-radius: 8px;
   background: var(--color-bg-panel);
 }
+
 .info-panel h2 {
   margin-bottom: 10px;
   font-size: 16px;
 }
+
 .log-panel {
   min-height: 260px;
 }
+
 .card-detail-panel {
   min-height: 360px;
 }
+
 .player-status-list,
 .room-status-list {
   display: grid;
   gap: 5px;
 }
+
 .player-status-item,
 .room-status-item {
   display: grid;
   grid-template-columns: 82px 1fr;
   gap: 8px;
+
   font-size: 13px;
 }
+
 .player-status-item dt,
 .room-status-item dt {
   color: var(--color-text-muted);
 }
+
 .player-status-item dd,
 .room-status-item dd {
   text-align: right;
 }
+
 .game-log {
   font-size: 13px;
 }
+
 .end-turn-button {
   width: 100%;
   height: 56px;
+
   border: 0;
   border-radius: 8px;
+
   background: #2563eb;
   color: #ffffff;
+
   font-size: 18px;
   font-weight: 700;
   cursor: pointer;
 }
+
 .end-turn-button:hover {
   background: #1d4ed8;
 }
+
+
 /* =========================================================
    5. Main Board
    ========================================================= */
+
 .game-board {
   display: flex;
   flex-direction: column;
   gap: var(--board-gap);
+
   min-width: 0;
 }
+
 .player-section {
   display: flex;
   flex-direction: column;
   gap: var(--zone-gap);
+
   min-width: 0;
   padding: 12px;
+
   border: 2px solid var(--color-border-main);
   border-radius: 12px;
 }
+
 .opponent-section {
   background: var(--color-opponent-bg);
   border-color: var(--color-opponent);
 }
+
 .self-section {
   background: var(--color-self-bg);
   border-color: var(--color-self);
 }
+
+
 /* =========================================================
    6. Hand
    ========================================================= */
+
 .hand-area {
   position: relative;
+
   display: flex;
   flex-direction: column;
+
   width: var(--hand-width);
   min-height: var(--hand-height);
   align-self: center;
+
   padding: 6px 10px;
+
   border: 1px solid var(--color-border-zone);
   border-radius: 8px;
   background: var(--color-bg-zone);
 }
+
 .hand-slots {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: var(--card-gap);
+
   width: 100%;
   min-height: var(--hand-card-height);
 }
+
 .hand-area .card-slot {
   width: var(--hand-card-width);
   height: var(--hand-card-height);
 }
+
+
 /* =========================================================
    7. Playmat Structure
    ========================================================= */
+
 .playmat {
   display: grid;
   gap: var(--board-gap);
+
   justify-content: center;
   align-items: stretch;
+
   min-width: 0;
 }
+
 /*
   相手側:
   左 = 控え室・山札・思い出
@@ -275,6 +356,7 @@ ol {
     var(--stage-width)
     var(--utility-area-width);
 }
+
 /*
   自分側:
   左 = ストック・クライマックス・レベル
@@ -287,54 +369,71 @@ ol {
     var(--stage-width)
     var(--memory-zone-width);
 }
+
 .playmat-side {
   min-width: 0;
 }
+
 .playmat-center {
   display: flex;
   flex-direction: column;
   gap: var(--zone-gap);
+
   width: var(--stage-width);
 }
+
+
 /* =========================================================
    8. Resource Side
    山札・控え室・思い出
    ========================================================= */
+
 .opponent-playmat > .side-left,
 .self-playmat > .side-right {
   display: flex;
   flex-direction: column;
   gap: var(--zone-gap);
+
   width: var(--memory-zone-width);
 }
+
 .opponent-playmat > .side-left {
   justify-content: flex-end;
 }
+
 .self-playmat > .side-right {
   justify-content: flex-start;
 }
+
 .waiting-room-zone,
 .deck-zone {
   width: var(--memory-zone-width);
   min-height: 116px;
 }
+
 .memory-zone {
   width: var(--memory-zone-width);
   min-height: 76px;
 }
+
+
 /* =========================================================
    9. Utility Side
    ストック・クライマックス・レベル
    ========================================================= */
+
 .opponent-playmat > .side-right,
 .self-playmat > .side-left {
   display: grid;
   grid-template-columns:
     var(--utility-column-width)
     var(--utility-column-width);
+
   gap: var(--zone-gap);
+
   width: var(--utility-area-width);
 }
+
 /*
   相手:
   レベル           空き
@@ -344,21 +443,28 @@ ol {
   grid-template-rows: 128px 1fr;
   align-items: stretch;
 }
+
 .opponent-playmat > .side-right .level-zone {
   grid-column: 1;
   grid-row: 1;
+
   align-self: start;
 }
+
 .opponent-playmat > .side-right .climax-zone {
   grid-column: 1;
   grid-row: 2;
+
   align-self: end;
 }
+
 .opponent-playmat > .side-right .stock-zone {
   grid-column: 2;
   grid-row: 2;
+
   align-self: stretch;
 }
+
 /*
   自分:
   ストック   クライマックス
@@ -368,82 +474,113 @@ ol {
   grid-template-rows: 1fr 128px;
   align-items: stretch;
 }
+
 .self-playmat > .side-left .stock-zone {
   grid-column: 1;
   grid-row: 1 / span 2;
+
   align-self: stretch;
 }
+
 .self-playmat > .side-left .climax-zone {
   grid-column: 2;
   grid-row: 1;
+
   align-self: start;
 }
+
 .self-playmat > .side-left .level-zone {
   grid-column: 2;
   grid-row: 2;
+
   align-self: end;
 }
+
 .stock-zone,
 .climax-zone,
 .level-zone {
   width: var(--utility-column-width);
 }
+
 .climax-zone,
 .level-zone {
   min-height: 118px;
 }
+
 .stock-zone {
   min-height: 360px;
 }
+
+
 /* =========================================================
    10. Zone Common
    ========================================================= */
+
 .zone {
   position: relative;
+
   display: flex;
   flex-direction: column;
+
   min-width: 0;
   padding: 5px;
+
   border: 1px solid var(--color-border-zone);
   border-radius: 8px;
   background: var(--color-bg-zone);
 }
+
 .zone-body {
   position: relative;
   z-index: 2;
+
   display: flex;
   justify-content: center;
   align-items: center;
+
   flex: 1;
   min-width: 0;
   min-height: 0;
 }
+
 .zone-title {
   z-index: 1;
+
   margin: 0;
   color: #e5e7eb;
+
   font-size: 12px;
   font-weight: 700;
+
   pointer-events: none;
 }
+
+
 /* =========================================================
    11. Card Slot
    ========================================================= */
+
 .card-slot {
   display: flex;
   justify-content: center;
   align-items: center;
+
   width: var(--card-width);
   height: var(--card-height);
   flex-shrink: 0;
+
   border: 1px solid var(--color-border-card);
   border-radius: 6px;
+
   background: #f9fafb;
   color: #111827;
+
   font-size: 12px;
   text-align: center;
+
   transform-origin: center;
 }
+
 [data-face="down"] {
   background:
     repeating-linear-gradient(
@@ -453,76 +590,99 @@ ol {
       #374151 8px,
       #374151 16px
     );
+
   color: #f9fafb;
 }
+
+
 /* =========================================================
    12. Stage
    ========================================================= */
+
 .stage-area {
   width: var(--stage-width);
   min-height: var(--stage-height);
 }
+
 .stage-body {
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: var(--card-gap);
+
   width: 100%;
 }
+
 .stage-row {
   display: flex;
   align-items: center;
+
   width: calc(
     var(--card-width) * 3
     + var(--card-gap) * 2
   );
   min-height: var(--card-height);
 }
+
 .front-row {
   justify-content: flex-start;
   gap: var(--card-gap);
 }
+
 /*
   後列2枚を、前列カード間の隙間を中心として配置
 */
 .back-row {
   gap: var(--card-gap);
+
   padding-left:
     calc(
       var(--card-width) / 2
       + var(--card-gap) / 2
     );
 }
+
 .stage-slot[data-position="stand"] {
   transform: rotate(0deg);
 }
+
 .stage-slot[data-position="rest"] {
   transform: rotate(90deg);
 }
+
 .stage-slot[data-position="reverse"] {
   transform: rotate(180deg);
 }
+
+
 /* 相手側の舞台行順 */
 .opponent-stage .stage-body {
   flex-direction: column;
 }
+
 /* 自分側の舞台行順 */
 .self-stage .stage-body {
   flex-direction: column;
 }
+
+
 /* =========================================================
    13. Clock
    ========================================================= */
+
 .clock-zone {
   width: var(--clock-width);
   min-height: var(--clock-height);
 }
+
 .clock-slots {
   display: flex;
   justify-content: center;
   align-items: center;
+
   width: 100%;
 }
+
 /*
   自分クロック:
   1 → 2 → 3 → 4 → 5 → 6
@@ -530,9 +690,11 @@ ol {
 .self-clock .card-slot {
   margin-right: calc(var(--clock-overlap) * -1);
 }
+
 .self-clock .card-slot:last-child {
   margin-right: 0;
 }
+
 /*
   相手クロック:
   HTML定義は 6 → 5 → 4 → 3 → 2 → 1
@@ -542,55 +704,72 @@ ol {
   position: relative;
   margin-right: calc(var(--clock-overlap) * -1);
 }
+
 .opponent-clock .card-slot:last-child {
   margin-right: 0;
 }
+
 .opponent-clock [data-index="1"] {
   z-index: 1;
 }
+
 .opponent-clock [data-index="2"] {
   z-index: 2;
 }
+
 .opponent-clock [data-index="3"] {
   z-index: 3;
 }
+
 .opponent-clock [data-index="4"] {
   z-index: 4;
 }
+
 .opponent-clock [data-index="5"] {
   z-index: 5;
 }
+
 .opponent-clock [data-index="6"] {
   z-index: 6;
 }
+
+
 /* =========================================================
    14. Fixed Landscape Zones
    レベル・クライマックス・ストック・思い出
    ========================================================= */
+
 .level-zone .card-slot,
 .climax-zone .card-slot,
 .stock-zone .card-slot,
 .memory-zone .card-slot {
   transform: rotate(90deg);
 }
+
+
 /* =========================================================
    15. Level
    ========================================================= */
+
 .level-slots {
   position: relative;
+
   width: 100%;
   min-height: 104px;
 }
+
 /*
   レベルカードの基準位置
 */
 .level-slots .card-slot {
   position: absolute;
   left: 50%;
+
   transform:
     translateX(-50%)
     rotate(90deg);
 }
+
 /*
   相手:
   上から 0 → 1 → 2 → 3
@@ -600,18 +779,22 @@ ol {
   top: 0;
   z-index: 1;
 }
+
 .opponent-playmat .level-slots [data-index="2"] {
   top: var(--level-overlap);
   z-index: 2;
 }
+
 .opponent-playmat .level-slots [data-index="3"] {
   top: calc(var(--level-overlap) * 2);
   z-index: 3;
 }
+
 .opponent-playmat .level-slots [data-index="4"] {
   top: calc(var(--level-overlap) * 3);
   z-index: 4;
 }
+
 /*
   自分:
   0の上に1、その上に2、その上に3
@@ -620,45 +803,60 @@ ol {
   bottom: 0;
   z-index: 1;
 }
+
 .self-playmat .level-slots [data-index="2"] {
   bottom: var(--level-overlap);
   z-index: 2;
 }
+
 .self-playmat .level-slots [data-index="3"] {
   bottom: calc(var(--level-overlap) * 2);
   z-index: 3;
 }
+
 .self-playmat .level-slots [data-index="4"] {
   bottom: calc(var(--level-overlap) * 3);
   z-index: 4;
 }
+
+
 /* =========================================================
    16. Climax
    ========================================================= */
+
 .climax-slots {
   justify-content: center;
 }
+
 .opponent-playmat .climax-slots {
   align-items: flex-end;
 }
+
 .self-playmat .climax-slots {
   align-items: flex-start;
 }
+
+
 /* =========================================================
    17. Stock
    ========================================================= */
+
 .stock-slots {
   position: relative;
+
   width: 100%;
   min-height: 300px;
 }
+
 .stock-slots .card-slot {
   position: absolute;
   left: 50%;
+
   transform:
     translateX(-50%)
     rotate(90deg);
 }
+
 /*
   相手ストック:
   下方向へ重ねる
@@ -667,30 +865,37 @@ ol {
   top: 0;
   z-index: 1;
 }
+
 .opponent-playmat .stock-slots [data-index="2"] {
   top: var(--stock-overlap);
   z-index: 2;
 }
+
 .opponent-playmat .stock-slots [data-index="3"] {
   top: calc(var(--stock-overlap) * 2);
   z-index: 3;
 }
+
 .opponent-playmat .stock-slots [data-index="4"] {
   top: calc(var(--stock-overlap) * 3);
   z-index: 4;
 }
+
 .opponent-playmat .stock-slots [data-index="5"] {
   top: calc(var(--stock-overlap) * 4);
   z-index: 5;
 }
+
 .opponent-playmat .stock-slots [data-index="6"] {
   top: calc(var(--stock-overlap) * 5);
   z-index: 6;
 }
+
 .opponent-playmat .stock-slots [data-index="7"] {
   top: calc(var(--stock-overlap) * 6);
   z-index: 7;
 }
+
 /*
   自分ストック:
   下から上方向へ重ねる
@@ -699,49 +904,64 @@ ol {
   bottom: 0;
   z-index: 1;
 }
+
 .self-playmat .stock-slots [data-index="2"] {
   bottom: var(--stock-overlap);
   z-index: 2;
 }
+
 .self-playmat .stock-slots [data-index="3"] {
   bottom: calc(var(--stock-overlap) * 2);
   z-index: 3;
 }
+
 .self-playmat .stock-slots [data-index="4"] {
   bottom: calc(var(--stock-overlap) * 3);
   z-index: 4;
 }
+
 .self-playmat .stock-slots [data-index="5"] {
   bottom: calc(var(--stock-overlap) * 4);
   z-index: 5;
 }
+
 .self-playmat .stock-slots [data-index="6"] {
   bottom: calc(var(--stock-overlap) * 5);
   z-index: 6;
 }
+
 .self-playmat .stock-slots [data-index="7"] {
   bottom: calc(var(--stock-overlap) * 6);
   z-index: 7;
 }
+
+
 /* =========================================================
    18. Deck / Waiting Room
    ========================================================= */
+
 .deck-zone .card-slot,
 .waiting-room-zone .card-slot {
   width: 64px;
   height: 90px;
 }
+
+
 /* =========================================================
    19. Play Mode
    ========================================================= */
+
 body.play-mode {
   --mode-zone-padding: 4px;
 }
+
 body.play-mode .zone,
 body.play-mode .hand-area {
   padding: var(--mode-zone-padding);
+
   border-color: rgba(156, 163, 175, 0.45);
 }
+
 /*
   エリア名を背景ウォーターマークとして表示
 */
@@ -749,81 +969,112 @@ body.play-mode .zone-title {
   position: absolute;
   inset: 0;
   z-index: 1;
+
   display: flex;
   justify-content: center;
   align-items: center;
+
   width: 100%;
   height: 100%;
   margin: 0;
+
   color: rgba(255, 255, 255, 0.14);
+
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.08em;
+
   overflow: hidden;
 }
+
 /* 手札も背景ラベル化 */
 body.play-mode .hand-area {
   position: relative;
 }
+
 body.play-mode .hand-area > .zone-title {
   position: absolute;
   inset: 0;
   z-index: 1;
+
   display: flex;
   justify-content: center;
   align-items: center;
+
   width: 100%;
   height: 100%;
+
   color: rgba(255, 255, 255, 0.14);
+
   font-size: 14px;
   letter-spacing: 0.08em;
 }
+
 body.play-mode .zone-body,
 body.play-mode .hand-area .zone-body {
   position: relative;
   z-index: 2;
 }
+
+
 /* =========================================================
    20. Debug Mode
    ========================================================= */
+
 body.debug-mode .zone,
 body.debug-mode .hand-area {
   padding: 8px;
+
   border-color: rgba(229, 231, 235, 0.8);
 }
+
 body.debug-mode .zone-title {
   position: static;
+
   display: block;
+
   width: auto;
   height: auto;
   margin-bottom: 6px;
+
   color: #e5e7eb;
   opacity: 1;
+
   font-size: 12px;
   letter-spacing: normal;
 }
+
 body.debug-mode .hand-area > .zone-title {
   position: static;
+
   display: block;
+
   width: auto;
   height: auto;
   margin-bottom: 6px;
+
   color: #e5e7eb;
   opacity: 1;
+
   font-size: 12px;
   letter-spacing: normal;
 }
+
+
 /* =========================================================
    21. Debug Card Labels
    ========================================================= */
+
 .card-slot:empty::after {
   content:
     attr(data-zone)
     " "
     attr(data-index);
+
   font-size: 10px;
   opacity: 0.35;
 }
+
 body.debug-mode .card-slot:empty::after {
   opacity: 0.85;
 }
