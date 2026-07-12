@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>weiss-online</title>
+  <link rel="stylesheet" href="./css/board.css" />
+</head>
+<!-- ========================================
+         play-mode / debug Mode
+    ========================================= -->
+
+<body class="play-mode">
+  <header class="app-header">
+    <h1>weiss-online</h1>
+  </header>
+  <div class="app-layout">
+    <!-- ========================================
+         左サイドバー
+    ========================================= -->
+    <aside class="left-sidebar">
+      <section class="info-panel opponent-info">
+        <h2>相手の情報</h2>
+        <dl class="player-status-list">
+          <div class="player-status-item">
+            <dt>名前</dt>
+            <dd>Player 2</dd>
+          </div>
+          <div class="player-status-item">
+            <dt>手札</dt>
+            <dd>7枚</dd>
+          </div>
+          <div class="player-status-item">
+            <dt>山札</dt>
+            <dd>0枚</dd>
+          </div>
+          <div class="player-status-item">
+            <dt>控え室</dt>
+            <dd>0枚</dd>
+          </div>
+          <div class="player-status-item">
+            <dt>思い出</dt>
+            <dd>0枚</dd>
+          </div>
+          <div class="player-status-item">
+            <dt>ストック</dt>
+            <dd>0枚</dd>
+          </div>
+        </dl>
+      </section>
+      <section class="info-panel room-info">
+        <h2>対戦ルーム情報</h2>
+        <dl class="room-status-list">
+          <div class="room-status-item">
+            <dt>ルームID</dt>
+            <dd>未設定</dd>
+          </div>
+          <div class="room-status-item">
+            <dt>状態</dt>
+            <dd>待機中</dd>
+          </div>
+        </dl>
+      </section>
+      <section class="info-panel log-panel">
+        <h2>ログ</h2>
+        <ol class="game-log">
+          <li>ゲーム開始待機中</li>
+        </ol>
+      </section>
+    </aside>
+    <!-- ========================================
+         ゲーム盤面
+    ========================================= -->
+    <main class="game-board">
+      <!-- ======================================
+           相手エリア
+      ======================================= -->
+      <section class="player-section opponent-section" aria-label="相手エリア">
+        <!-- 相手の手札 -->
+        <section class="hand-area opponent-hand">
+          <h2 class="zone-title">相手</h2>
+          <div class="zone-body hand-slots">
+            <article class="card-slot" data-owner="opponent" data-zone="hand" data-index="1" data-face="down"
+              data-position="stand" data-card-id=""></article>
+            <article class="card-slot" data-owner="opponent" data-zone="hand" data-index="2" data-face="down"
+              data-position="stand" data-card-id=""></article>
+            <article class="card-slot" data-owner="opponent" data-zone="hand" data-index="3" data-face="down"
+              data-position="stand" data-card-id=""></article>
+            <article class="card-slot" data-owner="opponent" data-zone="hand" data-index="4" data-face="down"
+              data-position="stand" data-card-id=""></article>
+            <article class="card-slot" data-owner="opponent" data-zone="hand" data-index="5" data-face="down"
+              data-position="stand" data-card-id=""></article>
+            <article class="card-slot" data-owner="opponent" data-zone="hand" data-index="6" data-face="down"
+              data-position="stand" data-card-id=""></article>
+            <article class="card-slot" data-owner="opponent" data-zone="hand" data-index="7" data-face="down"
+              data-position="stand" data-card-id=""></article>
+          </div>
+        </section>
+        <!-- 相手のプレイマット -->
+        <div class="playmat opponent-playmat">
+          <!-- ==================================
+               相手側・左
+               控え室 → 山札 → 思い出
+          =================================== -->
+          <div class="playmat-side side-left">
+            <section class="zone waiting-room-zone">
+              <h3 class="zone-title">控え室</h3>
+              <div class="zone-body waiting-room-slots">
+                <article class="card-slot" data-owner="opponent" data-zone="waiting-room" data-index="1" data-face="up"
+                  data-position="stand" data-card-id=""></article>
+              </div>
+            </section>
+            <section class="zone deck-zone">
+              <h3 class="zone-title">山札</h3>
+              <div class="zone-body deck-slots">
+                <article class="card-slot" data-owner="opponent" data-zone="deck" data-index="1" data-face="down"
+                  data-position="stand" data-card-id=""></article>
+              </div>
+            </section>
+            <section class="zone memory-zone">
+              <h3 class="zone-title">思い出</h3>
+              <div class="zone-body memory-slots">
+                <article class="card-slot" data-owner="opponent" data-zone="memory" data-index="1" data-face="up"
+                  data-position="stand" data-card-id=""></article>
+              </div>
+            </section>
+          </div>
+          <!-- ==================================
+               相手側・中央
+               クロック → 舞台
+          =================================== -->
+          <div class="playmat-center">
+            <!-- 相手のクロック -->
+            <section class="zone clock-zone opponent-clock">
+              <h3 class="zone-title">クロック</h3>
+              <div class="zone-body clock-slots">
+                <article class="card-slot" data-owner="opponent" data-zone="clock" data-index="6" data-face="up"
+                  data-position="stand" data-card-id="">
+                  6
+                </article>
+                <article class="card-slot" data-owner="opponent" data-zone="clock" data-index="5" data-face="up"
+                  data-position="stand" data-card-id="">
+                  5
+                </article>
+                <article class="card-slot" data-owner="opponent" data-zone="clock" data-index="4" data-face="up"
+                  data-position="stand" data-card-id="">
+                  4
+                </article>
+                <article class="card-slot" data-owner="opponent" data-zone="clock" data-index="3" data-face="up"
+                  data-position="stand" data-card-id="">
+                  3
+                </article>
+                <article class="card-slot" data-owner="opponent" data-zone="clock" data-index="2" data-face="up"
+                  data-position="stand" data-card-id="">
+                  2
+                </article>
+                <article class="card-slot" data-owner="opponent" data-zone="clock" data-index="1" data-face="up"
+                  data-position="stand" data-card-id="">
+                  1
+                </article>
+              </div>
+            </section>
+            <!-- 相手の舞台 -->
+            <section class="zone stage-area opponent-stage">
+              <h3 class="zone-title">舞台</h3>
+              <div class="zone-body stage-body">
+                <div class="stage-row back-row">
+                  <article class="card-slot stage-slot" data-owner="opponent" data-zone="stage" data-row="back"
+                    data-index="2" data-face="up" data-position="stand" data-card-id="">
+                    後列 右
+                  </article>
+                  <article class="card-slot stage-slot" data-owner="opponent" data-zone="stage" data-row="back"
+                    data-index="1" data-face="up" data-position="stand" data-card-id="">
+                    後列 左
+                  </article>
+                </div>
+                <div class="stage-row front-row">
+                  <article class="card-slot stage-slot" data-owner="opponent" data-zone="stage" data-row="front"
+                    data-index="3" data-face="up" data-position="stand" data-card-id=""></article>
+                    <!--　======================================自分エリア=======================================　-->
+                    <section class="player-section self-section" aria-label="自分エリア">
+                      <!-- 自分のプレイマット -->
+                      <div class="playmat self-playmat">
+                        <!-- ==================================
+               自分側・左
+               ストック / クライマックス / レベル
+          =================================== -->
+                        <div class="playmat-side side-left">
+                          <section class="zone stock-zone">
+                            <h3 class="zone-title">ストック</h3>
+                            <div class="zone-body stock-slots">
+                              <article class="card-slot" data-owner="self" data-zone="stock" data-index="1"
+                                data-face="down" data-position="stand" data-card-id=""></article>
+                              <article class="card-slot" data-owner="self" data-zone="stock" data-index="2"
+                                data-face="down" data-position="stand" data-card-id=""></article>
+                              <article class="card-slot" data-owner="self" data-zone="stock" data-index="3"
+                                data-face="down" data-position="stand" data-card-id=""></article>
+                              <article class="card-slot" data-owner="self" data-zone="stock" data-index="4"
+                                data-face="down" data-position="stand" data-card-id=""></article>
+                              <article class="card-slot" data-owner="self" data-zone="stock" data-index="5"
+                                data-face="down" data-position="stand" data-card-id=""></article>
+                              <article class="card-slot" data-owner="self" data-zone="stock" data-index="6"
+                                data-face="down" data-position="stand" data-card-id=""></article>
+                              <article class="card-slot" data-owner="self" data-zone="stock" data-index="7"
+                                data-face="down" data-position="stand" data-card-id=""></article>
+                            </div>
+                          </section>
+                          <section class="zone climax-zone">
+                            <h3 class="zone-title">クライマックス</h3>
+                            <div class="zone-body climax-slots">
+                              <article class="card-slot" data-owner="self" data-zone="climax" data-index="1"
+                                data-face="up" data-position="stand" data-card-id=""></article>
+                            </div>
+                          </section>
+                          <section class="zone level-zone">
+                            <h3 class="zone-title">レベル</h3>
+                            <div class="zone-body level-slots">
+                              <article class="card-slot" data-owner="self" data-zone="level" data-index="4"
+                                data-face="up" data-position="stand" data-card-id="">
+                                3
+                              </article>
+                              <article class="card-slot" data-owner="self" data-zone="level" data-index="3"
+                                data-face="up" data-position="stand" data-card-id="">
+                                2
+                              </article>
+                              <article class="card-slot" data-owner="self" data-zone="level" data-index="2"
+                                data-face="up" data-position="stand" data-card-id="">
+                                1
+                              </article>
+                              <article class="card-slot" data-owner="self" data-zone="level" data-index="1"
+                                data-face="up" data-position="stand" data-card-id="">
+                                0
+                              </article>
+                            </div>
+                          </section>
+                        </div>
+                        <!-- ==================================
+               自分側・中央
+               舞台 → クロック
+          =================================== -->
+                        <div class="playmat-center">
+                          <!-- 自分の舞台 -->
+                          <section class="zone stage-area self-stage">
+                            <h3 class="zone-title">舞台</h3>
+                            <div class="zone-body stage-body">
+                              <div class="stage-row front-row">
+                                <article class="card-slot stage-slot" data-owner="self" data-zone="stage"
+                                  data-row="front" data-index="1" data-face="up" data-position="stand" data-card-id="">
+                                  前列 左
+                                </article>
+                                <article class="card-slot stage-slot" data-owner="self" data-zone="stage"
+                                  data-row="front" data-index="2" data-face="up" data-position="stand" data-card-id="">
+                                  前列 中央
+                                </article>
+                                <article class="card-slot stage-slot" data-owner="self" data-zone="stage"
+                                  data-row="front" data-index="3" data-face="up" data-position="stand" data-card-id="">
+                                  前列 右
+                                </article>
+                              </div>
+                              <div class="stage-row back-row">
+                                <article class="card-slot stage-slot" data-owner="self" data-zone="stage"
+                                  data-row="back" data-index="1" data-face="up" data-position="stand" data-card-id="">
+                                  後列 左
+                                </article>
+                                <article class="card-slot stage-slot" data-owner="self" data-zone="stage"
+                                  data-row="back" data-index="2" data-face="up" data-position="stand" data-card-id="">
+                                  後列 右
+                                </article>
+                              </div>
+                            </div>
+                          </section>
+                          <!-- 自分のクロック -->
+                          <section class="zone clock-zone self-clock">
+                            <h3 class="zone-title">クロック</h3>
+                            <div class="zone-body clock-slots">
+                              <article class="card-slot" data-owner="self" data-zone="clock" data-index="1"
+                                data-face="up" data-position="stand" data-card-id="">
+                                1
+                              </article>
+                              <article class="card-slot" data-owner="self" data-zone="clock" data-index="2"
+                                data-face="up" data-position="stand" data-card-id="">
+                                2
+                              </article>
+                              <article class="card-slot" data-owner="self" data-zone="clock" data-index="3"
+                                data-face="up" data-position="stand" data-card-id="">
+                                3
+                              </article>
+                              <article class="card-slot" data-owner="self" data-zone="clock" data-index="4"
+                                data-face="up" data-position="stand" data-card-id="">
+                                4
+                              </article>
+                              <article class="card-slot" data-owner="self" data-zone="clock" data-index="5"
+                                data-face="up" data-position="stand" data-card-id="">
+                                5
+                              </article>
+                              <article class="card-slot" data-owner="self" data-zone="clock" data-index="6"
+                                data-face="up" data-position="stand" data-card-id="">
+                                6
+                              </article>
+                            </div>
+                          </section>
+                        </div>
+                        <!-- ==================================
+               自分側・右
+               思い出 → 山札 → 控え室
+          =================================== -->
+                        <div class="playmat-side side-right">
+                          <section class="zone memory-zone">
+                            <h3 class="zone-title">思い出</h3>
+                            <div class="zone-body memory-slots">
+                              <article class="card-slot" data-owner="self" data-zone="memory" data-index="1"
+                                data-face="up" data-position="stand" data-card-id=""></article>
+                            </div>
+                          </section>
+                          <section class="zone deck-zone">
+                            <h3 class="zone-title">山札</h3>
+                            <div class="zone-body deck-slots">
+                              <article class="card-slot" data-owner="self" data-zone="deck" data-index="1"
+                                data-face="down" data-position="stand" data-card-id=""></article>
+                            </div>
+                          </section>
+                          <section class="zone waiting-room-zone">
+                            <h3 class="zone-title">控え室</h3>
+                            <div class="zone-body waiting-room-slots">
+                              <article class="card-slot" data-owner="self" data-zone="waiting-room" data-index="1"
+                                data-face="up" data-position="stand" data-card-id=""></article>
+                            </div>
+                          </section>
+                        </div>
+                      </div>
+                      <!-- 自分の手札 -->
+                      <section class="hand-area self-hand">
+                        <h2 class="zone-title">あなた</h2>
+                        <div class="zone-body hand-slots">
+                          <article class="card-slot" data-owner="self" data-zone="hand" data-index="1" data-face="up"
+                            data-position="stand" data-card-id=""></article>
+                          <article class="card-slot" data-owner="self" data-zone="hand" data-index="2" data-face="up"
+                            data-position="stand" data-card-id=""></article>
+                          <article class="card-slot" data-owner="self" data-zone="hand" data-index="3" data-face="up"
+                            data-position="stand" data-card-id=""></article>
+                          <article class="card-slot" data-owner="self" data-zone="hand" data-index="4" data-face="up"
+                            data-position="stand" data-card-id=""></article>
+                          <article class="card-slot" data-owner="self" data-zone="hand" data-index="5" data-face="up"
+                            data-position="stand" data-card-id=""></article>
+                          <article class="card-slot" data-owner="self" data-zone="hand" data-index="6" data-face="up"
+                            data-position="stand" data-card-id=""></article>
+                          <article class="card-slot" data-owner="self" data-zone="hand" data-index="7" data-face="up"
+                            data-position="stand" data-card-id=""></article>
+                        </div>
+                      </section>
+                    </section>
+                    <!-- ======================================
+           右サイドバー
+      ======================================= -->
+    </main>
+
+    <aside class="right-sidebar">
+      <!-- カード説明 -->
+
+      <section class="info-panel card-detail-panel">
+        <h2>カード説明</h2>
+
+        <div class="card-detail">
+          <p>カードを選択してください。</p>
+        </div>
+      </section>
+
+      <!-- ターン終了 -->
+
+      <button class="end-turn-button" type="button">
+        ターン終了
+      </button>
+
+      <!-- 自分情報 -->
+
+      <section class="info-panel self-info">
+        <h2>自分の情報</h2>
+
+        <dl class="player-status-list">
+          <div class="player-status-item">
+            <dt>名前</dt>
+            <dd>Player 1</dd>
+          </div>
+
+          <div class="player-status-item">
+            <dt>手札</dt>
+            <dd>7枚</dd>
+          </div>
+
+          <div class="player-status-item">
+            <dt>山札</dt>
+            <dd>0枚</dd>
+          </div>
+
+          <div class="player-status-item">
+            <dt>控え室</dt>
+            <dd>0枚</dd>
+          </div>
+
+          <div class="player-status-item">
+            <dt>思い出</dt>
+            <dd>0枚</dd>
+          </div>
+
+          <div class="player-status-item">
+            <dt>ストック</dt>
+            <dd>0枚</dd>
+          </div>
+        </dl>
+      </section>
+    </aside>
+  </div>
+</body>
+
+</html>
