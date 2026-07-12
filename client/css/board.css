@@ -545,3 +545,89 @@ ul {
     + 24px
   );
 }
+/* =========================================================
+   board.css v4.3.2
+   相手エリア・自分エリアの上下分離 安定化パッチ
+   ========================================================= */
+
+:root {
+  /*
+    現在の舞台・クロック・左右エリアを収容するための仮高さ。
+    多少縦長でも、位置被りを起こさないことを優先する。
+  */
+  --playmat-safe-height: 560px;
+}
+
+/* Gridによる重なりを避け、通常の縦方向レイアウトに戻す */
+.game-board {
+  display: block !important;
+  min-width: 0;
+}
+
+/* 相手エリアの後に自分エリアを通常フローで配置 */
+.opponent-section {
+  margin-bottom: 24px;
+}
+
+/* 各プレイヤーエリアを通常のブロックとして扱う */
+.player-section {
+  display: block !important;
+
+  position: relative !important;
+  inset: auto !important;
+
+  width: 100%;
+  height: auto !important;
+  min-height: 0 !important;
+
+  overflow: visible;
+}
+
+/* プレイマット自体に十分な高さを確保する */
+.playmat,
+.opponent-playmat,
+.self-playmat {
+  position: relative !important;
+  inset: auto !important;
+
+  width: 100%;
+  height: var(--playmat-safe-height) !important;
+  min-height: var(--playmat-safe-height) !important;
+
+  transform: none;
+}
+
+/* 相手：手札 → プレイマット */
+.opponent-hand {
+  margin-bottom: var(--gap-zone);
+}
+
+/* 自分：プレイマット → 手札 */
+.self-hand {
+  margin-top: var(--gap-zone);
+}
+
+/*
+  プレイヤー外枠が、手札とプレイマットを含む高さになるようにする
+*/
+.opponent-section,
+.self-section {
+  padding: 12px;
+
+  min-height:
+    calc(
+      var(--playmat-safe-height)
+      + var(--hand-h)
+      + var(--gap-zone)
+      + 24px
+    ) !important;
+}
+
+/* 過去のGrid行指定を解除 */
+.opponent-hand,
+.self-hand,
+.opponent-playmat,
+.self-playmat {
+  grid-row: auto !important;
+  grid-column: auto !important;
+}
