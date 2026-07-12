@@ -894,3 +894,463 @@ body.play-mode .zone {
 body.play-mode .hand-area {
     padding: 6px 10px;
 }
+
+/* =========================================================
+   board.css v4.8
+   index.html v3.1 対応
+   v4.7の末尾へ追記する
+   ========================================================= */
+
+/* =========================================================
+   1. v3.1共通構造
+   ========================================================= */
+
+.zone-body {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.zone-footer {
+  display: none;
+}
+
+.hand-slots,
+.clock-slots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.hand-slots {
+  gap: 8px;
+}
+
+
+/* =========================================================
+   2. プレイマット構造を安定化
+   ========================================================= */
+
+.playmat {
+  display: grid;
+  grid-template-columns:
+    146px
+    var(--stage-w)
+    274px;
+  gap: var(--gap-board);
+  justify-content: center;
+  align-items: stretch;
+}
+
+/* 自分側は左右の役割が逆 */
+.self-playmat {
+  grid-template-columns:
+    274px
+    var(--stage-w)
+    146px;
+}
+
+.playmat-center {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-zone);
+  width: var(--stage-w);
+}
+
+/* 山札・控え室・思い出は縦並び */
+.opponent-playmat > .side-left,
+.self-playmat > .side-right {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-zone);
+  width: 146px;
+}
+
+/* v4.4の横並び試験を確実に解除 */
+.opponent-playmat > .side-left,
+.self-playmat > .side-right {
+  grid-template-columns: none;
+  grid-template-rows: none;
+}
+
+
+/* =========================================================
+   3. レベル・クライマックス・ストック
+   ========================================================= */
+
+/* 相手側
+   レベル | 空き
+   CX     | ストック
+*/
+.opponent-playmat > .side-right {
+  display: grid;
+  grid-template-columns: 132px 132px;
+  grid-template-rows: 132px 1fr;
+  gap: var(--gap-zone);
+  width: 274px;
+}
+
+.opponent-playmat > .side-right .level-zone {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.opponent-playmat > .side-right .climax-zone {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: end;
+}
+
+.opponent-playmat > .side-right .stock-zone {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+/* 自分側
+   ストック | CX
+   ストック | レベル
+*/
+.self-playmat > .side-left {
+  display: grid;
+  grid-template-columns: 132px 132px;
+  grid-template-rows: 1fr 132px;
+  gap: var(--gap-zone);
+  width: 274px;
+
+  /* v4.5で採用した暫定位置 */
+  transform: translateX(-114px);
+}
+
+.self-playmat > .side-left .stock-zone {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+.self-playmat > .side-left .climax-zone {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: start;
+}
+
+.self-playmat > .side-left .level-zone {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: end;
+}
+
+/* ストックは縦長 */
+.stock-zone {
+  min-height: 360px;
+}
+
+
+/* =========================================================
+   4. 舞台
+   HTML v3.1のstage-rowへ対応
+   ========================================================= */
+
+.stage-area {
+  width: var(--stage-w);
+  min-height: var(--stage-h);
+}
+
+.stage-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--gap-zone);
+  width: 100%;
+}
+
+.stage-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--card-h);
+}
+
+/* 前列3枚 */
+.stage-row.front-row {
+  justify-content: center;
+  gap: var(--gap-zone);
+}
+
+/*
+  後列2枚
+  前列左-中央、中央-右の間を基準に配置
+*/
+.stage-row.back-row {
+  justify-content: center;
+  gap: var(--gap-zone);
+}
+
+.stage-row.back-row .stage-slot:first-child {
+  margin-right: calc(var(--card-w) / 2);
+}
+
+.stage-row.back-row .stage-slot:last-child {
+  margin-left: calc(var(--card-w) / 2);
+}
+
+/* 旧Grid指定を解除 */
+.stage-slot {
+  grid-column: auto !important;
+  grid-row: auto !important;
+}
+
+/* 舞台カードだけ状態を向きに反映 */
+.stage-slot[data-position="stand"] {
+  transform: rotate(0deg);
+}
+
+.stage-slot[data-position="rest"] {
+  transform: rotate(90deg);
+}
+
+.stage-slot[data-position="reverse"] {
+  transform: rotate(180deg);
+}
+
+
+/* =========================================================
+   5. クロック
+   ========================================================= */
+
+.clock-zone {
+  width: var(--clock-w);
+  min-height: var(--clock-h);
+}
+
+.clock-slots {
+  width: 100%;
+}
+
+.clock-slots .card-slot {
+  position: relative;
+  margin-right: -32px;
+}
+
+.clock-slots .card-slot:last-child {
+  margin-right: 0;
+}
+
+/* 相手：1の上に2、その上に3…6 */
+.opponent-clock [data-index="1"] {
+  z-index: 1;
+}
+
+.opponent-clock [data-index="2"] {
+  z-index: 2;
+}
+
+.opponent-clock [data-index="3"] {
+  z-index: 3;
+}
+
+.opponent-clock [data-index="4"] {
+  z-index: 4;
+}
+
+.opponent-clock [data-index="5"] {
+  z-index: 5;
+}
+
+.opponent-clock [data-index="6"] {
+  z-index: 6;
+}
+
+
+/* =========================================================
+   6. レベル
+   ========================================================= */
+
+.level-slots {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 104px;
+}
+
+.level-slots .card-slot {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%) rotate(90deg);
+}
+
+/* 相手：上から0、1、2、3 */
+.opponent-playmat .level-slots [data-index="1"] {
+  top: 0;
+  z-index: 1;
+}
+
+.opponent-playmat .level-slots [data-index="2"] {
+  top: 18px;
+  z-index: 2;
+}
+
+.opponent-playmat .level-slots [data-index="3"] {
+  top: 36px;
+  z-index: 3;
+}
+
+.opponent-playmat .level-slots [data-index="4"] {
+  top: 54px;
+  z-index: 4;
+}
+
+/* 自分：0の上に1、その上に2、3 */
+.self-playmat .level-slots [data-index="1"] {
+  bottom: 0;
+  z-index: 1;
+}
+
+.self-playmat .level-slots [data-index="2"] {
+  bottom: 18px;
+  z-index: 2;
+}
+
+.self-playmat .level-slots [data-index="3"] {
+  bottom: 36px;
+  z-index: 3;
+}
+
+.self-playmat .level-slots [data-index="4"] {
+  bottom: 54px;
+  z-index: 4;
+}
+
+
+/* =========================================================
+   7. ストック
+   ========================================================= */
+
+.stock-slots {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 300px;
+}
+
+.stock-slots .card-slot {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%) rotate(90deg);
+}
+
+/* 相手ストック：上から下へ */
+.opponent-playmat .stock-slots [data-index="1"] {
+  top: 0;
+  z-index: 1;
+}
+
+.opponent-playmat .stock-slots [data-index="2"] {
+  top: 18px;
+  z-index: 2;
+}
+
+.opponent-playmat .stock-slots [data-index="3"] {
+  top: 36px;
+  z-index: 3;
+}
+
+.opponent-playmat .stock-slots [data-index="4"] {
+  top: 54px;
+  z-index: 4;
+}
+
+.opponent-playmat .stock-slots [data-index="5"] {
+  top: 72px;
+  z-index: 5;
+}
+
+.opponent-playmat .stock-slots [data-index="6"] {
+  top: 90px;
+  z-index: 6;
+}
+
+.opponent-playmat .stock-slots [data-index="7"] {
+  top: 108px;
+  z-index: 7;
+}
+
+/* 自分ストック：下から上へ */
+.self-playmat .stock-slots [data-index="1"] {
+  bottom: 0;
+  z-index: 1;
+}
+
+.self-playmat .stock-slots [data-index="2"] {
+  bottom: 18px;
+  z-index: 2;
+}
+
+.self-playmat .stock-slots [data-index="3"] {
+  bottom: 36px;
+  z-index: 3;
+}
+
+.self-playmat .stock-slots [data-index="4"] {
+  bottom: 54px;
+  z-index: 4;
+}
+
+.self-playmat .stock-slots [data-index="5"] {
+  bottom: 72px;
+  z-index: 5;
+}
+
+.self-playmat .stock-slots [data-index="6"] {
+  bottom: 90px;
+  z-index: 6;
+}
+
+.self-playmat .stock-slots [data-index="7"] {
+  bottom: 108px;
+  z-index: 7;
+}
+
+
+/* =========================================================
+   8. 固定横向きエリア
+   data-positionではなくエリア側で横向きにする
+   ========================================================= */
+
+.climax-slots .card-slot,
+.memory-slots .card-slot {
+  transform: rotate(90deg);
+}
+
+
+/* =========================================================
+   9. 情報パネル
+   v3.1のdl構造へ対応
+   ========================================================= */
+
+.player-status-list,
+.room-status-list {
+  display: grid;
+  gap: 5px;
+}
+
+.player-status-item,
+.room-status-item {
+  display: grid;
+  grid-template-columns: 82px 1fr;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.player-status-item dt,
+.room-status-item dt {
+  color: var(--text-muted);
+}
+
+.player-status-item dd,
+.room-status-item dd {
+  margin: 0;
+  text-align: right;
+}
