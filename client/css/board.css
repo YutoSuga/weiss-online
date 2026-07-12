@@ -455,3 +455,374 @@ ul {
   font-size: 10px;
   opacity: 0.65;
 }
+
+/* =========================================================
+   board.css v4.3.1
+   index.html v3.1：相手エリアと自分エリアの上下分離
+   ========================================================= */
+
+:root {
+  /*
+    舞台＋クロック、または縦長ストックのうち、
+    大きい方をプレイマットの最低高さとする
+  */
+  --playmat-min-height: max(
+    378px,
+    calc(var(--stage-h) + var(--clock-h) + var(--gap-zone))
+  );
+}
+
+/*
+  相手・自分を縦方向へ並べる。
+  Gridには変更せず、HTMLの記載順をそのまま使用する。
+*/
+.game-board {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: stretch;
+}
+
+/*
+  各プレイヤーエリアも縦方向へ並べる。
+
+  相手：
+  手札
+  プレイマット
+
+  自分：
+  プレイマット
+  手札
+*/
+.player-section {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  gap: var(--gap-zone);
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+}
+
+/*
+  子要素が枠外へはみ出しても、
+  次のプレイヤーエリアが途中から始まらないように、
+  プレイマット自身へ十分な高さを持たせる。
+*/
+.playmat {
+  flex: none;
+  width: 100%;
+  height: auto;
+  min-height: var(--playmat-min-height);
+  align-items: stretch;
+}
+
+/* 相手と自分のプレイマットに同じ最低高さを適用 */
+.opponent-playmat,
+.self-playmat {
+  min-height: var(--playmat-min-height);
+}
+
+/*
+  手札枠はプレイマットの高さ計算から独立させ、
+  通常のFlex要素として配置する。
+*/
+.hand-area {
+  flex: none;
+  align-self: center;
+}
+
+/*
+  相手・自分の外枠が内容を確実に囲むよう、
+  最低高さを明示する。
+*/
+.opponent-section,
+.self-section {
+  min-height: calc(
+    var(--playmat-min-height)
+    + var(--hand-h)
+    + var(--gap-zone)
+    + 24px
+  );
+}
+/* =========================================================
+   board.css v4.3.2
+   相手エリア・自分エリアの上下分離 安定化パッチ
+   ========================================================= */
+
+:root {
+  /*
+    現在の舞台・クロック・左右エリアを収容するための仮高さ。
+    多少縦長でも、位置被りを起こさないことを優先する。
+  */
+  --playmat-safe-height: 560px;
+}
+
+/* Gridによる重なりを避け、通常の縦方向レイアウトに戻す */
+.game-board {
+  display: block !important;
+  min-width: 0;
+}
+
+/* 相手エリアの後に自分エリアを通常フローで配置 */
+.opponent-section {
+  margin-bottom: 24px;
+}
+
+/* 各プレイヤーエリアを通常のブロックとして扱う */
+.player-section {
+  display: block !important;
+
+  position: relative !important;
+  inset: auto !important;
+
+  width: 100%;
+  height: auto !important;
+  min-height: 0 !important;
+
+  overflow: visible;
+}
+
+/* プレイマット自体に十分な高さを確保する */
+.playmat,
+.opponent-playmat,
+.self-playmat {
+  position: relative !important;
+  inset: auto !important;
+
+  width: 100%;
+  height: var(--playmat-safe-height) !important;
+  min-height: var(--playmat-safe-height) !important;
+
+  transform: none;
+}
+
+/* 相手：手札 → プレイマット */
+.opponent-hand {
+  margin-bottom: var(--gap-zone);
+}
+
+/* 自分：プレイマット → 手札 */
+.self-hand {
+  margin-top: var(--gap-zone);
+}
+
+/*
+  プレイヤー外枠が、手札とプレイマットを含む高さになるようにする
+*/
+.opponent-section,
+.self-section {
+  padding: 12px;
+
+  min-height:
+    calc(
+      var(--playmat-safe-height)
+      + var(--hand-h)
+      + var(--gap-zone)
+      + 24px
+    ) !important;
+}
+
+/* 過去のGrid行指定を解除 */
+.opponent-hand,
+.self-hand,
+.opponent-playmat,
+.self-playmat {
+  grid-row: auto !important;
+  grid-column: auto !important;
+}
+/* =========================================================
+   舞台配置
+   前列: 1 / 3 / 5
+   後列: 2 / 4
+   ========================================================= */
+
+.stage-body {
+  display: grid;
+  grid-template-columns:
+    var(--card-w)
+    calc(var(--card-w) / 2)
+    var(--card-w)
+    calc(var(--card-w) / 2)
+    var(--card-w);
+
+  grid-template-rows:
+    var(--card-h)
+    var(--card-h);
+
+  column-gap: 0;
+  row-gap: var(--gap-zone);
+
+  justify-content: center;
+  align-content: center;
+
+  width: calc(var(--card-w) * 4);
+}
+
+/* stage-row自体はGrid上で透明化 */
+.stage-row {
+  display: contents;
+}
+
+/* 自分側
+   前列が上、後列が下
+*/
+.self-stage .front-row .stage-slot:nth-child(1) {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.self-stage .front-row .stage-slot:nth-child(2) {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.self-stage .front-row .stage-slot:nth-child(3) {
+  grid-column: 5;
+  grid-row: 1;
+}
+
+.self-stage .back-row .stage-slot:nth-child(1) {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.self-stage .back-row .stage-slot:nth-child(2) {
+  grid-column: 4;
+  grid-row: 2;
+}
+
+/* 相手側
+   後列が上、前列が下
+*/
+.opponent-stage .back-row .stage-slot:nth-child(1) {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.opponent-stage .back-row .stage-slot:nth-child(2) {
+  grid-column: 4;
+  grid-row: 1;
+}
+
+.opponent-stage .front-row .stage-slot:nth-child(1) {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.opponent-stage .front-row .stage-slot:nth-child(2) {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.opponent-stage .front-row .stage-slot:nth-child(3) {
+  grid-column: 5;
+  grid-row: 2;
+}
+
+/* 旧Flex調整を無効化 */
+.stage-row.front-row,
+.stage-row.back-row {
+  gap: 0;
+  padding: 0;
+}
+
+.stage-row.back-row .stage-slot:first-child,
+.stage-row.back-row .stage-slot:last-child {
+  margin: 0;
+}
+
+/* =========================================================
+   board.css v4.3.3
+   ストック表示修正
+   - 横一列表示を解除
+   - レベルと同じ縦方向の重なりに変更
+   - ストックを裏向き表示
+   - ストック枠外へのはみ出しと舞台への重なりを防止
+   ========================================================= */
+
+/*
+  ストックは横向きカードを縦方向へ重ねる。
+  HTML側が .card-row / .stock-slots のどちらでも動くようにする。
+*/
+.stock-zone .zone-body {
+  overflow: hidden;
+}
+
+.stock-zone .card-row,
+.stock-zone .stock-slots {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 96px;
+}
+
+/*
+  既存のFlex配置や余白指定を解除し、
+  レベルと同じく絶対配置で中央へ重ねる。
+*/
+.stock-zone .card-row .card-slot,
+.stock-zone .stock-slots .card-slot {
+  position: absolute;
+  left: 50%;
+  margin: 0;
+  transform: translateX(-50%) rotate(90deg);
+}
+
+/* レベルと同じ18px刻みで重ねる */
+.stock-zone .card-row .card-slot:nth-child(1),
+.stock-zone .stock-slots .card-slot:nth-child(1) {
+  top: 0;
+}
+
+.stock-zone .card-row .card-slot:nth-child(2),
+.stock-zone .stock-slots .card-slot:nth-child(2) {
+  top: 18px;
+}
+
+.stock-zone .card-row .card-slot:nth-child(3),
+.stock-zone .stock-slots .card-slot:nth-child(3) {
+  top: 36px;
+}
+
+.stock-zone .card-row .card-slot:nth-child(4),
+.stock-zone .stock-slots .card-slot:nth-child(4) {
+  top: 54px;
+}
+
+.stock-zone .card-row .card-slot:nth-child(5),
+.stock-zone .stock-slots .card-slot:nth-child(5) {
+  top: 72px;
+}
+
+.stock-zone .card-row .card-slot:nth-child(6),
+.stock-zone .stock-slots .card-slot:nth-child(6) {
+  top: 90px;
+}
+
+.stock-zone .card-row .card-slot:nth-child(7),
+.stock-zone .stock-slots .card-slot:nth-child(7) {
+  top: 108px;
+}
+
+/*
+  7枚を収めるため、ストック枠だけ高さを確保する。
+  これにより隣接する舞台へカードがはみ出さない。
+*/
+.stock-zone {
+  min-height: 206px;
+}
+
+/* ストックカードは常に裏向きとして表示 */
+.stock-zone .card-slot {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      #1f2937,
+      #1f2937 8px,
+      #374151 8px,
+      #374151 16px
+    );
+  color: #f9fafb;
+}
+
