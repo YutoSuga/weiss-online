@@ -1062,12 +1062,12 @@ ul {
   --opponent-stock-offset-y: 12px;
 
   /* 赤／青背景内のプレイマット高さ。個別に微調整できる。 */
-  --opponent-playmat-height: 520px;
-  --self-playmat-height: 520px;
+  --opponent-playmat-height: 440px;
+  --self-playmat-height: 440px;
 
   /* 手札の水平位置。正の値ほど右へ移動する。 */
-  --opponent-hand-offset-x: 24px;
-  --self-hand-offset-x: 24px;
+  --opponent-hand-offset-x: 180px;
+  --self-hand-offset-x: 180px;
 }
 
 /*
