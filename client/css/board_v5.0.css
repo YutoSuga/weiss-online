@@ -960,17 +960,17 @@ ul {
 
 .opponent-playmat .level-zone {
   grid-column: 3;
-  grid-row: 2;
+  grid-row: 1;
 }
 
 .opponent-playmat .climax-zone {
   grid-column: 3;
-  grid-row: 3;
+  grid-row: 2;
 }
 
 .opponent-playmat .stock-zone {
-  grid-column: 5;
-  grid-row: 3;
+  grid-column: 4;
+  grid-row: 1 / span 2;
 }
 
 /* 各zoneが指定列の幅を超えないよう固定 */
@@ -1142,7 +1142,7 @@ ul {
 
 .opponent-playmat .level-zone {
   grid-column: 4;
-  grid-row: 2;
+  grid-row: 1;
   position: relative;
   left: var(--opponent-level-offset-x);
   top: var(--opponent-level-offset-y);
@@ -1150,7 +1150,7 @@ ul {
 
 .opponent-playmat .climax-zone {
   grid-column: 4;
-  grid-row: 3;
+  grid-row: 2;
   position: relative;
   left: var(--opponent-climax-offset-x);
   top: var(--opponent-climax-offset-y);
@@ -1158,9 +1158,12 @@ ul {
 
 .opponent-playmat .stock-zone {
   grid-column: 5;
-  grid-row: 3;
+  grid-row: 1 / span 2;
   justify-self: start;
-  align-self: end;
+  align-self: start;
+  transform:
+    translateX(calc(-1 * var(--opponent-stock-offset-x)))
+    translateY(var(--opponent-stock-offset-y));
 }
 
 /* Optional: the fifth track stays valid when this element is absent. */
