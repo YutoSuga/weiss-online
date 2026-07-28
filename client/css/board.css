@@ -36,9 +36,14 @@
   --side-narrow-w: 132px;
   --side-wide-w: 146px;
   --utility-w: var(--side-narrow-w);
-  --stage-w: calc(var(--card-w) * 3 + var(--gap-zone) * 2 + 24px);
+
+  --center-zone-w: calc(
+    var(--card-w) * 4
+    + 18px
+  );
+  --stage-w: var(--center-zone-w);
   --stage-h: calc(var(--card-h) * 2 + var(--gap-zone) + 44px);
-  --clock-w: var(--stage-w);
+  --clock-w: var(--center-zone-w);
   --clock-h: calc(var(--card-h) + 44px);
 
   /* One height model for both playmats */
@@ -58,7 +63,6 @@
   /* Hands */
   --hand-w: calc(var(--hand-card-w) * 7 + 8px * 6 + 32px);
   --hand-h: calc(var(--hand-card-h) + 44px);
-  --hand-offset-x: 180px;
 }
 
 * {
@@ -212,7 +216,6 @@ ul {
 .opponent-hand,
 .self-hand {
   position: relative;
-  left: var(--hand-offset-x);
 }
 
 /* =========================================================
@@ -223,12 +226,6 @@ ul {
 
 .playmat {
   display: grid;
-  grid-template-columns:
-    var(--side-narrow-w)
-    var(--side-narrow-w)
-    var(--stage-w)
-    var(--side-wide-w)
-    var(--utility-w);
   grid-template-rows: repeat(3, var(--playmat-row-h));
   column-gap: var(--gap-board);
   row-gap: var(--gap-zone);
@@ -241,10 +238,22 @@ ul {
 }
 
 .opponent-playmat {
+  grid-template-columns:
+    var(--side-narrow-w)  /* Utility */
+    var(--side-wide-w)    /* 控え室・山札・思い出 */
+    var(--center-zone-w)  /* 舞台・クロック */
+    var(--side-narrow-w)  /* レベル・CX */
+    var(--side-narrow-w); /* ストック */
   align-items: end;
 }
 
 .self-playmat {
+  grid-template-columns:
+    var(--side-narrow-w)  /* ストック */
+    var(--side-narrow-w)  /* CX・レベル */
+    var(--center-zone-w)  /* 舞台・クロック */
+    var(--side-wide-w)    /* 思い出・山札・控え室 */
+    var(--side-narrow-w); /* Utility */
   align-items: start;
 }
 
@@ -273,6 +282,7 @@ ul {
 .opponent-playmat .waiting-room-zone {
   grid-column: 2;
   grid-row: 1;
+  align-self: start;
 }
 
 .opponent-playmat .deck-zone {
@@ -288,6 +298,7 @@ ul {
 .opponent-playmat .clock-zone {
   grid-column: 3;
   grid-row: 1;
+  align-self: start;
 }
 
 .opponent-playmat .stage-area {
@@ -297,7 +308,8 @@ ul {
 
 .opponent-playmat .level-zone {
   grid-column: 4;
-  grid-row: 2;
+  grid-row: 1;
+  align-self: start;
 }
 
 .opponent-playmat .climax-zone {
@@ -324,7 +336,8 @@ ul {
 
 .self-playmat .level-zone {
   grid-column: 2;
-  grid-row: 2;
+  grid-row: 3;
+  align-self: end;
 }
 
 .self-playmat .stage-area {
@@ -335,6 +348,7 @@ ul {
 .self-playmat .clock-zone {
   grid-column: 3;
   grid-row: 3;
+  align-self: end;
 }
 
 .self-playmat .memory-zone {
@@ -350,6 +364,7 @@ ul {
 .self-playmat .waiting-room-zone {
   grid-column: 4;
   grid-row: 3;
+  align-self: end;
 }
 
 .self-playmat > .utility-column {
@@ -405,10 +420,14 @@ ul {
 }
 
 .stock-zone,
-.climax-zone,
-.level-zone {
+.climax-zone {
   width: var(--side-narrow-w);
   min-height: 126px;
+}
+
+.level-zone {
+  width: var(--side-narrow-w);
+  min-height: 180px;
 }
 
 .stock-zone {
@@ -482,6 +501,7 @@ ul {
   align-content: center;
   justify-content: center;
   width: calc(var(--card-w) * 4);
+  justify-items: center; /* 配置するカードはGrid内の中央揃え */
 }
 
 .stage-row {
@@ -499,55 +519,56 @@ ul {
   margin: 0;
 }
 
-.self-stage .front-row .stage-slot:nth-child(1) {
+.self-stage .stage-slot[data-row="front"][data-index="1"] {
   grid-column: 1;
   grid-row: 1;
 }
 
-.self-stage .front-row .stage-slot:nth-child(2) {
+.self-stage .stage-slot[data-row="front"][data-index="2"] {
   grid-column: 3;
   grid-row: 1;
 }
 
-.self-stage .front-row .stage-slot:nth-child(3) {
+.self-stage .stage-slot[data-row="front"][data-index="3"] {
   grid-column: 5;
   grid-row: 1;
 }
 
-.self-stage .back-row .stage-slot:nth-child(1) {
+.self-stage .stage-slot[data-row="back"][data-index="1"] {
   grid-column: 2;
   grid-row: 2;
 }
 
-.self-stage .back-row .stage-slot:nth-child(2) {
+.self-stage .stage-slot[data-row="back"][data-index="2"] {
   grid-column: 4;
   grid-row: 2;
 }
 
-.opponent-stage .back-row .stage-slot:nth-child(1) {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.opponent-stage .back-row .stage-slot:nth-child(2) {
+.opponent-stage .stage-slot[data-row="back"][data-index="1"] {
   grid-column: 4;
   grid-row: 1;
 }
 
-.opponent-stage .front-row .stage-slot:nth-child(1) {
+.opponent-stage .stage-slot[data-row="back"][data-index="2"] {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.opponent-stage .stage-slot[data-row="front"][data-index="1"] {
+  grid-column: 5;
+  grid-row: 2;
+}
+
+.opponent-stage .stage-slot[data-row="front"][data-index="2"] {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.opponent-stage .stage-slot[data-row="front"][data-index="3"] {
   grid-column: 1;
   grid-row: 2;
 }
 
-.opponent-stage .front-row .stage-slot:nth-child(2) {
-  grid-column: 3;
-  grid-row: 2;
-}
-
-.opponent-stage .front-row .stage-slot:nth-child(3) {
-  grid-column: 5;
-  grid-row: 2;
-}
 
 .stage-slot[data-position="stand"] {
   transform: rotate(0deg);
