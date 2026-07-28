@@ -1,0 +1,1386 @@
+/* =========================================================
+   weiss-online board.css v4.3
+   目的: 位置被りを解消し、各エリアを確認しやすくする
+   ========================================================= */
+
+:root {
+  --bg-app: #111827;
+  --bg-header: #757781;
+  --bg-panel: #1f2937;
+  --bg-zone: rgba(17, 24, 39, 0.82);
+
+  --text-main: #f9fafb;
+  --text-muted: #d1d5db;
+
+  --border-main: #4b5563;
+  --border-zone: #6b7280;
+
+  --self-color: #1d4ed8;
+  --opponent-color: #991b1b;
+
+  --header-h: 48px;
+  --left-sidebar-w: 260px;
+  --right-sidebar-w: 300px;
+
+  --card-w: 72px;
+  --card-h: 100px;
+  --hand-card-w: 64px;
+  --hand-card-h: 90px;
+
+  --gap-page: 12px;
+  --gap-board: 12px;
+  --gap-zone: 10px;
+
+  --side-narrow-w: 132px;
+  --side-wide-w: 146px;
+
+  --stage-w: calc(var(--card-w) * 3 + var(--gap-zone) * 2 + 24px);
+  --stage-h: calc(var(--card-h) * 2 + var(--gap-zone) + 44px);
+
+  --clock-w: var(--stage-w);
+  --clock-h: calc(var(--card-h) + 44px);
+
+  --hand-w: calc(var(--hand-card-w) * 7 + 8px * 6 + 32px);
+  --hand-h: calc(var(--hand-card-h) + 44px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 1440px;
+  background: var(--bg-app);
+  color: var(--text-main);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+h1,
+h2,
+h3,
+p,
+ul {
+  margin: 0;
+}
+
+ul {
+  padding-left: 20px;
+}
+
+/* ------------------------------
+   App
+------------------------------ */
+
+.app-header {
+  height: var(--header-h);
+  padding: 8px 16px;
+  border-bottom: 1px solid #374151;
+  background: var(--bg-header);
+}
+
+.app-header h1 {
+  font-size: 20px;
+}
+
+.app-layout {
+  display: grid;
+  grid-template-columns: var(--left-sidebar-w) 1fr var(--right-sidebar-w);
+  gap: var(--gap-page);
+  min-height: calc(100vh - var(--header-h));
+  padding: var(--gap-page);
+}
+
+/* ------------------------------
+   Sidebars
+------------------------------ */
+
+.left-sidebar,
+.right-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-page);
+}
+
+.info-panel {
+  padding: 12px;
+  border: 1px solid var(--border-main);
+  border-radius: 8px;
+  background: var(--bg-panel);
+}
+
+.info-panel h2 {
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.log-panel,
+.card-detail-panel {
+  min-height: 180px;
+}
+
+.end-turn-button {
+  width: 100%;
+  height: 56px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* ------------------------------
+   Board
+------------------------------ */
+
+.game-board {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-board);
+  min-width: 0;
+}
+
+.player-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-zone);
+  padding: 12px;
+  border-radius: 12px;
+  border: 2px solid var(--border-main);
+}
+
+.opponent-section {
+  background: rgba(127, 29, 29, 0.34);
+  border-color: var(--opponent-color);
+}
+
+.self-section {
+  background: rgba(30, 64, 175, 0.34);
+  border-color: var(--self-color);
+}
+
+/* ------------------------------
+   Hand
+------------------------------ */
+
+.hand-area {
+  width: var(--hand-w);
+  min-height: var(--hand-h);
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-zone);
+  border-radius: 8px;
+  background: var(--bg-zone);
+}
+
+.hand-area .zone-body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ------------------------------
+   Playmat
+------------------------------ */
+
+.playmat {
+  display: grid;
+  grid-template-columns: var(--side-wide-w) var(--stage-w) var(--side-wide-w);
+  gap: var(--gap-board);
+  justify-content: center;
+  align-items: start;
+}
+
+.playmat-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-zone);
+}
+
+.playmat-center {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-zone);
+}
+
+/* ------------------------------
+   Zone
+------------------------------ */
+
+.zone {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  border: 1px solid var(--border-zone);
+  border-radius: 8px;
+  background: var(--bg-zone);
+}
+
+.zone-title {
+  min-height: 16px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #e5e7eb;
+  line-height: 1;
+}
+
+.zone-body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 0;
+}
+
+.zone-footer {
+  min-height: 14px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+/* ------------------------------
+   Zone Size
+------------------------------ */
+
+.stage-area {
+  width: var(--stage-w);
+  min-height: var(--stage-h);
+}
+
+.clock-zone {
+  width: var(--clock-w);
+  min-height: var(--clock-h);
+}
+
+.stock-zone,
+.climax-zone,
+.level-zone {
+  width: var(--side-narrow-w);
+  min-height: 126px;
+}
+
+.memory-zone {
+  width: var(--side-wide-w);
+  min-height: 126px;
+}
+
+.deck-zone,
+.waiting-room-zone {
+  width: var(--side-wide-w);
+  min-height: 134px;
+}
+
+/* ------------------------------
+   Card Slot
+------------------------------ */
+
+.card-slot {
+  width: var(--card-w);
+  height: var(--card-h);
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid #9ca3af;
+  border-radius: 6px;
+  background: #f9fafb;
+  color: #111827;
+  font-size: 12px;
+  text-align: center;
+}
+
+.hand-area .card-slot {
+  width: var(--hand-card-w);
+  height: var(--hand-card-h);
+}
+
+[data-face="down"] {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      #1f2937,
+      #1f2937 8px,
+      #374151 8px,
+      #374151 16px
+    );
+  color: #f9fafb;
+}
+
+/* ------------------------------
+   Stage
+------------------------------ */
+
+.stage-grid {
+  display: grid;
+  grid-template-columns: repeat(3, var(--card-w));
+  grid-template-rows: repeat(2, var(--card-h));
+  gap: var(--gap-zone);
+  justify-content: center;
+  align-content: center;
+}
+
+.self-stage [data-row="front"] {
+  grid-row: 1;
+}
+
+.self-stage [data-row="back"] {
+  grid-row: 2;
+}
+
+.opponent-stage [data-row="back"] {
+  grid-row: 1;
+}
+
+.opponent-stage [data-row="front"] {
+  grid-row: 2;
+}
+
+.stage-slot[data-index="1"] {
+  grid-column: 1;
+}
+
+.stage-slot[data-index="2"] {
+  grid-column: 2;
+}
+
+.stage-slot[data-index="3"] {
+  grid-column: 3;
+}
+
+.stage-slot[data-row="back"][data-index="1"] {
+  grid-column: 1;
+}
+
+.stage-slot[data-row="back"][data-index="2"] {
+  grid-column: 3;
+}
+
+.stage-slot[data-position="stand"] {
+  transform: rotate(0deg);
+}
+
+.stage-slot[data-position="rest"] {
+  transform: rotate(90deg);
+}
+
+.stage-slot[data-position="reverse"] {
+  transform: rotate(180deg);
+}
+
+/* ------------------------------
+   Clock
+------------------------------ */
+
+.clock-zone .card-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.clock-zone .card-slot {
+  margin-right: -32px;
+}
+
+.clock-zone .card-slot:last-child {
+  margin-right: 0;
+}
+
+/* ------------------------------
+   Landscape Zones
+------------------------------ */
+
+.stock-zone .card-slot,
+.climax-zone .card-slot,
+.level-zone .card-slot,
+.memory-zone .card-slot {
+  transform: rotate(90deg);
+}
+
+/* ------------------------------
+   Level
+------------------------------ */
+
+.level-slots {
+  position: relative;
+  width: 100%;
+  min-height: 96px;
+}
+
+.level-slots .card-slot {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%) rotate(90deg);
+}
+
+.level-slots .card-slot:nth-child(1) {
+  top: 0;
+}
+
+.level-slots .card-slot:nth-child(2) {
+  top: 18px;
+}
+
+.level-slots .card-slot:nth-child(3) {
+  top: 36px;
+}
+
+.level-slots .card-slot:nth-child(4) {
+  top: 54px;
+}
+
+/* ------------------------------
+   Deck / Waiting Room
+------------------------------ */
+
+.deck-zone .card-slot,
+.waiting-room-zone .card-slot {
+  width: 64px;
+  height: 90px;
+}
+
+/* ------------------------------
+   Debug
+------------------------------ */
+
+.card-slot:empty::after {
+  content: attr(data-zone) " " attr(data-index);
+  font-size: 10px;
+  opacity: 0.65;
+}
+
+/* =========================================================
+   board.css v4.3.1
+   index.html v3.1：相手エリアと自分エリアの上下分離
+   ========================================================= */
+
+:root {
+  /*
+    舞台＋クロック、または縦長ストックのうち、
+    大きい方をプレイマットの最低高さとする
+  */
+  --playmat-min-height: max(
+    378px,
+    calc(var(--stage-h) + var(--clock-h) + var(--gap-zone))
+  );
+}
+
+/*
+  相手・自分を縦方向へ並べる。
+  Gridには変更せず、HTMLの記載順をそのまま使用する。
+*/
+.game-board {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: stretch;
+}
+
+/*
+  各プレイヤーエリアも縦方向へ並べる。
+
+  相手：
+  手札
+  プレイマット
+
+  自分：
+  プレイマット
+  手札
+*/
+.player-section {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  gap: var(--gap-zone);
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+}
+
+/*
+  子要素が枠外へはみ出しても、
+  次のプレイヤーエリアが途中から始まらないように、
+  プレイマット自身へ十分な高さを持たせる。
+*/
+.playmat {
+  flex: none;
+  width: 100%;
+  height: auto;
+  min-height: var(--playmat-min-height);
+  align-items: stretch;
+}
+
+/* 相手と自分のプレイマットに同じ最低高さを適用 */
+.opponent-playmat,
+.self-playmat {
+  min-height: var(--playmat-min-height);
+}
+
+/*
+  手札枠はプレイマットの高さ計算から独立させ、
+  通常のFlex要素として配置する。
+*/
+.hand-area {
+  flex: none;
+  align-self: center;
+}
+
+/*
+  相手・自分の外枠が内容を確実に囲むよう、
+  最低高さを明示する。
+*/
+.opponent-section,
+.self-section {
+  min-height: calc(
+    var(--playmat-min-height)
+    + var(--hand-h)
+    + var(--gap-zone)
+    + 24px
+  );
+}
+/* =========================================================
+   board.css v4.3.2
+   相手エリア・自分エリアの上下分離 安定化パッチ
+   ========================================================= */
+
+:root {
+  /*
+    現在の舞台・クロック・左右エリアを収容するための仮高さ。
+    多少縦長でも、位置被りを起こさないことを優先する。
+  */
+  --playmat-safe-height: 560px;
+}
+
+/* Gridによる重なりを避け、通常の縦方向レイアウトに戻す */
+.game-board {
+  display: block !important;
+  min-width: 0;
+}
+
+/* 相手エリアの後に自分エリアを通常フローで配置 */
+.opponent-section {
+  margin-bottom: 24px;
+}
+
+/* 各プレイヤーエリアを通常のブロックとして扱う */
+.player-section {
+  display: block !important;
+
+  position: relative !important;
+  inset: auto !important;
+
+  width: 100%;
+  height: auto !important;
+  min-height: 0 !important;
+
+  overflow: visible;
+}
+
+/* プレイマット自体に十分な高さを確保する */
+.playmat,
+.opponent-playmat,
+.self-playmat {
+  position: relative !important;
+  inset: auto !important;
+
+  width: 100%;
+  height: var(--playmat-safe-height) !important;
+  min-height: var(--playmat-safe-height) !important;
+
+  transform: none;
+}
+
+/* 相手：手札 → プレイマット */
+.opponent-hand {
+  margin-bottom: var(--gap-zone);
+}
+
+/* 自分：プレイマット → 手札 */
+.self-hand {
+  margin-top: var(--gap-zone);
+}
+
+/*
+  プレイヤー外枠が、手札とプレイマットを含む高さになるようにする
+*/
+.opponent-section,
+.self-section {
+  padding: 12px;
+
+  min-height:
+    calc(
+      var(--playmat-safe-height)
+      + var(--hand-h)
+      + var(--gap-zone)
+      + 24px
+    ) !important;
+}
+
+/* 過去のGrid行指定を解除 */
+.opponent-hand,
+.self-hand,
+.opponent-playmat,
+.self-playmat {
+  grid-row: auto !important;
+  grid-column: auto !important;
+}
+/* =========================================================
+   舞台配置
+   前列: 1 / 3 / 5
+   後列: 2 / 4
+   ========================================================= */
+
+.stage-body {
+  display: grid;
+  grid-template-columns:
+    var(--card-w)
+    calc(var(--card-w) / 2)
+    var(--card-w)
+    calc(var(--card-w) / 2)
+    var(--card-w);
+
+  grid-template-rows:
+    var(--card-h)
+    var(--card-h);
+
+  column-gap: 0;
+  row-gap: var(--gap-zone);
+
+  justify-content: center;
+  align-content: center;
+
+  width: calc(var(--card-w) * 4);
+}
+
+/* stage-row自体はGrid上で透明化 */
+.stage-row {
+  display: contents;
+}
+
+/* 自分側
+   前列が上、後列が下
+*/
+.self-stage .front-row .stage-slot:nth-child(1) {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.self-stage .front-row .stage-slot:nth-child(2) {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.self-stage .front-row .stage-slot:nth-child(3) {
+  grid-column: 5;
+  grid-row: 1;
+}
+
+.self-stage .back-row .stage-slot:nth-child(1) {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.self-stage .back-row .stage-slot:nth-child(2) {
+  grid-column: 4;
+  grid-row: 2;
+}
+
+/* 相手側
+   後列が上、前列が下
+*/
+.opponent-stage .back-row .stage-slot:nth-child(1) {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.opponent-stage .back-row .stage-slot:nth-child(2) {
+  grid-column: 4;
+  grid-row: 1;
+}
+
+.opponent-stage .front-row .stage-slot:nth-child(1) {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.opponent-stage .front-row .stage-slot:nth-child(2) {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.opponent-stage .front-row .stage-slot:nth-child(3) {
+  grid-column: 5;
+  grid-row: 2;
+}
+
+/* 旧Flex調整を無効化 */
+.stage-row.front-row,
+.stage-row.back-row {
+  gap: 0;
+  padding: 0;
+}
+
+.stage-row.back-row .stage-slot:first-child,
+.stage-row.back-row .stage-slot:last-child {
+  margin: 0;
+}
+
+/* =========================================================
+   board.css v4.3.3
+   ストック表示修正
+   - 横一列表示を解除
+   - レベルと同じ縦方向の重なりに変更
+   - ストックを裏向き表示
+   - ストック枠外へのはみ出しと舞台への重なりを防止
+   ========================================================= */
+
+/*
+  ストックは横向きカードを縦方向へ重ねる。
+  HTML側が .card-row / .stock-slots のどちらでも動くようにする。
+*/
+.stock-zone .zone-body {
+  overflow: hidden;
+}
+
+.stock-zone .card-row,
+.stock-zone .stock-slots {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 96px;
+}
+
+/*
+  既存のFlex配置や余白指定を解除し、
+  レベルと同じく絶対配置で中央へ重ねる。
+*/
+.stock-zone .card-row .card-slot,
+.stock-zone .stock-slots .card-slot {
+  position: absolute;
+  left: 50%;
+  margin: 0;
+  transform: translateX(-50%) rotate(90deg);
+}
+
+/* レベルと同じ18px刻みで重ねる */
+.stock-zone .card-row .card-slot:nth-child(1),
+.stock-zone .stock-slots .card-slot:nth-child(1) {
+  top: 0;
+}
+
+.stock-zone .card-row .card-slot:nth-child(2),
+.stock-zone .stock-slots .card-slot:nth-child(2) {
+  top: 18px;
+}
+
+.stock-zone .card-row .card-slot:nth-child(3),
+.stock-zone .stock-slots .card-slot:nth-child(3) {
+  top: 36px;
+}
+
+.stock-zone .card-row .card-slot:nth-child(4),
+.stock-zone .stock-slots .card-slot:nth-child(4) {
+  top: 54px;
+}
+
+.stock-zone .card-row .card-slot:nth-child(5),
+.stock-zone .stock-slots .card-slot:nth-child(5) {
+  top: 72px;
+}
+
+.stock-zone .card-row .card-slot:nth-child(6),
+.stock-zone .stock-slots .card-slot:nth-child(6) {
+  top: 90px;
+}
+
+.stock-zone .card-row .card-slot:nth-child(7),
+.stock-zone .stock-slots .card-slot:nth-child(7) {
+  top: 108px;
+}
+
+/*
+  7枚を収めるため、ストック枠だけ高さを確保する。
+  これにより隣接する舞台へカードがはみ出さない。
+*/
+.stock-zone {
+  min-height: 206px;
+}
+
+/* ストックカードは常に裏向きとして表示 */
+.stock-zone .card-slot {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      #1f2937,
+      #1f2937 8px,
+      #374151 8px,
+      #374151 16px
+    );
+  color: #f9fafb;
+}
+
+/* =========================================================
+   board.css v4.4
+   プレイマットの列構成を整理
+
+   自分側：
+   1列目  ストック
+   2列目  クライマックス／レベル
+   3列目  舞台／クロック
+   4列目  思い出／山札／控え室
+
+   相手側：
+   1列目  控え室／山札／思い出
+   2列目  クロック／舞台
+   3列目  レベル／クライマックス
+   4列目  ストック
+
+   HTMLの並び順には依存せず、CSS Gridで位置を明示する。
+   ========================================================= */
+
+:root {
+  --playmat-grid-w:
+    calc(
+      var(--side-narrow-w) * 2
+      + var(--stage-w)
+      + var(--side-wide-w)
+      + var(--gap-board) * 3
+    );
+}
+
+/*
+  playmat直下のラッパーをGrid上で透明化し、
+  各zoneをplaymatの直接のGrid要素として扱う。
+*/
+.playmat {
+  display: grid !important;
+  grid-template-columns:
+    var(--side-narrow-w)
+    var(--side-narrow-w)
+    var(--stage-w)
+    var(--side-wide-w);
+  grid-template-rows: auto auto auto;
+  gap: var(--gap-zone) var(--gap-board);
+
+  justify-content: center;
+  align-content: start;
+  align-items: start;
+
+  width: 100%;
+  min-width: var(--playmat-grid-w);
+  height: var(--playmat-safe-height) !important;
+  min-height: var(--playmat-safe-height) !important;
+}
+
+.playmat > .playmat-side,
+.playmat > .playmat-center {
+  display: contents !important;
+}
+
+/* =========================================================
+   自分側
+   ========================================================= */
+
+.self-playmat .stock-zone {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+.self-playmat .climax-zone {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.self-playmat .level-zone {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.self-playmat .stage-area {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+}
+
+.self-playmat .clock-zone {
+  grid-column: 3;
+  grid-row: 3;
+}
+
+.self-playmat .memory-zone {
+  grid-column: 4;
+  grid-row: 1;
+}
+
+.self-playmat .deck-zone {
+  grid-column: 4;
+  grid-row: 2;
+}
+
+.self-playmat .waiting-room-zone {
+  grid-column: 4;
+  grid-row: 3;
+}
+
+/* =========================================================
+   相手側
+   左右を自分側と反転
+   ========================================================= */
+
+.opponent-playmat .waiting-room-zone {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.opponent-playmat .deck-zone {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.opponent-playmat .memory-zone {
+  grid-column: 1;
+  grid-row: 3;
+}
+
+.opponent-playmat .clock-zone {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.opponent-playmat .stage-area {
+  grid-column: 2;
+  grid-row: 2 / span 2;
+}
+
+.opponent-playmat .level-zone {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.opponent-playmat .climax-zone {
+  grid-column: 3;
+  grid-row: 3;
+}
+
+.opponent-playmat .stock-zone {
+  grid-column: 5;
+  grid-row: 3;
+}
+
+/* 各zoneが指定列の幅を超えないよう固定 */
+.stock-zone,
+.climax-zone,
+.level-zone {
+  width: var(--side-narrow-w);
+}
+
+.stage-area,
+.clock-zone {
+  width: var(--stage-w);
+}
+
+.memory-zone,
+.deck-zone,
+.waiting-room-zone {
+  width: var(--side-wide-w);
+}
+
+
+
+/* 古いFlex用の余白指定を無効化 */
+.playmat .zone {
+  margin: 0;
+}
+
+
+
+
+/* =========================================================
+   board.css v4.5
+   相手ストックを中央線側へ寄せる
+   （レイアウトは維持し、ストックのみ調整）
+   ========================================================= */
+
+/*
+ 相手側だけストックを中央線（プレイヤー境界）へ寄せる。
+ Gridはそのままで、見た目だけ左へ移動する。
+ */
+:root {
+  /* v4.5の左方向への移動量。正の値を大きくすると、さらに左へ移動する */
+  --opponent-stock-offset-x: 96px;
+
+  /* 境界線側への移動量。正の値を大きくすると、さらに下へ移動する */
+  --opponent-stock-offset-y: 36px;
+}
+
+.opponent-playmat .stock-zone {
+  justify-self: start;
+  transform:
+    translateX(calc(-1 * var(--opponent-stock-offset-x)))
+    translateY(var(--opponent-stock-offset-y));
+}
+
+/*
+ ストックが動いた分だけレベル・クライマックスとの距離を自然にする
+ */
+.opponent-playmat .level-zone,
+.opponent-playmat .climax-zone{
+  justify-self:start;
+}
+
+/*
+ ストックの重なり表示は上寄せ維持
+ */
+.opponent-playmat .stock-zone .zone-body{
+  justify-content:center;
+  align-items:flex-start;
+}
+
+/* =========================================================
+   board.css v4.6
+   ========================================================= */
+
+/* =========================================================
+   board.css v5.0
+   5-column playmat: small | small | stage | small | utility
+   This final section is authoritative for the playmat grid.
+   ========================================================= */
+
+:root {
+  --utility-w: var(--side-narrow-w);
+  --playmat-grid-w: calc(
+    var(--side-narrow-w) * 2
+    + var(--stage-w)
+    + var(--side-wide-w)
+    + var(--utility-w)
+    + var(--gap-board) * 4
+  );
+
+  --opponent-playmat-height: 440px;
+  --self-playmat-height: 440px;
+  --opponent-hand-offset-x: 180px;
+  --self-hand-offset-x: 180px;
+  --opponent-stock-offset-x: 96px;
+  --opponent-stock-offset-y: 120px;
+  --opponent-level-offset-x: 24px;
+  --opponent-level-offset-y: 12px;
+  --opponent-climax-offset-x: 24px;
+  --opponent-climax-offset-y: 24px;
+}
+
+.playmat,
+.opponent-playmat,
+.self-playmat {
+  display: grid !important;
+  grid-template-columns:
+    var(--side-narrow-w)
+    var(--side-narrow-w)
+    var(--stage-w)
+    var(--side-wide-w)
+    var(--utility-w);
+  grid-template-rows: auto auto auto;
+  column-gap: var(--gap-board);
+  row-gap: var(--gap-zone);
+  justify-content: center;
+  align-content: start;
+  align-items: start;
+  width: 100%;
+  min-width: var(--playmat-grid-w);
+}
+
+.opponent-playmat {
+  height: var(--opponent-playmat-height) !important;
+  min-height: var(--opponent-playmat-height) !important;
+}
+
+.self-playmat {
+  height: var(--self-playmat-height) !important;
+  min-height: var(--self-playmat-height) !important;
+}
+
+.playmat > .playmat-side,
+.playmat > .playmat-center {
+  display: contents !important;
+}
+
+.opponent-hand {
+  position: relative;
+  left: var(--opponent-hand-offset-x);
+}
+
+.self-hand {
+  position: relative;
+  left: var(--self-hand-offset-x);
+}
+
+/* Self: columns 1-4 retain their roles; column 5 is utility. */
+.self-playmat .stock-zone { grid-column: 1; grid-row: 1 / span 2; }
+.self-playmat .climax-zone { grid-column: 2; grid-row: 1; }
+.self-playmat .level-zone { grid-column: 2; grid-row: 2; }
+.self-playmat .stage-area { grid-column: 3; grid-row: 1 / span 2; }
+.self-playmat .clock-zone { grid-column: 3; grid-row: 3; }
+.self-playmat .memory-zone { grid-column: 4; grid-row: 1; }
+.self-playmat .deck-zone { grid-column: 4; grid-row: 2; }
+.self-playmat .waiting-room-zone { grid-column: 4; grid-row: 3; }
+.self-playmat > .utility-column { grid-column: 5; }
+
+/* Opponent: mirrored; utility is column 1 and zones use columns 2-5. */
+.opponent-playmat > .utility-column { grid-column: 1; }
+.opponent-playmat .waiting-room-zone { grid-column: 2; grid-row: 1; }
+.opponent-playmat .deck-zone { grid-column: 2; grid-row: 2; }
+.opponent-playmat .memory-zone { grid-column: 2; grid-row: 3; }
+.opponent-playmat .clock-zone { grid-column: 3; grid-row: 1; }
+.opponent-playmat .stage-area { grid-column: 3; grid-row: 2 / span 2; }
+
+.opponent-playmat .level-zone {
+  grid-column: 4;
+  grid-row: 2;
+  position: relative;
+  left: var(--opponent-level-offset-x);
+  top: var(--opponent-level-offset-y);
+}
+
+.opponent-playmat .climax-zone {
+  grid-column: 4;
+  grid-row: 3;
+  position: relative;
+  left: var(--opponent-climax-offset-x);
+  top: var(--opponent-climax-offset-y);
+}
+
+.opponent-playmat .stock-zone {
+  grid-column: 5;
+  grid-row: 3;
+  justify-self: start;
+  align-self: end;
+}
+
+/* Optional: the fifth track stays valid when this element is absent. */
+.utility-column {
+  grid-row: 1 / -1;
+  width: var(--utility-w);
+  min-width: 0;
+  min-height: 0;
+  align-self: stretch;
+}
+
+/*
+   相手ストック位置のX/Yオフセット管理
+   - v4.5の左方向への移動量をXオフセットとして継承
+   - 相手と自分の境界線側へ寄せるため、下方向のYオフセットを追加
+   - 既存のGrid配置や他ゾーンには影響を与えない
+   ========================================================= */
+
+   /* =========================================================
+   相手側 最終Grid配置
+   ========================================================= */
+
+.opponent-playmat > .utility-column {
+  grid-column: 1;
+  grid-row: 1 / 4;
+}
+
+.opponent-playmat .waiting-room-zone {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.opponent-playmat .deck-zone {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.opponent-playmat .memory-zone {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.opponent-playmat .clock-zone {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.opponent-playmat .stage-area {
+  grid-column: 3;
+  grid-row: 2 / span 2;
+}
+
+.opponent-playmat .level-zone {
+  grid-column: 4;
+  grid-row: 2;
+}
+
+.opponent-playmat .climax-zone {
+  grid-column: 4;
+  grid-row: 3;
+}
+
+.opponent-playmat .stock-zone {
+  grid-column: 5;
+  grid-row: 3;
+}
+
+/* 過去の位置調整を解除 */
+.opponent-playmat .level-zone,
+.opponent-playmat .climax-zone,
+.opponent-playmat .stock-zone {
+  position: static;
+  left: auto;
+  top: auto;
+  transform: none;
+}
+
+.opponent-playmat .level-zone,
+.opponent-playmat .climax-zone,
+.opponent-playmat .stock-zone {
+  justify-self: center;
+
+}
+
+/* =========================================================
+   相手プレイマットを下揃え
+   自分側との対称性を高める
+   ========================================================= */
+
+
+
+.opponent-playmat {
+  align-content: start; /* Grid全体の位置は維持 */
+  align-items: end;     /* 各ゾーンをセル下端へ揃える */
+}
+
+.opponent-playmat .level-zone,
+.opponent-playmat .climax-zone,
+.opponent-playmat .stock-zone {
+  position: static;
+  left: auto;
+  top: auto;
+  transform: none;
+  justify-self: center;
+  /* align-selfは指定しない */
+}
+
+/* =========================================================
+   board.css v5.1
+   Fixed, symmetrical three-row playmat
+   ========================================================= */
+
+:root {
+  /* The stock zone has min-height: 206px. */
+  --playmat-row-h: 210px;
+  --playmat-fixed-height: calc(
+    var(--playmat-row-h) * 3
+    + var(--gap-zone) * 2
+  );
+  --opponent-playmat-height: var(--playmat-fixed-height);
+  --self-playmat-height: var(--playmat-fixed-height);
+}
+
+.opponent-playmat {
+  grid-template-rows:
+    var(--playmat-row-h)
+    var(--playmat-row-h)
+    var(--playmat-row-h);
+  height: var(--opponent-playmat-height) !important;
+  min-height: var(--opponent-playmat-height) !important;
+  align-content: start;
+  align-items: end;
+}
+
+.self-playmat {
+  grid-template-rows:
+    var(--playmat-row-h)
+    var(--playmat-row-h)
+    var(--playmat-row-h);
+  height: var(--self-playmat-height) !important;
+  min-height: var(--self-playmat-height) !important;
+  align-content: start;
+  align-items: start;
+}
+
+/* Opponent: confirmed five-column, three-row placement. */
+.opponent-playmat > .utility-column {
+  grid-column: 1;
+  grid-row: 1 / 4;
+}
+
+.opponent-playmat .waiting-room-zone {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.opponent-playmat .deck-zone {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.opponent-playmat .memory-zone {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.opponent-playmat .clock-zone {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.opponent-playmat .stage-area {
+  grid-column: 3;
+  grid-row: 2 / span 2;
+}
+
+.opponent-playmat .level-zone {
+  grid-column: 4;
+  grid-row: 2;
+}
+
+.opponent-playmat .climax-zone {
+  grid-column: 4;
+  grid-row: 3;
+}
+
+.opponent-playmat .stock-zone {
+  grid-column: 5;
+  grid-row: 3;
+}
+
+/* Remove obsolete per-zone offsets and inherit cell alignment. */
+.opponent-playmat .waiting-room-zone,
+.opponent-playmat .deck-zone,
+.opponent-playmat .memory-zone,
+.opponent-playmat .clock-zone,
+.opponent-playmat .stage-area,
+.opponent-playmat .level-zone,
+.opponent-playmat .climax-zone,
+.opponent-playmat .stock-zone {
+  position: static;
+  left: auto;
+  top: auto;
+  transform: none;
+  align-self: auto;
+}
+
+/* Preserve self placement and inherit top alignment. */
+.self-playmat .stock-zone,
+.self-playmat .climax-zone,
+.self-playmat .level-zone,
+.self-playmat .stage-area,
+.self-playmat .clock-zone,
+.self-playmat .memory-zone,
+.self-playmat .deck-zone,
+.self-playmat .waiting-room-zone {
+  align-self: auto;
+}
+
+/* Utility occupies all three rows on both sides. */
+.opponent-playmat > .utility-column,
+.self-playmat > .utility-column {
+  grid-row: 1 / 4;
+  align-self: stretch;
+}
