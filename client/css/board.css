@@ -991,9 +991,7 @@ ul {
   width: var(--side-wide-w);
 }
 
-.stock-zone {
-  align-self: start;
-}
+
 
 /* 古いFlex用の余白指定を無効化 */
 .playmat .zone {
@@ -1178,3 +1176,92 @@ ul {
    - 相手と自分の境界線側へ寄せるため、下方向のYオフセットを追加
    - 既存のGrid配置や他ゾーンには影響を与えない
    ========================================================= */
+
+   /* =========================================================
+   相手側 最終Grid配置
+   ========================================================= */
+
+.opponent-playmat > .utility-column {
+  grid-column: 1;
+  grid-row: 1 / 4;
+}
+
+.opponent-playmat .waiting-room-zone {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.opponent-playmat .deck-zone {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.opponent-playmat .memory-zone {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.opponent-playmat .clock-zone {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.opponent-playmat .stage-area {
+  grid-column: 3;
+  grid-row: 2 / span 2;
+}
+
+.opponent-playmat .level-zone {
+  grid-column: 4;
+  grid-row: 2;
+}
+
+.opponent-playmat .climax-zone {
+  grid-column: 4;
+  grid-row: 3;
+}
+
+.opponent-playmat .stock-zone {
+  grid-column: 5;
+  grid-row: 3;
+}
+
+/* 過去の位置調整を解除 */
+.opponent-playmat .level-zone,
+.opponent-playmat .climax-zone,
+.opponent-playmat .stock-zone {
+  position: static;
+  left: auto;
+  top: auto;
+  transform: none;
+}
+
+.opponent-playmat .level-zone,
+.opponent-playmat .climax-zone,
+.opponent-playmat .stock-zone {
+  justify-self: center;
+
+}
+
+/* =========================================================
+   相手プレイマットを下揃え
+   自分側との対称性を高める
+   ========================================================= */
+
+
+
+.opponent-playmat {
+  align-content: start; /* Grid全体の位置は維持 */
+  align-items: end;     /* 各ゾーンをセル下端へ揃える */
+}
+
+.opponent-playmat .level-zone,
+.opponent-playmat .climax-zone,
+.opponent-playmat .stock-zone {
+  position: static;
+  left: auto;
+  top: auto;
+  transform: none;
+  justify-self: center;
+  /* align-selfは指定しない */
+}
