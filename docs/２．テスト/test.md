@@ -9,3 +9,6 @@ renderer.render(gameState);
 手札にcard1を追加する場合は、以下を入力
 gameState.players.self.hand.push(card1);
 renderer.render(gameState);
+
+次のフェイズに進む
+gameEngine.nextPhase()

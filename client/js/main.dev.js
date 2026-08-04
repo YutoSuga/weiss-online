@@ -1,8 +1,8 @@
 /**
  * 開発用エントリーポイント
  *
- * Renderer の確認専用。
- * GameEngine や通信は使用しない。
+ * Renderer / GameEngine の開発確認用。
+ * 通信は使用しない。
  *
  * 確認項目：
  * - 手札
@@ -19,6 +19,7 @@
  */
 
 import { Renderer } from "./core/renderer.js";
+import { GameEngine } from "./core/gameEngine.js";
 
 import { GameState } from "./models/gameState.js";
 import { Player } from "./models/player.js";
@@ -41,8 +42,6 @@ const gameState = new GameState({
 
 const renderer = new Renderer(document);
 
-renderer.render(gameState);
-
 const card1 = new Card({
   id: "test-card-001",
   name: "テストカード1",
@@ -56,12 +55,43 @@ const card1 = new Card({
   traits: ["テスト"],
   text: "",
   owner: "self",
-  zone: "hand",
+  zone: "deck",
   row: null,
   index: 1,
-  face: "up",
+  face: "down",
   position: "stand",
 });
+
+self.deck.addTop(card1);
+
+const opponentCard1 = new Card({
+  id: "opponent-test-001",
+  name: "相手テストカード1",
+  cardType: "character",
+  level: 0,
+  cost: 0,
+  color: "yellow",
+  basePower: 1000,
+  baseSoul: 1,
+  trigger: [],
+  traits: ["テスト"],
+  text: "",
+  owner: "opponent",
+  zone: "deck",
+  row: null,
+  index: null,
+  face: "down",
+  position: "stand",
+});
+
+gameState.players.opponent.deck.addTop(opponentCard1);
+
+const gameEngine = new GameEngine({
+  gameState,
+  renderer,
+});
+
+renderer.render(gameState);
 
 window.card1 = card1;
 
@@ -69,3 +99,4 @@ window.card1 = card1;
 window.renderer = renderer;
 window.gameState = gameState;
 window.Card = Card;
+window.gameEngine = gameEngine;

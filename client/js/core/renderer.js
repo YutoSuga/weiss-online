@@ -37,6 +37,7 @@ export class Renderer {
     }
 
     this.clear();
+    this.renderLog(gameState);
 
     if (!gameState || typeof gameState !== "object") {
       return;
@@ -44,6 +45,118 @@ export class Renderer {
 
     this.renderPlayer(gameState.players?.self, "self");
     this.renderPlayer(gameState.players?.opponent, "opponent");
+  }
+
+  /**
+   * GameStateのログを既存のログ領域へ時系列順に描画する。
+   * 描画前にログ項目だけを消去するため、再描画しても重複しない。
+   *
+   * @param {import("../models/gameState.js").GameState|null|undefined} gameState
+   * @returns {void}
+   */
+  renderLog(gameState) {
+    const logList = this.rootElement?.querySelector(".game-log");
+
+    if (!logList) {
+      return;
+    }
+
+    logList.replaceChildren();
+
+    const log = Array.isArray(gameState?.log) ? gameState.log : [];
+
+    if (log.length === 0) {
+      this.appendLogItem(logList, "ゲーム開始待機中");
+      return;
+    }
+
+    log.forEach((entry) => {
+      if (!entry || typeof entry !== "object") {
+        return;
+      }
+
+      const parts = [];
+      const time = this.formatLogTime(entry.time);
+      const playerName = this.resolveLogPlayerName(entry.player, gameState);
+      const message = entry.message == null ? "" : String(entry.message);
+
+      if (time) {
+        parts.push(`[${time}]`);
+      }
+
+      if (playerName) {
+        parts.push(playerName);
+      }
+
+      if (message) {
+        parts.push(message);
+      }
+
+      this.appendLogItem(logList, parts.join(" "));
+    });
+
+    if (!logList.firstElementChild) {
+      this.appendLogItem(logList, "ゲーム開始待機中");
+    }
+  }
+
+  /**
+   * @param {Element} logList
+   * @param {string} text
+   * @returns {void}
+   */
+  appendLogItem(logList, text) {
+    const listItem = logList.ownerDocument?.createElement("li");
+
+    if (!listItem) {
+      return;
+    }
+
+    listItem.textContent = text;
+    logList.appendChild(listItem);
+  }
+
+  /**
+   * @param {unknown} value
+   * @returns {string}
+   */
+  formatLogTime(value) {
+    if (value == null) {
+      return "";
+    }
+
+    const date = value instanceof Date ? value : new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return "";
+    }
+
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+    return `${hours}:${minutes}:${seconds}`;
+  }
+
+  /**
+   * @param {unknown} player
+   * @param {import("../models/gameState.js").GameState|null|undefined} gameState
+   * @returns {string}
+   */
+  resolveLogPlayerName(player, gameState) {
+    if (player === "self" || player === "opponent") {
+      const playerName = gameState?.players?.[player]?.name;
+      if (typeof playerName === "string" && playerName.trim()) {
+        return playerName;
+      }
+
+      return player;
+    }
+
+    if (typeof player === "string" && player.trim() && player !== "system") {
+      return player;
+    }
+
+    return "システム";
   }
 
   /**

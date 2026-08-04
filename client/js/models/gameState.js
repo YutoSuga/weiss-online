@@ -29,7 +29,8 @@ export class GameState {
    * @param {Player} params.self
    * @param {Player} params.opponent
    * @param {Partial<RoomState>} [params.room={}]
-   * @param {'self'|'opponent'} [params.turnPlayer='self']
+   * @param {{first: 'self'|'opponent', second: 'self'|'opponent'}} [params.turnOrder]
+   * @param {'self'|'opponent'} [params.turnPlayer=params.turnOrder.first]
    * @param {number} [params.turnNumber=1]
    * @param {string} [params.phase=PHASE.STAND]
    * @param {GameLogEntry[]} [params.log=[]]
@@ -38,13 +39,29 @@ export class GameState {
     self,
     opponent,
     room = {},
-    turnPlayer = "self",
+    turnOrder = {
+      first: "self",
+      second: "opponent",
+    },
+    turnPlayer = turnOrder.first,
     turnNumber = 1,
     phase = PHASE.STAND,
     log = [],
   }) {
     if (!(self instanceof Player) || !(opponent instanceof Player)) {
       throw new TypeError("self and opponent must be Player instances.");
+    }
+
+    if (
+      !turnOrder ||
+      typeof turnOrder !== "object" ||
+      !PLAYER_SIDE_VALUES.includes(turnOrder.first) ||
+      !PLAYER_SIDE_VALUES.includes(turnOrder.second) ||
+      turnOrder.first === turnOrder.second
+    ) {
+      throw new TypeError(
+        "turnOrder must contain different first and second players.",
+      );
     }
 
     if (!PLAYER_SIDE_VALUES.includes(turnPlayer)) {
@@ -65,6 +82,12 @@ export class GameState {
 
     /** @type {{self: Player, opponent: Player}} */
     this.players = { self, opponent };
+
+    /** @type {{first: 'self'|'opponent', second: 'self'|'opponent'}} */
+    this.turnOrder = {
+      first: turnOrder.first,
+      second: turnOrder.second,
+    };
 
     /** @type {RoomState} */
     this.room = {
