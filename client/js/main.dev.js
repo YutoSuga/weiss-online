@@ -9,23 +9,10 @@ import { GameStartController } from "./ui/gameStartController.js";
 import { GameState } from "./models/gameState.js";
 import { Player } from "./models/player.js";
 import { Card } from "./models/card.js";
+import { Deck } from "./models/deck.js";
+import { ZONE } from "./constants/zone.js";
 
-const self = new Player({
-  id: "self",
-  name: "あなた",
-});
-
-const opponent = new Player({
-  id: "opponent",
-  name: "相手",
-});
-
-const gameState = new GameState({
-  self,
-  opponent,
-});
-
-const renderer = new Renderer(document);
+const TEST_DECK_SIZE = 50;
 
 /**
  * @param {'self'|'opponent'} owner
@@ -34,8 +21,8 @@ const renderer = new Renderer(document);
  */
 function createTestCard(owner, sequence) {
   return new Card({
-    id: `${owner}-test-${String(sequence).padStart(3, "0")}`,
-    name: `${owner === "self" ? "自分" : "相手"}テストカード${sequence}`,
+    id: `${owner}-test-card-${String(sequence).padStart(3, "0")}`,
+    name: `${owner === "self" ? "自分" : "相手"}テストカード ${sequence}`,
     cardType: "character",
     level: 0,
     cost: 0,
@@ -46,7 +33,7 @@ function createTestCard(owner, sequence) {
     traits: ["テスト"],
     text: "",
     owner,
-    zone: "deck",
+    zone: ZONE.DECK,
     row: null,
     index: null,
     face: "down",
@@ -54,16 +41,47 @@ function createTestCard(owner, sequence) {
   });
 }
 
-const card1 = createTestCard("self", 1);
-self.deck.addBottom(card1);
+/**
+ * 開発確認用の独立したCardインスタンスで山札を作成する。
+ *
+ * @param {'self'|'opponent'} owner
+ * @param {number} [count=TEST_DECK_SIZE]
+ * @returns {Deck}
+ */
+function createTestDeck(owner, count = TEST_DECK_SIZE) {
+  if (!Number.isInteger(count) || count < 0) {
+    throw new TypeError("count must be a non-negative integer.");
+  }
 
-for (let sequence = 2; sequence <= 10; sequence += 1) {
-  self.deck.addBottom(createTestCard("self", sequence));
+  const cards = Array.from({ length: count }, (_unused, index) =>
+    createTestCard(owner, index + 1),
+  );
+
+  return new Deck(cards);
 }
 
-for (let sequence = 1; sequence <= 10; sequence += 1) {
-  opponent.deck.addBottom(createTestCard("opponent", sequence));
-}
+const selfDeck = createTestDeck("self");
+const opponentDeck = createTestDeck("opponent");
+
+const self = new Player({
+  id: "self",
+  name: "あなた",
+  deck: selfDeck,
+});
+
+const opponent = new Player({
+  id: "opponent",
+  name: "相手",
+  deck: opponentDeck,
+});
+
+const gameState = new GameState({
+  self,
+  opponent,
+});
+
+const renderer = new Renderer(document);
+const card1 = selfDeck.cards[0];
 
 const gameEngine = new GameEngine({
   gameState,
