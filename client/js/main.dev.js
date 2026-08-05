@@ -5,6 +5,7 @@
 
 import { Renderer } from "./core/renderer.js";
 import { GameEngine } from "./core/gameEngine.js";
+import { GameStartController } from "./ui/gameStartController.js";
 import { GameState } from "./models/gameState.js";
 import { Player } from "./models/player.js";
 import { Card } from "./models/card.js";
@@ -69,6 +70,14 @@ const gameEngine = new GameEngine({
   renderer,
 });
 
+const gameStartController = new GameStartController({
+  gameEngine,
+  gameState,
+  rootElement: document,
+});
+
+gameStartController.init();
+
 renderer.render(gameState);
 
 window.card1 = card1;
@@ -76,3 +85,4 @@ window.renderer = renderer;
 window.gameState = gameState;
 window.Card = Card;
 window.gameEngine = gameEngine;
+window.gameStartController = gameStartController;
