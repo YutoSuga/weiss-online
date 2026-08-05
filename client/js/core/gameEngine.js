@@ -13,11 +13,12 @@ const PHASE_ORDER = Object.freeze([
   PHASE.END,
 ]);
 
+const INITIAL_HAND_SIZE = 5;
 const MAX_LOG_ENTRIES = 20;
 
 /**
- * GameStateの更新、ターン進行、最小限のゲーム処理を担当する。
- * DOM操作は行わず、画面更新はRendererへ委譲する。
+ * ゲームルールの進行とGameStateの更新を担当する。
+ * DOM操作とUIロジックは持たず、画面更新はRendererへ委譲する。
  */
 export class GameEngine {
   /**
@@ -39,27 +40,179 @@ export class GameEngine {
   }
 
   /**
-   * 対戦を初期状態から開始する。
+   * 両山札をシャッフルし、初期手札配布後にマリガンを開始する。
+   * 通常ターンは後攻プレイヤーのマリガン完了まで開始しない。
    *
    * @returns {void}
    */
   startGame() {
-    const { first } = this.gameState.turnOrder;
+    const { first, second } = this.gameState.turnOrder;
 
-    this.gameState.turn.player = first;
-    this.gameState.turn.number = 1;
-    this.gameState.phase = PHASE.STAND;
-    this.addLog(first, `Game started. ${first} is the first player.`);
+    this.gameState.players[first].deck.shuffle();
+    this.gameState.players[second].deck.shuffle();
+    this.gameState.turn.player = null;
+    this.gameState.turn.number = 0;
+    this.addLog(null, "ゲームの初期準備を開始しました。");
+
+    this.drawInitialHand();
+    this.startMulligan();
     this.render();
   }
 
   /**
-   * 現在のフェイズを次へ進める。
-   * DRAWフェイズへ入った際は、現在プレイヤーが1枚引く。
+   * 先攻・後攻の順に初期手札を5枚ずつ配る。
+   *
+   * @returns {{first: import("../models/card.js").Card[], second: import("../models/card.js").Card[]}}
+   */
+  drawInitialHand() {
+    const { first, second } = this.gameState.turnOrder;
+
+    return {
+      first: this.drawCards(first, INITIAL_HAND_SIZE),
+      second: this.drawCards(second, INITIAL_HAND_SIZE),
+    };
+  }
+
+  /**
+   * 先攻プレイヤーからマリガンを開始する。
+   *
+   * @returns {void}
+   */
+  startMulligan() {
+    const { first } = this.gameState.turnOrder;
+
+    this.gameState.mulliganState.active = true;
+    this.gameState.mulliganState.currentPlayer = first;
+    this.gameState.phase = PHASE.MULLIGAN;
+    this.addLog(first, "マリガンを開始しました。");
+  }
+
+  /**
+   * 選択した手札を控え室へ送り、同じ枚数を引く。
+   * `handIndexes`は1始まりで、0枚選択も許可する。
+   *
+   * @param {'self'|'opponent'} playerId
+   * @param {number[]} handIndexes
+   * @returns {import("../models/card.js").Card[]} 控え室へ送ったカード
+   */
+  mulligan(playerId, handIndexes) {
+    this.#assertPlayerId(playerId);
+
+    if (!this.gameState.mulliganState.active) {
+      throw new Error("Mulligan is not active.");
+    }
+
+    if (this.gameState.mulliganState.currentPlayer !== playerId) {
+      throw new Error(`It is not ${playerId}'s mulligan turn.`);
+    }
+
+    if (!Array.isArray(handIndexes)) {
+      throw new TypeError("handIndexes must be an array.");
+    }
+
+    const uniqueIndexes = new Set(handIndexes);
+    if (
+      uniqueIndexes.size !== handIndexes.length ||
+      handIndexes.some((index) => !Number.isInteger(index) || index < 1)
+    ) {
+      throw new TypeError(
+        "handIndexes must contain unique positive integers.",
+      );
+    }
+
+    const player = this.gameState.players[playerId];
+    const sortedIndexes = [...uniqueIndexes].sort((left, right) => left - right);
+
+    if (sortedIndexes.some((index) => index > player.hand.length)) {
+      throw new RangeError("handIndexes contains an index outside the hand.");
+    }
+
+    const selectedIndexSet = new Set(sortedIndexes);
+    const discardedCards = sortedIndexes.map((index) => player.hand[index - 1]);
+    const remainingCards = player.hand.filter(
+      (_card, arrayIndex) => !selectedIndexSet.has(arrayIndex + 1),
+    );
+
+    player.hand.splice(0, player.hand.length, ...remainingCards);
+    this.#reindexCards(player.hand);
+
+    discardedCards.forEach((card) => {
+      const waitingRoomIndex = player.waitingRoom.length + 1;
+      card.moveTo({
+        zone: ZONE.WAITING_ROOM,
+        row: null,
+        index: waitingRoomIndex,
+      });
+      player.waitingRoom.push(card);
+    });
+
+    this.drawCards(playerId, discardedCards.length);
+    this.addLog(
+      playerId,
+      `${discardedCards.length}枚をマリガンしました。`,
+    );
+
+    const { first, second } = this.gameState.turnOrder;
+    if (playerId === first) {
+      this.gameState.mulliganState.currentPlayer = second;
+      this.addLog(second, "マリガンを開始しました。");
+    } else {
+      this.gameState.mulliganState.active = false;
+      this.gameState.mulliganState.currentPlayer = null;
+      this.gameState.turn.player = first;
+      this.gameState.turn.number = 1;
+      this.gameState.phase = PHASE.STAND;
+      this.addLog(first, "Turn 1を開始しました。");
+    }
+
+    this.render();
+    return discardedCards;
+  }
+
+  /**
+   * 指定プレイヤーが複数枚引く。
+   *
+   * @param {'self'|'opponent'} playerId
+   * @param {number} [count=1]
+   * @returns {import("../models/card.js").Card[]} 実際に引けたカード
+   */
+  drawCards(playerId, count = 1) {
+    this.#assertPlayerId(playerId);
+
+    if (!Number.isInteger(count) || count < 0) {
+      throw new TypeError("count must be a non-negative integer.");
+    }
+
+    /** @type {import("../models/card.js").Card[]} */
+    const drawnCards = [];
+
+    for (let index = 0; index < count; index += 1) {
+      const card = this.drawCard(playerId);
+      if (!card) {
+        break;
+      }
+
+      drawnCards.push(card);
+    }
+
+    if (drawnCards.length > 0) {
+      this.addLog(playerId, `${drawnCards.length}枚引きました。`);
+    }
+
+    return drawnCards;
+  }
+
+  /**
+   * 通常ターンのフェイズを次へ進める。
+   * DRAWフェイズへ入った際は現在プレイヤーが1枚引く。
    *
    * @returns {void}
    */
   nextPhase() {
+    if (this.gameState.mulliganState.active) {
+      throw new Error("Cannot advance phases during mulligan.");
+    }
+
     const currentIndex = PHASE_ORDER.indexOf(this.gameState.phase);
 
     if (currentIndex === -1) {
@@ -75,16 +228,63 @@ export class GameEngine {
     this.gameState.phase = nextPhase;
 
     if (nextPhase === PHASE.DRAW) {
-      this.drawCard(this.gameState.turn.player);
+      this.drawCards(this.gameState.turn.player, 1);
     }
 
     this.render();
   }
 
   /**
+   * 対戦ログを追加し、最新20件だけを保持する。
+   *
+   * @param {'self'|'opponent'|null} player
+   * @param {string} message
+   * @returns {import("../models/gameState.js").GameLogEntry}
+   */
+  addLog(player, message) {
+    const entry = this.gameState.addLog(message, player);
+    const excessEntryCount = this.gameState.log.length - MAX_LOG_ENTRIES;
+
+    if (excessEntryCount > 0) {
+      this.gameState.log.splice(0, excessEntryCount);
+    }
+
+    return entry;
+  }
+
+  /**
+   * 山札の一番上から手札へ1枚移動する。
+   * リフレッシュおよびリフレッシュダメージはまだ処理しない。
+   *
+   * @private
+   * @param {'self'|'opponent'} playerId
+   * @returns {import("../models/card.js").Card|null}
+   */
+  drawCard(playerId) {
+    this.#assertPlayerId(playerId);
+    const player = this.gameState.players[playerId];
+    const card = player.deck.draw();
+
+    if (!card) {
+      this.addLog(playerId, "山札が空のためカードを引けませんでした。");
+      return null;
+    }
+
+    card.owner = playerId;
+    card.moveTo({
+      zone: ZONE.HAND,
+      row: null,
+      index: player.hand.length + 1,
+    });
+    player.hand.push(card);
+    return card;
+  }
+
+  /**
    * 現在のターンを終了し、次のプレイヤーのSTANDフェイズへ移る。
    * 後攻プレイヤーのターン終了時だけターン番号を増やす。
    *
+   * @private
    * @returns {void}
    */
   endTurn() {
@@ -103,84 +303,41 @@ export class GameEngine {
     this.gameState.phase = PHASE.STAND;
     this.addLog(
       this.gameState.turn.player,
-      `Turn ${this.gameState.turn.number} started.`,
+      `Turn ${this.gameState.turn.number}を開始しました。`,
     );
     this.render();
   }
 
   /**
-   * 指定プレイヤーの山札からカードを引き、手札の末尾へ加える。
-   * リフレッシュおよびダメージ処理はまだ行わない。
-   *
-   * @param {'self'|'opponent'} owner
-   * @param {number} [count=1]
-   * @returns {import("../models/card.js").Card[]} 引けたカード
-   */
-  drawCard(owner, count = 1) {
-    const player = this.gameState.players[owner];
-
-    if (!player) {
-      throw new RangeError(`Unknown player: ${owner}.`);
-    }
-
-    if (!Number.isInteger(count) || count < 1) {
-      throw new TypeError("count must be a positive integer.");
-    }
-
-    /** @type {import("../models/card.js").Card[]} */
-    const drawnCards = [];
-
-    for (let drawIndex = 0; drawIndex < count; drawIndex += 1) {
-      const card = player.deck.draw();
-
-      if (!card) {
-        this.addLog(owner, "Could not draw because the deck is empty.");
-        break;
-      }
-
-      const handIndex = player.hand.length + 1;
-      card.owner = owner;
-      card.moveTo({
-        zone: ZONE.HAND,
-        row: null,
-        index: handIndex,
-      });
-      player.hand.push(card);
-      drawnCards.push(card);
-    }
-
-    if (drawnCards.length > 0) {
-      this.addLog(owner, `Drew ${drawnCards.length} card(s).`);
-    }
-
-    return drawnCards;
-  }
-
-  /**
-   * 対戦ログを追加する。
-   *
-   * @param {'self'|'opponent'|null} player
-   * @param {string} message
-   * @returns {import("../models/gameState.js").GameLogEntry}
-   */
-  addLog(player, message) {
-    const entry = this.gameState.addLog(message, player);
-    const excessEntryCount =
-      this.gameState.log.length - MAX_LOG_ENTRIES;
-
-    if (excessEntryCount > 0) {
-      this.gameState.log.splice(0, excessEntryCount);
-    }
-
-    return entry;
-  }
-
-  /**
    * 現在のGameStateをRendererへ渡して再描画する。
    *
+   * @private
    * @returns {void}
    */
   render() {
     this.renderer.render(this.gameState);
+  }
+
+  /**
+   * @param {unknown} playerId
+   * @returns {asserts playerId is 'self'|'opponent'}
+   */
+  #assertPlayerId(playerId) {
+    if (
+      playerId !== this.gameState.turnOrder.first &&
+      playerId !== this.gameState.turnOrder.second
+    ) {
+      throw new RangeError(`Unknown player: ${playerId}.`);
+    }
+  }
+
+  /**
+   * @param {import("../models/card.js").Card[]} cards
+   * @returns {void}
+   */
+  #reindexCards(cards) {
+    cards.forEach((card, arrayIndex) => {
+      card.index = arrayIndex + 1;
+    });
   }
 }

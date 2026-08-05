@@ -2,6 +2,7 @@
  * ゲームの進行フェイズ。
  */
 export const PHASE = Object.freeze({
+  MULLIGAN: "mulligan",
   STAND: "stand",
   DRAW: "draw",
   CLOCK: "clock",

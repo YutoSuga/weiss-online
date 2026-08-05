@@ -20,6 +20,12 @@ const PLAYER_SIDE_VALUES = Object.freeze(["self", "opponent"]);
  */
 
 /**
+ * @typedef {object} MulliganState
+ * @property {boolean} active
+ * @property {'self'|'opponent'|null} currentPlayer
+ */
+
+/**
  * 対戦全体の状態を管理する。
  * 描画やルール実行は、将来追加するRenderer/GameEngineの責務とする。
  */
@@ -33,6 +39,7 @@ export class GameState {
    * @param {'self'|'opponent'} [params.turnPlayer=params.turnOrder.first]
    * @param {number} [params.turnNumber=1]
    * @param {string} [params.phase=PHASE.STAND]
+   * @param {Partial<MulliganState>} [params.mulliganState={}]
    * @param {GameLogEntry[]} [params.log=[]]
    */
   constructor({
@@ -46,6 +53,7 @@ export class GameState {
     turnPlayer = turnOrder.first,
     turnNumber = 1,
     phase = PHASE.STAND,
+    mulliganState = {},
     log = [],
   }) {
     if (!(self instanceof Player) || !(opponent instanceof Player)) {
@@ -76,6 +84,17 @@ export class GameState {
       throw new RangeError(`phase must be one of: ${PHASE_VALUES.join(", ")}.`);
     }
 
+    if (
+      mulliganState === null ||
+      typeof mulliganState !== "object" ||
+      (mulliganState.active != null &&
+        typeof mulliganState.active !== "boolean") ||
+      (mulliganState.currentPlayer != null &&
+        !PLAYER_SIDE_VALUES.includes(mulliganState.currentPlayer))
+    ) {
+      throw new TypeError("mulliganState is invalid.");
+    }
+
     if (!Array.isArray(log)) {
       throw new TypeError("log must be an array.");
     }
@@ -98,7 +117,7 @@ export class GameState {
       status: room.status ?? "waiting",
     };
 
-    /** @type {{player: 'self'|'opponent', number: number}} */
+    /** @type {{player: 'self'|'opponent'|null, number: number}} */
     this.turn = {
       player: turnPlayer,
       number: turnNumber,
@@ -106,6 +125,12 @@ export class GameState {
 
     /** @type {string} */
     this.phase = phase;
+
+    /** @type {MulliganState} */
+    this.mulliganState = {
+      active: mulliganState.active ?? false,
+      currentPlayer: mulliganState.currentPlayer ?? null,
+    };
 
     /** @type {GameLogEntry[]} */
     this.log = log.map((entry) => ({ ...entry }));
