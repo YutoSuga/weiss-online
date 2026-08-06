@@ -6,6 +6,7 @@
 import { Renderer } from "./core/renderer.js";
 import { GameEngine } from "./core/gameEngine.js";
 import { GameStartController } from "./ui/gameStartController.js";
+import { MulliganController } from "./ui/mulliganController.js";
 import { GameState } from "./models/gameState.js";
 import { Player } from "./models/player.js";
 import { Card } from "./models/card.js";
@@ -96,6 +97,14 @@ const gameStartController = new GameStartController({
 
 gameStartController.init();
 
+const mulliganController = new MulliganController({
+  gameEngine,
+  gameState,
+  rootElement: document,
+});
+
+mulliganController.init();
+
 renderer.render(gameState);
 
 window.card1 = card1;
@@ -104,3 +113,4 @@ window.gameState = gameState;
 window.Card = Card;
 window.gameEngine = gameEngine;
 window.gameStartController = gameStartController;
+window.mulliganController = mulliganController;

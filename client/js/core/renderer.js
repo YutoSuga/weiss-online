@@ -38,6 +38,7 @@ export class Renderer {
 
     this.clear();
     this.renderLog(gameState);
+    this.updateMessageOverlay(gameState);
 
     if (!gameState || typeof gameState !== "object") {
       return;
@@ -45,6 +46,38 @@ export class Renderer {
 
     this.renderPlayer(gameState.players?.self, "self");
     this.renderPlayer(gameState.players?.opponent, "opponent");
+  }
+
+  /**
+   * GameStateの値だけを使用してメッセージオーバーレイを描画する。
+   *
+   * @param {import("../models/gameState.js").GameState|null|undefined} gameState
+   * @returns {void}
+   */
+  updateMessageOverlay(gameState) {
+    const overlay = this.rootElement?.querySelector("[data-message-overlay]");
+    if (!(overlay instanceof HTMLElement)) {
+      return;
+    }
+
+    const state = gameState?.messageOverlay;
+    const visible = state?.visible === true;
+    const title = state?.title == null ? "" : String(state.title);
+    const message = state?.message == null ? "" : String(state.message);
+    const titleElement = overlay.querySelector("[data-message-overlay-title]");
+    const messageElement = overlay.querySelector("[data-message-overlay-message]");
+
+    overlay.hidden = !visible;
+    overlay.setAttribute("aria-hidden", String(!visible));
+
+    if (titleElement) {
+      titleElement.textContent = title;
+      titleElement.hidden = title.length === 0;
+    }
+
+    if (messageElement) {
+      messageElement.textContent = message;
+    }
   }
 
   /**

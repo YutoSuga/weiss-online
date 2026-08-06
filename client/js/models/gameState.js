@@ -26,6 +26,13 @@ const PLAYER_SIDE_VALUES = Object.freeze(["self", "opponent"]);
  */
 
 /**
+ * @typedef {object} MessageOverlayState
+ * @property {boolean} visible
+ * @property {string} title
+ * @property {string} message
+ */
+
+/**
  * 対戦全体の状態を管理する。
  * 描画やルール実行は、将来追加するRenderer/GameEngineの責務とする。
  */
@@ -40,6 +47,7 @@ export class GameState {
    * @param {number} [params.turnNumber=1]
    * @param {string} [params.phase=PHASE.STAND]
    * @param {Partial<MulliganState>} [params.mulliganState={}]
+   * @param {Partial<MessageOverlayState>} [params.messageOverlay={}]
    * @param {GameLogEntry[]} [params.log=[]]
    */
   constructor({
@@ -54,6 +62,7 @@ export class GameState {
     turnNumber = 1,
     phase = PHASE.STAND,
     mulliganState = {},
+    messageOverlay = {},
     log = [],
   }) {
     if (!(self instanceof Player) || !(opponent instanceof Player)) {
@@ -99,6 +108,19 @@ export class GameState {
       throw new TypeError("log must be an array.");
     }
 
+    if (
+      messageOverlay === null ||
+      typeof messageOverlay !== "object" ||
+      (messageOverlay.visible != null &&
+        typeof messageOverlay.visible !== "boolean") ||
+      (messageOverlay.title != null &&
+        typeof messageOverlay.title !== "string") ||
+      (messageOverlay.message != null &&
+        typeof messageOverlay.message !== "string")
+    ) {
+      throw new TypeError("messageOverlay is invalid.");
+    }
+
     /** @type {{self: Player, opponent: Player}} */
     this.players = { self, opponent };
 
@@ -130,6 +152,13 @@ export class GameState {
     this.mulliganState = {
       active: mulliganState.active ?? false,
       currentPlayer: mulliganState.currentPlayer ?? null,
+    };
+
+    /** @type {MessageOverlayState} */
+    this.messageOverlay = {
+      visible: messageOverlay.visible ?? false,
+      title: messageOverlay.title ?? "",
+      message: messageOverlay.message ?? "",
     };
 
     /** @type {GameLogEntry[]} */

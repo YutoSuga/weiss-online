@@ -12,6 +12,17 @@
     <h1>weiss-online</h1>
   </header>
 
+  <aside
+    class="message-overlay"
+    data-message-overlay
+    aria-live="polite"
+    aria-hidden="true"
+    hidden
+  >
+    <strong class="message-overlay-title" data-message-overlay-title hidden></strong>
+    <span class="message-overlay-text" data-message-overlay-message></span>
+  </aside>
+
   <div class="app-layout">
     <aside class="left-sidebar">
       <section class="info-panel opponent-info">
@@ -261,6 +272,13 @@
       >ゲーム開始</button>
 
       <button class="end-turn-button" type="button">ターン終了</button>
+
+      <button
+        class="end-turn-button mulligan-confirm-button"
+        type="button"
+        data-action="confirm-mulligan"
+        hidden
+      >交換せず次へ</button>
 
       <section class="info-panel self-info">
         <h2>自分の情報</h2>

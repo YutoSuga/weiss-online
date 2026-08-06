@@ -15,6 +15,10 @@ const PHASE_ORDER = Object.freeze([
 
 const INITIAL_HAND_SIZE = 5;
 const MAX_LOG_ENTRIES = 20;
+const MULLIGAN_MESSAGES = Object.freeze({
+  self: "あなたがマリガン中です",
+  opponent: "相手がマリガン中です",
+});
 
 /**
  * ゲームルールの進行とGameStateの更新を担当する。
@@ -37,6 +41,8 @@ export class GameEngine {
 
     this.gameState = gameState;
     this.renderer = renderer;
+    /** @type {Set<(gameState: GameState) => void>} */
+    this.renderListeners = new Set();
   }
 
   /**
@@ -84,6 +90,7 @@ export class GameEngine {
     this.gameState.mulliganState.active = true;
     this.gameState.mulliganState.currentPlayer = first;
     this.gameState.phase = PHASE.MULLIGAN;
+    this.#updateMulliganOverlay();
     this.addLog(first, "マリガンを開始しました。");
   }
 
@@ -155,6 +162,7 @@ export class GameEngine {
     const { first, second } = this.gameState.turnOrder;
     if (playerId === first) {
       this.gameState.mulliganState.currentPlayer = second;
+      this.#updateMulliganOverlay();
       this.addLog(second, "マリガンを開始しました。");
     } else {
       this.gameState.mulliganState.active = false;
@@ -162,6 +170,7 @@ export class GameEngine {
       this.gameState.turn.player = first;
       this.gameState.turn.number = 1;
       this.gameState.phase = PHASE.STAND;
+      this.#updateMulliganOverlay();
       this.addLog(first, "Turn 1を開始しました。");
     }
 
@@ -316,6 +325,44 @@ export class GameEngine {
    */
   render() {
     this.renderer.render(this.gameState);
+    this.renderListeners.forEach((listener) => listener(this.gameState));
+  }
+
+  /**
+   * 描画完了後のUI同期処理を購読する。
+   *
+   * @param {(gameState: GameState) => void} listener
+   * @returns {() => boolean} 購読解除関数
+   */
+  onRender(listener) {
+    if (typeof listener !== "function") {
+      throw new TypeError("listener must be a function.");
+    }
+
+    this.renderListeners.add(listener);
+    return () => this.renderListeners.delete(listener);
+  }
+
+  /**
+   * マリガン状態に対応する表示状態をGameStateへ反映する。
+   *
+   * @private
+   * @returns {void}
+   */
+  #updateMulliganOverlay() {
+    const { active, currentPlayer } = this.gameState.mulliganState;
+
+    if (!active || !currentPlayer) {
+      this.gameState.messageOverlay.visible = false;
+      this.gameState.messageOverlay.title = "";
+      this.gameState.messageOverlay.message = "";
+      return;
+    }
+
+    this.gameState.messageOverlay.visible = true;
+    this.gameState.messageOverlay.title = "MULLIGAN";
+    this.gameState.messageOverlay.message =
+      MULLIGAN_MESSAGES[currentPlayer] ?? "";
   }
 
   /**
