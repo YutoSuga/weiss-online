@@ -39,6 +39,7 @@ export class Renderer {
     this.clear();
     this.renderLog(gameState);
     this.updateMessageOverlay(gameState);
+    this.updateTurnEndButton(gameState);
 
     if (!gameState || typeof gameState !== "object") {
       return;
@@ -78,6 +79,25 @@ export class Renderer {
     if (messageElement) {
       messageElement.textContent = message;
     }
+  }
+
+  /**
+   * 通常ターン開始状態に基づいて、既存のターン終了ボタンを表示する。
+   *
+   * @param {import("../models/gameState.js").GameState|null|undefined} gameState
+   * @returns {void}
+   */
+  updateTurnEndButton(gameState) {
+    const button = this.rootElement?.querySelector('[data-action="end-turn"]');
+    if (!(button instanceof HTMLButtonElement)) {
+      return;
+    }
+
+    const normalPlayActive =
+      gameState?.started === true &&
+      gameState?.mulliganState?.active !== true;
+
+    button.hidden = !normalPlayActive;
   }
 
   /**

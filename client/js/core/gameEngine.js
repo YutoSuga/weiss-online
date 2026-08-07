@@ -54,6 +54,7 @@ export class GameEngine {
   startGame() {
     const { first, second } = this.gameState.turnOrder;
 
+    this.gameState.started = false;
     this.gameState.players[first].deck.shuffle();
     this.gameState.players[second].deck.shuffle();
     this.gameState.turn.player = null;
@@ -170,6 +171,7 @@ export class GameEngine {
       this.gameState.turn.player = first;
       this.gameState.turn.number = 1;
       this.gameState.phase = PHASE.STAND;
+      this.gameState.started = true;
       this.#updateMulliganOverlay();
       this.addLog(first, "Turn 1を開始しました。");
     }

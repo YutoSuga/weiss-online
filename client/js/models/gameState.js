@@ -46,6 +46,7 @@ export class GameState {
    * @param {'self'|'opponent'} [params.turnPlayer=params.turnOrder.first]
    * @param {number} [params.turnNumber=1]
    * @param {string} [params.phase=PHASE.STAND]
+   * @param {boolean} [params.started=false] 通常ターン開始済みか
    * @param {Partial<MulliganState>} [params.mulliganState={}]
    * @param {Partial<MessageOverlayState>} [params.messageOverlay={}]
    * @param {GameLogEntry[]} [params.log=[]]
@@ -61,6 +62,7 @@ export class GameState {
     turnPlayer = turnOrder.first,
     turnNumber = 1,
     phase = PHASE.STAND,
+    started = false,
     mulliganState = {},
     messageOverlay = {},
     log = [],
@@ -91,6 +93,10 @@ export class GameState {
 
     if (!PHASE_VALUES.includes(phase)) {
       throw new RangeError(`phase must be one of: ${PHASE_VALUES.join(", ")}.`);
+    }
+
+    if (typeof started !== "boolean") {
+      throw new TypeError("started must be a boolean.");
     }
 
     if (
@@ -147,6 +153,9 @@ export class GameState {
 
     /** @type {string} */
     this.phase = phase;
+
+    /** @type {boolean} */
+    this.started = started;
 
     /** @type {MulliganState} */
     this.mulliganState = {
