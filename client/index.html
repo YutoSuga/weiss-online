@@ -299,6 +299,24 @@
     </aside>
   </div>
 
+  <aside class="dev-panel" data-role="dev-panel" hidden>
+    <strong class="dev-panel-title">DEV</strong>
+
+    <dl class="dev-status-list">
+      <div><dt>started</dt><dd data-dev-status="started">-</dd></div>
+      <div><dt>turn</dt><dd data-dev-status="turn-player">-</dd></div>
+      <div><dt>turnNo</dt><dd data-dev-status="turn-number">-</dd></div>
+      <div><dt>phase</dt><dd data-dev-status="phase">-</dd></div>
+    </dl>
+
+    <div class="dev-actions">
+      <button type="button" data-dev-action="next-phase">次フェイズ</button>
+      <button type="button" data-dev-action="draw-self">自分1枚ドロー</button>
+      <button type="button" data-dev-action="draw-opponent">相手1枚ドロー</button>
+      <button type="button" data-dev-action="redraw">再描画</button>
+    </div>
+  </aside>
+
   <!-- 開発用 main.dev.js -->
   <!-- 本番用 main.js -->
   <script type="module" src="./js/main.dev.js"></script>

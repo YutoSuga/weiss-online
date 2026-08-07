@@ -779,3 +779,78 @@ ul {
   outline-offset: 2px;
   box-shadow: 0 0 14px rgba(250, 204, 21, 0.9);
 }
+
+/* =========================================================
+   Development-only panel
+   Hidden unless DevController is initialized from main.dev.js
+   ========================================================= */
+
+.dev-panel {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1100;
+  width: 220px;
+  padding: 12px;
+  border: 2px solid #f59e0b;
+  border-radius: 8px;
+  background: rgba(17, 24, 39, 0.96);
+  color: #f9fafb;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.dev-panel[hidden] {
+  display: none;
+}
+
+.dev-panel-title {
+  display: block;
+  margin-bottom: 8px;
+  color: #fbbf24;
+  font-size: 16px;
+  letter-spacing: 0.12em;
+}
+
+.dev-status-list {
+  display: grid;
+  gap: 3px;
+  margin: 0 0 10px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 12px;
+}
+
+.dev-status-list > div {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 6px;
+}
+
+.dev-status-list dt {
+  color: #d1d5db;
+}
+
+.dev-status-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.dev-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.dev-actions button {
+  min-height: 34px;
+  padding: 5px 6px;
+  border: 1px solid #d97706;
+  border-radius: 5px;
+  background: #78350f;
+  color: #fef3c7;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.dev-actions button:hover {
+  background: #92400e;
+}
