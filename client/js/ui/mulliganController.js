@@ -175,6 +175,12 @@ export class MulliganController {
     if (!this.button) {
       return;
     }
+
+    if (this.gameState?.mulliganState?.currentPlayer === "opponent") {
+      this.button.textContent = "相手操作中";
+      return;
+    }
+
     this.button.textContent = this.selectedIndexes.size > 0
       ? "選択したカードを交換"
       : "交換せず次へ";
