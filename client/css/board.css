@@ -760,6 +760,7 @@ ul {
 }
 
 .message-overlay[hidden],
+.message-overlay-text[hidden],
 .mulligan-confirm-button[hidden] {
   display: none;
 }

@@ -78,6 +78,7 @@ export class Renderer {
 
     if (messageElement) {
       messageElement.textContent = message;
+      messageElement.hidden = message.length === 0;
     }
   }
 

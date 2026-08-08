@@ -1,5 +1,10 @@
-import { PHASE } from "../constants/phase.js";
+import {
+  PHASE,
+  PHASE_LABELS,
+  PHASE_VALUES,
+} from "../constants/phase.js";
 import { ZONE } from "../constants/zone.js";
+import { POSITION } from "../models/card.js";
 import { GameState } from "../models/gameState.js";
 
 const PHASE_ORDER = Object.freeze([
@@ -92,7 +97,7 @@ export class GameEngine {
     this.gameState.mulliganState.currentPlayer = first;
     this.gameState.phase = PHASE.MULLIGAN;
     this.#updateMulliganOverlay();
-    this.addLog(first, "マリガンを開始しました。");
+    this.addLog(first, "手札交換を開始しました。");
   }
 
   /**
@@ -157,26 +162,28 @@ export class GameEngine {
     this.drawCards(playerId, discardedCards.length);
     this.addLog(
       playerId,
-      `${discardedCards.length}枚をマリガンしました。`,
+      `${discardedCards.length}枚を手札交換しました。`,
     );
 
     const { first, second } = this.gameState.turnOrder;
     if (playerId === first) {
       this.gameState.mulliganState.currentPlayer = second;
       this.#updateMulliganOverlay();
-      this.addLog(second, "マリガンを開始しました。");
+      this.addLog(second, "手札交換を開始しました。");
     } else {
       this.gameState.mulliganState.active = false;
       this.gameState.mulliganState.currentPlayer = null;
       this.gameState.turn.player = first;
       this.gameState.turn.number = 1;
-      this.gameState.phase = PHASE.STAND;
       this.gameState.started = true;
       this.#updateMulliganOverlay();
       this.addLog(first, "Turn 1を開始しました。");
+      this.enterPhase(PHASE.STAND);
     }
 
-    this.render();
+    if (playerId === first) {
+      this.render();
+    }
     return discardedCards;
   }
 
@@ -224,6 +231,18 @@ export class GameEngine {
       throw new Error("Cannot advance phases during mulligan.");
     }
 
+    const nextPhase = this.getNextPhase();
+    this.enterPhase(nextPhase);
+  }
+
+  /**
+   * 現在フェイズから次に入るフェイズだけを決定する。
+   * ENDの次は次プレイヤーのSTANDとなる。
+   *
+   * @private
+   * @returns {string}
+   */
+  getNextPhase() {
     const currentIndex = PHASE_ORDER.indexOf(this.gameState.phase);
 
     if (currentIndex === -1) {
@@ -231,18 +250,78 @@ export class GameEngine {
     }
 
     if (this.gameState.phase === PHASE.END) {
+      return PHASE.STAND;
+    }
+
+    return PHASE_ORDER[currentIndex + 1];
+  }
+
+  /**
+   * 指定フェイズへ入り、そのフェイズ固有の開始処理後に再描画する。
+   *
+   * @private
+   * ENDからSTANDへ入る場合は、先にターン交代を行う。
+   *
+   * @param {string} phase
+   * @param {{turnTransitionHandled?: boolean}} [options]
+   * @returns {void}
+   */
+  enterPhase(phase, { turnTransitionHandled = false } = {}) {
+    if (!PHASE_VALUES.includes(phase)) {
+      throw new RangeError(`Unknown phase: ${phase}.`);
+    }
+
+    if (
+      phase === PHASE.STAND &&
+      this.gameState.phase === PHASE.END &&
+      !turnTransitionHandled
+    ) {
       this.endTurn();
       return;
     }
 
-    const nextPhase = PHASE_ORDER[currentIndex + 1];
-    this.gameState.phase = nextPhase;
+    this.gameState.phase = phase;
+    this.#updatePhaseMessageOverlay(phase);
 
-    if (nextPhase === PHASE.DRAW) {
-      this.drawCards(this.gameState.turn.player, 1);
+    switch (phase) {
+      case PHASE.STAND:
+        this.startStandPhase();
+        break;
+      case PHASE.DRAW:
+        this.startDrawPhase();
+        break;
+      default:
+        break;
     }
 
     this.render();
+  }
+
+  /**
+   * 現在ターンのプレイヤーの舞台にある全カードをSTANDにする。
+   *
+   * @private
+   * @returns {void}
+   */
+  startStandPhase() {
+    const playerId = this.gameState.turn.player;
+    this.#assertPlayerId(playerId);
+
+    this.gameState.players[playerId].stage.forEach((card) => {
+      card.setPosition(POSITION.STAND);
+    });
+  }
+
+  /**
+   * 現在ターンのプレイヤーが通常の1枚ドローを行う。
+   *
+   * @private
+   * @returns {void}
+   */
+  startDrawPhase() {
+    const playerId = this.gameState.turn.player;
+    this.#assertPlayerId(playerId);
+    this.drawCards(playerId, 1);
   }
 
   /**
@@ -311,12 +390,11 @@ export class GameEngine {
       throw new RangeError(`Unknown current player: ${currentPlayer}.`);
     }
 
-    this.gameState.phase = PHASE.STAND;
     this.addLog(
       this.gameState.turn.player,
       `Turn ${this.gameState.turn.number}を開始しました。`,
     );
-    this.render();
+    this.enterPhase(PHASE.STAND, { turnTransitionHandled: true });
   }
 
   /**
@@ -365,6 +443,25 @@ export class GameEngine {
     this.gameState.messageOverlay.title = "手札交換";
     this.gameState.messageOverlay.message =
       MULLIGAN_MESSAGES[currentPlayer] ?? "";
+  }
+
+  /**
+   * 通常フェイズに対応する表示状態をmessageOverlayへ反映する。
+   * 独立表示を持たないフェイズでは現在の表示を維持する。
+   *
+   * @private
+   * @param {string} phase
+   * @returns {void}
+   */
+  #updatePhaseMessageOverlay(phase) {
+    const title = PHASE_LABELS[phase];
+    if (!title) {
+      return;
+    }
+
+    this.gameState.messageOverlay.visible = true;
+    this.gameState.messageOverlay.title = title;
+    this.gameState.messageOverlay.message = "";
   }
 
   /**
