@@ -16,8 +16,8 @@ const PHASE_ORDER = Object.freeze([
 const INITIAL_HAND_SIZE = 5;
 const MAX_LOG_ENTRIES = 20;
 const MULLIGAN_MESSAGES = Object.freeze({
-  self: "あなたがマリガン中です",
-  opponent: "相手がマリガン中です",
+  self: "交換する手札を選択してください。",
+  opponent: "相手が手札交換中です",
 });
 
 /**
@@ -362,7 +362,7 @@ export class GameEngine {
     }
 
     this.gameState.messageOverlay.visible = true;
-    this.gameState.messageOverlay.title = "MULLIGAN";
+    this.gameState.messageOverlay.title = "手札交換";
     this.gameState.messageOverlay.message =
       MULLIGAN_MESSAGES[currentPlayer] ?? "";
   }
