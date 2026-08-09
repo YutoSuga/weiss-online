@@ -12,6 +12,26 @@
     <h1>weiss-online</h1>
   </header>
 
+  <section class="phase-bar" data-role="phase-bar" aria-label="現在のターンとフェイズ">
+    <div class="phase-bar__turn" data-phase-bar-turn>Turn -</div>
+
+    <div class="phase-bar__phases" aria-label="フェイズ進行">
+      <span class="phase-bar__phase" data-phase="stand">STAND</span>
+      <span class="phase-bar__separator" aria-hidden="true">―</span>
+      <span class="phase-bar__phase" data-phase="draw">DRAW</span>
+      <span class="phase-bar__separator" aria-hidden="true">―</span>
+      <span class="phase-bar__phase" data-phase="clock">CLOCK</span>
+      <span class="phase-bar__separator" aria-hidden="true">―</span>
+      <span class="phase-bar__phase" data-phase="main">MAIN</span>
+      <span class="phase-bar__separator" aria-hidden="true">―</span>
+      <span class="phase-bar__phase" data-phase="climax">CLIMAX</span>
+      <span class="phase-bar__separator" aria-hidden="true">―</span>
+      <span class="phase-bar__phase" data-phase="attack">ATTACK</span>
+      <span class="phase-bar__separator" aria-hidden="true">―</span>
+      <span class="phase-bar__phase" data-phase="end">END</span>
+    </div>
+  </section>
+
   <aside
     class="message-overlay"
     data-message-overlay
@@ -284,6 +304,13 @@
         data-action="confirm-mulligan"
         hidden
       >交換せず次へ</button>
+
+      <button
+        class="end-turn-button clock-action-button"
+        type="button"
+        data-action="confirm-clock"
+        hidden
+      >クロックに置かず次へ</button>
 
       <section class="info-panel self-info">
         <h2>自分の情報</h2>

@@ -7,6 +7,7 @@ import { Renderer } from "./core/renderer.js";
 import { GameEngine } from "./core/gameEngine.js";
 import { GameStartController } from "./ui/gameStartController.js";
 import { MulliganController } from "./ui/mulliganController.js";
+import { ClockController } from "./ui/clockController.js";
 import { DevController } from "./ui/devController.js";
 import { GameState } from "./models/gameState.js";
 import { Player } from "./models/player.js";
@@ -135,6 +136,14 @@ const mulliganController = new MulliganController({
 
 mulliganController.init();
 
+const clockController = new ClockController({
+  gameEngine,
+  gameState,
+  rootElement: document,
+});
+
+clockController.init();
+
 const devController = new DevController({
   gameEngine,
   gameState,
@@ -207,4 +216,5 @@ window.Card = Card;
 window.gameEngine = gameEngine;
 window.gameStartController = gameStartController;
 window.mulliganController = mulliganController;
+window.clockController = clockController;
 window.devController = devController;

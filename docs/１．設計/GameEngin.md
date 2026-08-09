@@ -181,6 +181,45 @@ STANDとDRAWは開始処理後も同じフェイズに留まり、自動的に�
 
 > TODO: `PHASE.ENCORE`は既存フローへの影響を避けるため暫定的にトップレベルフェイズとして維持する。ATTACK内部のEncore Stepを実装する際に整理する。
 
+## CLOCK Phase v1
+
+### Methods
+
+| Method | 日本語名 | Purpose | Processing summary |
+|---|---|---|---|
+| `startClockPhase()` | クロックフェイズ開始 | プレイヤー操作待ちへ入る | 現在プレイヤーを検証し、カード移動・ドロー・自動進行は行わない |
+| `clockCard(playerId, handIndex)` | クロック配置 | 手札1枚をクロックへ置き、2枚引いてMAINへ進む | 配置後に描画し、2枚ドロー後に再描画してから`nextPhase()`を呼ぶ |
+| `skipClockPhase(playerId)` | クロックを置かず次へ | カードを置かずMAINへ進む | ドローせず`nextPhase()`を呼ぶ |
+| `moveHandCardToClock(playerId, handIndex)` | 手札からクロックへ移動 | 手札1枚をクロック末尾へ移す | GameStateだけを更新し、描画やフェイズ進行は行わない |
+
+`handIndex`はHTMLおよび`Card.index`と同じ1始まりとする。不正フェイズ、不正プレイヤー、不正index、存在しないカードはGameEngineで拒否する。CLOCK状態は`gameState.phase === PHASE.CLOCK`だけで判定し、専用の`clockState`は持たない。
+
+`clockCard()`は将来の割り込みルールを挿入できるよう、次の処理境界を厳守する。
+
+```text
+HAND -> CLOCK
+    ↓
+render()
+    ↓
+drawCards(playerId, 2)
+    ↓
+render()
+    ↓
+nextPhase()
+    ↓
+MAIN
+```
+
+共通設計ルールは、低レベル操作ではGameStateだけを更新し、確定したルール単位のメソッドが描画タイミングを管理することとする。このため、`moveHandCardToClock()`、`drawCard()`、`drawCards()`は内部で描画しない。将来はクロック配置と2枚ドローの間へLevel Up、Refresh、Refresh Point、`effectQueue`処理を追加する。
+
+### CLOCK Phase remaining TODO
+
+- Level Up
+- Refresh
+- Refresh Point / Refresh Damage
+- opponent automatic CLOCK behavior
+- pending rule / `effectQueue` resolution
+
 ## Future Extensions
 
 - 先攻プレイヤーのランダム決定

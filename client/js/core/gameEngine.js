@@ -290,6 +290,9 @@ export class GameEngine {
       case PHASE.DRAW:
         this.startDrawPhase();
         break;
+      case PHASE.CLOCK:
+        this.startClockPhase();
+        break;
       default:
         break;
     }
@@ -322,6 +325,87 @@ export class GameEngine {
     const playerId = this.gameState.turn.player;
     this.#assertPlayerId(playerId);
     this.drawCards(playerId, 1);
+  }
+
+  /**
+   * CLOCKフェイズへ入り、現在のプレイヤーからの操作を待つ。
+   * カード移動やドローは、プレイヤーが行動を確定するまで実行しない。
+   *
+   * @returns {void}
+   */
+  startClockPhase() {
+    this.#assertPlayerId(this.gameState.turn.player);
+  }
+
+  /**
+   * 手札1枚をクロックへ置き、確定した処理単位ごとに描画して2枚引く。
+   * handIndexはCard.indexと同じ1始まりで扱う。
+   *
+   * @param {'self'|'opponent'} playerId
+   * @param {number} handIndex
+   * @returns {import("../models/card.js").Card} クロックへ置いたカード
+   */
+  clockCard(playerId, handIndex) {
+    this.#assertClockAction(playerId);
+    const card = this.moveHandCardToClock(playerId, handIndex);
+
+    this.addLog(playerId, "手札を1枚クロックに置きました。");
+    this.render();
+    this.drawCards(playerId, 2);
+    this.render();
+    this.nextPhase();
+
+    return card;
+  }
+
+  /**
+   * カードをクロックへ置かず、CLOCKフェイズを終了する。
+   *
+   * @param {'self'|'opponent'} playerId
+   * @returns {void}
+   */
+  skipClockPhase(playerId) {
+    this.#assertClockAction(playerId);
+    this.addLog(playerId, "クロックに置かず次のフェイズへ進みました。");
+    this.nextPhase();
+  }
+
+  /**
+   * 手札1枚をクロックの末尾へ移動する低レベル操作。
+   * GameStateだけを更新し、描画・ドロー・フェイズ進行は行わない。
+   *
+   * @param {'self'|'opponent'} playerId
+   * @param {number} handIndex 1始まりの手札位置
+   * @returns {import("../models/card.js").Card}
+   */
+  moveHandCardToClock(playerId, handIndex) {
+    this.#assertPlayerId(playerId);
+
+    if (!Number.isInteger(handIndex) || handIndex < 1) {
+      throw new TypeError("handIndex must be a positive integer.");
+    }
+
+    const player = this.gameState.players[playerId];
+    if (handIndex > player.hand.length) {
+      throw new RangeError("handIndex is outside the hand.");
+    }
+
+    const [card] = player.hand.splice(handIndex - 1, 1);
+    if (!card) {
+      throw new RangeError("The selected hand card does not exist.");
+    }
+
+    this.#reindexCards(player.hand);
+    card.owner = playerId;
+    card.moveTo({
+      zone: ZONE.CLOCK,
+      row: null,
+      index: player.clock.length + 1,
+    });
+    card.setPosition(POSITION.STAND);
+    player.clock.push(card);
+
+    return card;
   }
 
   /**
@@ -474,6 +558,21 @@ export class GameEngine {
       playerId !== this.gameState.turnOrder.second
     ) {
       throw new RangeError(`Unknown player: ${playerId}.`);
+    }
+  }
+
+  /**
+   * @param {unknown} playerId
+   * @returns {asserts playerId is 'self'|'opponent'}
+   */
+  #assertClockAction(playerId) {
+    if (this.gameState.phase !== PHASE.CLOCK) {
+      throw new Error("CLOCK action is only available during CLOCK phase.");
+    }
+
+    this.#assertPlayerId(playerId);
+    if (this.gameState.turn.player !== playerId) {
+      throw new Error(`It is not ${playerId}'s turn.`);
     }
   }
 

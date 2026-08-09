@@ -1,6 +1,11 @@
 import { ZONE } from "../constants/zone.js";
+import { PHASE } from "../constants/phase.js";
 
 const OWNERS = Object.freeze(["self", "opponent"]);
+const TURN_PLAYER_LABELS = Object.freeze({
+  self: "あなた",
+  opponent: "相手",
+});
 const DEFAULT_FACE = Object.freeze({
   [ZONE.DECK]: "down",
   [ZONE.HAND]: "up",
@@ -39,6 +44,7 @@ export class Renderer {
     this.clear();
     this.renderLog(gameState);
     this.updateMessageOverlay(gameState);
+    this.updatePhaseBar(gameState);
     this.updateTurnEndButton(gameState);
 
     if (!gameState || typeof gameState !== "object") {
@@ -80,6 +86,51 @@ export class Renderer {
       messageElement.textContent = message;
       messageElement.hidden = message.length === 0;
     }
+  }
+
+  /**
+   * 現在ターンと通常フェイズを固定フェイズバーへ反映する。
+   * DOM構造は生成せず、既存要素の表示状態だけを更新する。
+   *
+   * @param {import("../models/gameState.js").GameState|null|undefined} gameState
+   * @returns {void}
+   */
+  updatePhaseBar(gameState) {
+    const phaseBar = this.rootElement?.querySelector('[data-role="phase-bar"]');
+    if (!(phaseBar instanceof HTMLElement)) {
+      return;
+    }
+
+    const started = gameState?.started === true;
+    const turnNumber = Number.isInteger(gameState?.turn?.number)
+      ? gameState.turn.number
+      : null;
+    const playerLabel = TURN_PLAYER_LABELS[gameState?.turn?.player] ?? "-";
+    const turnElement = phaseBar.querySelector("[data-phase-bar-turn]");
+
+    if (turnElement) {
+      turnElement.textContent = started
+        ? `Turn ${turnNumber ?? "-"}　${playerLabel}`
+        : "Turn -";
+    }
+
+    const currentPhase = started
+      ? gameState?.phase === PHASE.ENCORE
+        ? PHASE.ATTACK
+        : gameState?.phase
+      : null;
+
+    phaseBar.querySelectorAll("[data-phase]").forEach((phaseElement) => {
+      const isCurrent =
+        currentPhase != null && phaseElement.dataset.phase === currentPhase;
+      phaseElement.classList.toggle("is-current", isCurrent);
+
+      if (isCurrent) {
+        phaseElement.setAttribute("aria-current", "step");
+      } else {
+        phaseElement.removeAttribute("aria-current");
+      }
+    });
   }
 
   /**
