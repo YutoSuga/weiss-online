@@ -545,7 +545,9 @@ export class GameEngine {
 
     this.gameState.messageOverlay.visible = true;
     this.gameState.messageOverlay.title = title;
-    this.gameState.messageOverlay.message = "";
+    this.gameState.messageOverlay.message = phase === PHASE.CLOCK
+      ? "クロックに置く手札を選択してください。"
+      : "";
   }
 
   /**
