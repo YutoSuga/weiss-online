@@ -4,8 +4,14 @@ import {
   PHASE_VALUES,
 } from "../constants/phase.js";
 import { ZONE } from "../constants/zone.js";
-import { POSITION } from "../models/card.js";
+import {
+  PROCESS_STATUS,
+  PROCESS_TYPE,
+  REFRESH_STEP,
+} from "../constants/process.js";
+import { FACE, POSITION } from "../models/card.js";
 import { GameState } from "../models/gameState.js";
+import { ProcessManager } from "./processManager.js";
 
 const PHASE_ORDER = Object.freeze([
   PHASE.STAND,
@@ -34,8 +40,13 @@ export class GameEngine {
    * @param {object} params
    * @param {GameState} params.gameState
    * @param {{render: (gameState: GameState) => void}} params.renderer
+   * @param {ProcessManager} [params.processManager]
    */
-  constructor({ gameState, renderer }) {
+  constructor({
+    gameState,
+    renderer,
+    processManager = new ProcessManager(gameState),
+  }) {
     if (!(gameState instanceof GameState)) {
       throw new TypeError("gameState must be a GameState instance.");
     }
@@ -44,8 +55,17 @@ export class GameEngine {
       throw new TypeError("renderer must provide a render() method.");
     }
 
+    if (!(processManager instanceof ProcessManager)) {
+      throw new TypeError("processManager must be a ProcessManager instance.");
+    }
+
+    if (processManager.gameState !== gameState) {
+      throw new TypeError("processManager must use the supplied gameState.");
+    }
+
     this.gameState = gameState;
     this.renderer = renderer;
+    this.processManager = processManager;
     /** @type {Set<(gameState: GameState) => void>} */
     this.renderListeners = new Set();
   }
@@ -406,6 +426,111 @@ export class GameEngine {
     player.clock.push(card);
 
     return card;
+  }
+
+  /**
+   * 指定プレイヤーのREFRESH Processをスタックへ追加して実行する。
+   * Phase Bでは自動検出を行わず、明示的な呼び出しだけを受け付ける。
+   *
+   * @param {'self'|'opponent'} playerId
+   * @returns {import("./processManager.js").Process}
+   */
+  startRefresh(playerId) {
+    this.#assertPlayerId(playerId);
+
+    const process = this.processManager.pushProcess({
+      type: PROCESS_TYPE.REFRESH,
+      playerId,
+      step: REFRESH_STEP.MOVE_WAITING_ROOM_TO_DECK,
+      status: PROCESS_STATUS.RUNNING,
+      context: {},
+    });
+
+    this.addLog(playerId, "リフレッシュを開始しました。");
+    this.executeRefreshProcess();
+    return process;
+  }
+
+  /**
+   * スタック最上段のREFRESH Processを、次のstepから実行する。
+   * 各確定stepで次stepを先に設定してから描画する。
+   *
+   * @returns {import("./processManager.js").Process|null}
+   */
+  executeRefreshProcess() {
+    const refreshProcess = this.processManager.getCurrentProcess();
+    if (!refreshProcess) {
+      return null;
+    }
+
+    if (refreshProcess.type !== PROCESS_TYPE.REFRESH) {
+      throw new Error("The current Process is not REFRESH.");
+    }
+
+    while (this.processManager.getCurrentProcess() === refreshProcess) {
+      switch (refreshProcess.step) {
+        case REFRESH_STEP.MOVE_WAITING_ROOM_TO_DECK: {
+          const movedCount = this.moveWaitingRoomToDeck(
+            refreshProcess.playerId,
+          );
+          this.processManager.updateStep(REFRESH_STEP.SHUFFLE_DECK);
+          this.addLog(
+            refreshProcess.playerId,
+            `控え室のカード${movedCount}枚を山札に戻しました。`,
+          );
+          this.render();
+          break;
+        }
+        case REFRESH_STEP.SHUFFLE_DECK: {
+          const player = this.gameState.players[refreshProcess.playerId];
+          player.deck.shuffle();
+          this.#reindexCards(player.deck.cards);
+          this.processManager.updateStep(REFRESH_STEP.COMPLETE);
+          this.addLog(refreshProcess.playerId, "山札をシャッフルしました。");
+          this.render();
+          break;
+        }
+        case REFRESH_STEP.COMPLETE:
+          this.processManager.popProcess();
+          this.addLog(refreshProcess.playerId, "リフレッシュが完了しました。");
+          this.render();
+          return refreshProcess;
+        default:
+          throw new RangeError(
+            `Unknown REFRESH step: ${refreshProcess.step}.`,
+          );
+      }
+    }
+
+    return refreshProcess;
+  }
+
+  /**
+   * 控え室の全カードを山札末尾へ移す低レベル操作。
+   * GameStateだけを更新し、シャッフル・描画・Process操作は行わない。
+   *
+   * @param {'self'|'opponent'} playerId
+   * @returns {number} 山札へ移動した枚数
+   */
+  moveWaitingRoomToDeck(playerId) {
+    this.#assertPlayerId(playerId);
+    const player = this.gameState.players[playerId];
+    const cards = player.waitingRoom.splice(0, player.waitingRoom.length);
+
+    cards.forEach((card) => {
+      card.owner = playerId;
+      card.moveTo({
+        zone: ZONE.DECK,
+        row: null,
+        index: player.deck.cards.length + 1,
+      });
+      card.setFace(FACE.DOWN);
+      card.setPosition(POSITION.STAND);
+      player.deck.addBottom(card);
+    });
+
+    this.#reindexCards(player.deck.cards);
+    return cards.length;
   }
 
   /**

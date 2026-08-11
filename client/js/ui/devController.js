@@ -173,6 +173,12 @@ export class DevController {
           break;
         case "refresh-stack":
           break;
+        case "test-refresh":
+          this.#requireMethod(this.gameEngine, "startRefresh").call(
+            this.gameEngine,
+            "self",
+          );
+          break;
         default:
           return;
       }

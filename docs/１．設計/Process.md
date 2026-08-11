@@ -79,9 +79,50 @@ ruleState = {
 
 将来、`effectQueue`が次に解決するカード効果を選び、カード効果の実行開始後はProcessとして表現することで、REFRESHやLEVEL_UPによる中断・再開を可能にする方向を検討する。Phase Aでは、この連携やeffectQueueの動作を実装しない。
 
+## REFRESH Process v1
+
+REFRESHはGameEngineが明示的に開始し、ProcessManagerを通して次のProcessを`processStack`末尾へ追加する。
+
+```js
+{
+  type: PROCESS_TYPE.REFRESH,
+  playerId,
+  step: REFRESH_STEP.MOVE_WAITING_ROOM_TO_DECK,
+  status: PROCESS_STATUS.RUNNING,
+  context: {},
+}
+```
+
+`REFRESH_STEP`は次の順で進む。stepは常に「次に実行する処理」を表す。
+
+```text
+MOVE_WAITING_ROOM_TO_DECK
+    ↓ 控え室の全カードを山札へ移動
+step = SHUFFLE_DECK
+    ↓ render
+SHUFFLE_DECK
+    ↓ 既存のDeck.shuffle()を実行
+step = COMPLETE
+    ↓ render
+COMPLETE
+    ↓ processStackからREFRESHをpop
+```
+
+REFRESHのstatusは全stepで`PROCESS_STATUS.RUNNING`とする。REFRESHの下に別Processがある場合、pop後はそのProcessが自然に現在Processへ戻るが、Phase Bでは自動再開処理を行わない。
+
+控え室が空でもREFRESHは拒否せず、移動枚数0枚の安全なno-opとしてシャッフルと完了まで実行する。これは開発用の明示実行を安全にするためであり、敗北条件を意味しない。
+
+Phase Bに含めないもの：
+
+- 山札切れによるREFRESHの自動検出
+- REFRESHの実行可能条件判定
+- リフレッシュペナルティおよび`pendingChecks`
+- `pendingInterrupts`
+- 敗北条件
+
 ## Remaining TODO
 
-- REFRESHおよびリフレッシュペナルティ
+- REFRESHの自動検出およびリフレッシュペナルティ
 - LEVEL_UP
 - 割り込み検出と優先順位
 - `pendingInterrupts`の解決

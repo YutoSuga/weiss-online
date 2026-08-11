@@ -25,3 +25,12 @@ export const PROCESS_STATUS = Object.freeze({
 export const PROCESS_STATUS_VALUES = Object.freeze(
   Object.values(PROCESS_STATUS),
 );
+
+/**
+ * REFRESH Processで次に実行する処理。
+ */
+export const REFRESH_STEP = Object.freeze({
+  MOVE_WAITING_ROOM_TO_DECK: "move_waiting_room_to_deck",
+  SHUFFLE_DECK: "shuffle_deck",
+  COMPLETE: "complete",
+});

@@ -117,12 +117,13 @@ const gameState = new GameState({
 const renderer = new Renderer(document);
 const card1 = selfDeck.cards[0];
 
+const processManager = new ProcessManager(gameState);
+
 const gameEngine = new GameEngine({
   gameState,
   renderer,
+  processManager,
 });
-
-const processManager = new ProcessManager(gameState);
 
 const gameStartController = new GameStartController({
   gameEngine,
