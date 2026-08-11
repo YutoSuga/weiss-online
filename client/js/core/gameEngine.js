@@ -7,6 +7,7 @@ import { ZONE } from "../constants/zone.js";
 import {
   PROCESS_STATUS,
   PROCESS_TYPE,
+  LEVEL_UP_STEP,
   REFRESH_STEP,
 } from "../constants/process.js";
 import { FACE, POSITION } from "../models/card.js";
@@ -251,6 +252,10 @@ export class GameEngine {
       throw new Error("Cannot advance phases during mulligan.");
     }
 
+    if (this.#isWaitingForProcessInput()) {
+      throw new Error("Cannot advance phases while a Process is waiting for input.");
+    }
+
     const nextPhase = this.getNextPhase();
     this.enterPhase(nextPhase);
   }
@@ -429,6 +434,35 @@ export class GameEngine {
   }
 
   /**
+   * 山札の一番上のカードをクロック末尾へ移動する低レベル操作。
+   * GameStateだけを更新し、描画・フェイズ進行・割り込み判定は行わない。
+   *
+   * @param {'self'|'opponent'} playerId
+   * @returns {import("../models/card.js").Card|null}
+   */
+  moveDeckCardToClock(playerId) {
+    this.#assertPlayerId(playerId);
+    const player = this.gameState.players[playerId];
+    const card = player.deck.draw();
+
+    if (!card) {
+      return null;
+    }
+
+    card.owner = playerId;
+    card.moveTo({
+      zone: ZONE.CLOCK,
+      row: null,
+      index: player.clock.length + 1,
+    });
+    card.setFace(FACE.UP);
+    card.setPosition(POSITION.STAND);
+    player.clock.push(card);
+    this.#reindexCards(player.deck.cards);
+    return card;
+  }
+
+  /**
    * 指定プレイヤーのREFRESH Processをスタックへ追加して実行する。
    * Phase Bでは自動検出を行わず、明示的な呼び出しだけを受け付ける。
    *
@@ -531,6 +565,117 @@ export class GameEngine {
 
     this.#reindexCards(player.deck.cards);
     return cards.length;
+  }
+
+  /**
+   * 指定プレイヤーのLEVEL_UP Processを開始する。
+   *
+   * @param {'self'|'opponent'} playerId
+   * @returns {import("./processManager.js").Process}
+   */
+  startLevelUp(playerId) {
+    this.#assertPlayerId(playerId);
+
+    const process = this.processManager.pushProcess({
+      type: PROCESS_TYPE.LEVEL_UP,
+      playerId,
+      step: LEVEL_UP_STEP.PREPARE_SELECTION,
+      status: PROCESS_STATUS.RUNNING,
+      context: {},
+    });
+
+    try {
+      this.addLog(playerId, "レベルアップを開始しました。");
+      this.executeLevelUpProcess();
+      return process;
+    } catch (error) {
+      if (this.processManager.getCurrentProcess() === process) {
+        this.processManager.popProcess();
+      }
+      this.render();
+      throw error;
+    }
+  }
+
+  /**
+   * 現在のLEVEL_UP Processを入力待ちまたは完了まで進める。
+   *
+   * @returns {import("./processManager.js").Process|null}
+   */
+  executeLevelUpProcess() {
+    const levelUpProcess = this.processManager.getCurrentProcess();
+    if (!levelUpProcess) {
+      return null;
+    }
+    if (levelUpProcess.type !== PROCESS_TYPE.LEVEL_UP) {
+      throw new Error("The current Process is not LEVEL_UP.");
+    }
+
+    while (this.processManager.getCurrentProcess() === levelUpProcess) {
+      switch (levelUpProcess.step) {
+        case LEVEL_UP_STEP.PREPARE_SELECTION:
+          this.#assertLevelUpCandidates(levelUpProcess.playerId);
+          this.processManager.updateStep(LEVEL_UP_STEP.WAIT_FOR_SELECTION);
+          this.processManager.updateStatus(PROCESS_STATUS.WAITING_INPUT);
+          this.#showLevelUpOverlay();
+          this.render();
+          return levelUpProcess;
+        case LEVEL_UP_STEP.WAIT_FOR_SELECTION:
+          if (levelUpProcess.status !== PROCESS_STATUS.WAITING_INPUT) {
+            throw new Error("LEVEL_UP selection step must be waiting for input.");
+          }
+          return levelUpProcess;
+        case LEVEL_UP_STEP.RESOLVE_SELECTION:
+          this.#resolveLevelUpSelection(levelUpProcess);
+          this.processManager.updateStep(LEVEL_UP_STEP.COMPLETE);
+          this.render();
+          break;
+        case LEVEL_UP_STEP.COMPLETE:
+          this.processManager.popProcess();
+          this.addLog(levelUpProcess.playerId, "レベルアップが完了しました。");
+          this.#restorePhaseMessageOverlay();
+          this.render();
+          return levelUpProcess;
+        default:
+          throw new RangeError(`Unknown LEVEL_UP step: ${levelUpProcess.step}.`);
+      }
+    }
+
+    return levelUpProcess;
+  }
+
+  /**
+   * LEVEL_UPでレベルに置くクロックカードを確定する。
+   * selectedClockIndexはclock配列の0始まりインデックス。
+   *
+   * @param {'self'|'opponent'} playerId
+   * @param {number} selectedClockIndex
+   * @returns {import("../models/card.js").Card}
+   */
+  submitLevelUpSelection(playerId, selectedClockIndex) {
+    this.#assertPlayerId(playerId);
+    const process = this.processManager.getCurrentProcess();
+
+    if (!process || process.type !== PROCESS_TYPE.LEVEL_UP) {
+      throw new Error("LEVEL_UP is not the current Process.");
+    }
+    if (
+      process.step !== LEVEL_UP_STEP.WAIT_FOR_SELECTION ||
+      process.status !== PROCESS_STATUS.WAITING_INPUT
+    ) {
+      throw new Error("LEVEL_UP is not waiting for a selection.");
+    }
+    if (process.playerId !== playerId) {
+      throw new Error("playerId does not match the LEVEL_UP Process.");
+    }
+
+    this.#assertLevelUpSelection(playerId, selectedClockIndex);
+    process.context.selectedClockIndex = selectedClockIndex;
+    this.processManager.updateStep(LEVEL_UP_STEP.RESOLVE_SELECTION);
+    this.processManager.updateStatus(PROCESS_STATUS.RUNNING);
+    this.executeLevelUpProcess();
+
+    return this.gameState.players[playerId].level.at(-1);
   }
 
   /**
@@ -675,6 +820,112 @@ export class GameEngine {
       : "";
   }
 
+  /** @returns {void} */
+  #showLevelUpOverlay() {
+    this.gameState.messageOverlay.visible = true;
+    this.gameState.messageOverlay.title = "レベルアップ";
+    this.gameState.messageOverlay.message =
+      "レベルに置くカードを選択してください。";
+  }
+
+  /** @returns {void} */
+  #restorePhaseMessageOverlay() {
+    this.gameState.messageOverlay.visible = false;
+    this.gameState.messageOverlay.title = "";
+    this.gameState.messageOverlay.message = "";
+    this.#updatePhaseMessageOverlay(this.gameState.phase);
+  }
+
+  /**
+   * @param {'self'|'opponent'} playerId
+   * @returns {import("../models/card.js").Card[]}
+   */
+  #assertLevelUpCandidates(playerId) {
+    this.#assertPlayerId(playerId);
+    const clock = this.gameState.players[playerId]?.clock;
+
+    if (!Array.isArray(clock) || clock.length < 7) {
+      throw new Error("LEVEL_UP requires at least 7 CLOCK cards.");
+    }
+
+    const candidates = clock.slice(0, 7);
+    if (candidates.length !== 7 || candidates.some((card) => !card)) {
+      throw new Error("LEVEL_UP candidates clock[0] through clock[6] must exist.");
+    }
+
+    return candidates;
+  }
+
+  /**
+   * @param {'self'|'opponent'} playerId
+   * @param {number} selectedClockIndex
+   * @returns {import("../models/card.js").Card[]}
+   */
+  #assertLevelUpSelection(playerId, selectedClockIndex) {
+    if (!Number.isInteger(selectedClockIndex)) {
+      throw new TypeError("selectedClockIndex must be an integer.");
+    }
+    if (selectedClockIndex < 0 || selectedClockIndex > 6) {
+      throw new RangeError("selectedClockIndex must be between 0 and 6.");
+    }
+
+    const candidates = this.#assertLevelUpCandidates(playerId);
+    if (!candidates[selectedClockIndex]) {
+      throw new RangeError("The selected CLOCK card does not exist.");
+    }
+    return candidates;
+  }
+
+  /**
+   * @param {import("./processManager.js").Process} process
+   * @returns {import("../models/card.js").Card}
+   */
+  #resolveLevelUpSelection(process) {
+    const { playerId } = process;
+    const selectedClockIndex = process.context.selectedClockIndex;
+    const candidates = this.#assertLevelUpSelection(
+      playerId,
+      selectedClockIndex,
+    );
+    const player = this.gameState.players[playerId];
+    const selectedCard = candidates[selectedClockIndex];
+
+    player.clock.splice(0, 7);
+    candidates.forEach((card, candidateIndex) => {
+      card.owner = playerId;
+      card.setFace(FACE.UP);
+      card.setPosition(POSITION.STAND);
+
+      if (candidateIndex === selectedClockIndex) {
+        card.moveTo({
+          zone: ZONE.LEVEL,
+          row: null,
+          index: player.level.length + 1,
+        });
+        player.level.push(card);
+      } else {
+        card.moveTo({
+          zone: ZONE.WAITING_ROOM,
+          row: null,
+          index: player.waitingRoom.length + 1,
+        });
+        player.waitingRoom.push(card);
+      }
+    });
+
+    this.#reindexCards(player.clock);
+    this.#reindexCards(player.level);
+    this.#reindexCards(player.waitingRoom);
+    this.addLog(playerId, "クロック7枚をレベルアップ処理しました。");
+    return selectedCard;
+  }
+
+  /** @returns {boolean} */
+  #isWaitingForProcessInput() {
+    return this.processManager.getCurrentProcess()?.status ===
+      PROCESS_STATUS.WAITING_INPUT;
+  }
+
   /**
    * @param {unknown} playerId
    * @returns {asserts playerId is 'self'|'opponent'}
@@ -693,6 +944,10 @@ export class GameEngine {
    * @returns {asserts playerId is 'self'|'opponent'}
    */
   #assertClockAction(playerId) {
+    if (this.#isWaitingForProcessInput()) {
+      throw new Error("CLOCK action is blocked while a Process awaits input.");
+    }
+
     if (this.gameState.phase !== PHASE.CLOCK) {
       throw new Error("CLOCK action is only available during CLOCK phase.");
     }

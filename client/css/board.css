@@ -663,7 +663,7 @@ ul {
 }
 
 .clock-zone .card-slot {
-  margin-right: -32px;
+  margin-right: -36px;
 }
 
 .clock-zone .card-slot:last-child {
@@ -816,12 +816,14 @@ ul {
 .message-overlay[hidden],
 .message-overlay-text[hidden],
 .mulligan-confirm-button[hidden],
-.clock-action-button[hidden] {
+.clock-action-button[hidden],
+.level-up-confirm-button[hidden] {
   display: none;
 }
 
 .mulligan-confirm-button:disabled,
-.clock-action-button:disabled {
+.clock-action-button:disabled,
+.level-up-confirm-button:disabled {
   background: #6b7280;
   color: #e5e7eb;
   cursor: not-allowed;

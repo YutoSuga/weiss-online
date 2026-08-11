@@ -9,6 +9,7 @@ import { ProcessManager } from "./core/processManager.js";
 import { GameStartController } from "./ui/gameStartController.js";
 import { MulliganController } from "./ui/mulliganController.js";
 import { ClockController } from "./ui/clockController.js";
+import { LevelUpController } from "./ui/levelUpController.js";
 import { DevController } from "./ui/devController.js";
 import { GameState } from "./models/gameState.js";
 import { Player } from "./models/player.js";
@@ -149,6 +150,15 @@ const clockController = new ClockController({
 
 clockController.init();
 
+const levelUpController = new LevelUpController({
+  gameEngine,
+  gameState,
+  processManager,
+  rootElement: document,
+});
+
+levelUpController.init();
+
 const devController = new DevController({
   gameEngine,
   gameState,
@@ -225,4 +235,5 @@ window.PROCESS_STATUS = PROCESS_STATUS;
 window.gameStartController = gameStartController;
 window.mulliganController = mulliganController;
 window.clockController = clockController;
+window.levelUpController = levelUpController;
 window.devController = devController;

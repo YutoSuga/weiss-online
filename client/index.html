@@ -116,6 +116,7 @@
             <section class="zone clock-zone opponent-clock">
               <h3 class="zone-title">クロック</h3>
               <div class="zone-body clock-slots">
+                <article class="card-slot" data-owner="opponent" data-zone="clock" data-index="7" data-face="up" data-position="stand" data-card-id="">7</article>
                 <article class="card-slot" data-owner="opponent" data-zone="clock" data-index="6" data-face="up" data-position="stand" data-card-id="">6</article>
                 <article class="card-slot" data-owner="opponent" data-zone="clock" data-index="5" data-face="up" data-position="stand" data-card-id="">5</article>
                 <article class="card-slot" data-owner="opponent" data-zone="clock" data-index="4" data-face="up" data-position="stand" data-card-id="">4</article>
@@ -234,6 +235,7 @@
                 <article class="card-slot" data-owner="self" data-zone="clock" data-index="4" data-face="up" data-position="stand" data-card-id="">4</article>
                 <article class="card-slot" data-owner="self" data-zone="clock" data-index="5" data-face="up" data-position="stand" data-card-id="">5</article>
                 <article class="card-slot" data-owner="self" data-zone="clock" data-index="6" data-face="up" data-position="stand" data-card-id="">6</article>
+                <article class="card-slot" data-owner="self" data-zone="clock" data-index="7" data-face="up" data-position="stand" data-card-id="">7</article>
               </div>
             </section>
           </div>
@@ -312,6 +314,14 @@
         hidden
       >クロックに置かず次へ</button>
 
+      <button
+        class="end-turn-button level-up-confirm-button"
+        type="button"
+        data-action="confirm-level-up"
+        disabled
+        hidden
+      >レベルに置く</button>
+
       <section class="info-panel self-info">
         <h2>自分の情報</h2>
         <dl class="player-status-list">
@@ -352,6 +362,9 @@
       <button type="button" data-dev-action="redraw">再描画</button>
       <button type="button" data-dev-action="refresh-stack">Stack確認</button>
       <button type="button" data-dev-action="test-refresh">リフレッシュ</button>
+      <button type="button" data-dev-action="hand-to-clock">手札を1枚クロックに置く</button>
+      <button type="button" data-dev-action="deck-to-clock">山札を1枚クロックに置く</button>
+      <button type="button" data-dev-action="test-level-up">レベルアップ</button>
     </div>
   </aside>
 

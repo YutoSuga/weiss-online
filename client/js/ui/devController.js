@@ -179,6 +179,18 @@ export class DevController {
             "self",
           );
           break;
+        case "hand-to-clock":
+          this.#moveHandCardToClock();
+          break;
+        case "deck-to-clock":
+          this.#moveDeckCardToClock();
+          break;
+        case "test-level-up":
+          this.#requireMethod(this.gameEngine, "startLevelUp").call(
+            this.gameEngine,
+            "self",
+          );
+          break;
         default:
           return;
       }
@@ -206,6 +218,31 @@ export class DevController {
       playerId,
       1,
     );
+    this.#requireMethod(this.gameEngine, "render").call(this.gameEngine);
+  }
+
+  /** @returns {void} */
+  #moveHandCardToClock() {
+    if ((this.gameState?.players?.self?.hand?.length ?? 0) < 1) {
+      throw new Error("DevController: self hand is empty.");
+    }
+    this.#requireMethod(this.gameEngine, "moveHandCardToClock").call(
+      this.gameEngine,
+      "self",
+      1,
+    );
+    this.#requireMethod(this.gameEngine, "render").call(this.gameEngine);
+  }
+
+  /** @returns {void} */
+  #moveDeckCardToClock() {
+    const card = this.#requireMethod(
+      this.gameEngine,
+      "moveDeckCardToClock",
+    ).call(this.gameEngine, "self");
+    if (!card) {
+      throw new Error("DevController: self deck is empty.");
+    }
     this.#requireMethod(this.gameEngine, "render").call(this.gameEngine);
   }
 

@@ -120,10 +120,49 @@ Phase Bに含めないもの：
 - `pendingInterrupts`
 - 敗北条件
 
+## LEVEL_UP Process v1
+
+LEVEL_UPはGameEngineの明示的な呼び出しで開始し、次のProcessをProcessManager経由でpushする。
+
+```js
+{
+  type: PROCESS_TYPE.LEVEL_UP,
+  playerId,
+  step: LEVEL_UP_STEP.PREPARE_SELECTION,
+  status: PROCESS_STATUS.RUNNING,
+  context: {},
+}
+```
+
+stepは次の順で進む。
+
+```text
+PREPARE_SELECTION (running)
+    ↓ clock[0]からclock[6]の存在を検証
+WAIT_FOR_SELECTION (waiting_input)
+    ↓ LevelUpControllerから選択を受け取る
+RESOLVE_SELECTION (running)
+    ↓ 選択カードをレベル、残り6枚を控え室へ移動
+COMPLETE (running)
+    ↓ LEVEL_UPをpop
+```
+
+候補は常に現在のGameStateの`clock[0..6]`から導出し、Process contextへカード、カードID、候補配列を複製しない。contextは開始時に空で、入力確定後に`selectedClockIndex`だけを保持する。選択解決時にもクロック状態とインデックスを再検証する。
+
+`WAIT_FOR_SELECTION`中は通常フェイズ進行とCLOCK操作を停止し、LevelUpControllerだけが入力を受け付ける。完了後はLEVEL_UPをpopし、下にあるProcessを自然に現在Processへ戻す。自動再開処理は行わない。
+
+Phase Cに含めないもの：
+
+- `clock.length >= 7`によるLEVEL_UPの自動検出
+- REFRESHとLEVEL_UPの同時割り込み順序
+- `pendingInterrupts` / `pendingChecks`の解決
+- リフレッシュペナルティ
+- 敗北条件
+
 ## Remaining TODO
 
 - REFRESHの自動検出およびリフレッシュペナルティ
-- LEVEL_UP
+- LEVEL_UPの自動検出
 - 割り込み検出と優先順位
 - `pendingInterrupts`の解決
 - `pendingChecks`の解決

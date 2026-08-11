@@ -34,3 +34,11 @@ export const REFRESH_STEP = Object.freeze({
   SHUFFLE_DECK: "shuffle_deck",
   COMPLETE: "complete",
 });
+
+/** LEVEL_UP Processで次に実行する処理。 */
+export const LEVEL_UP_STEP = Object.freeze({
+  PREPARE_SELECTION: "prepare_selection",
+  WAIT_FOR_SELECTION: "wait_for_selection",
+  RESOLVE_SELECTION: "resolve_selection",
+  COMPLETE: "complete",
+});

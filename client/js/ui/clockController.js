@@ -1,4 +1,5 @@
 import { PHASE } from "../constants/phase.js";
+import { PROCESS_STATUS } from "../constants/process.js";
 
 const SELECTED_CLASS = "is-selected";
 
@@ -86,7 +87,8 @@ export class ClockController {
       return;
     }
 
-    const active = this.gameState?.phase === PHASE.CLOCK;
+    const active = this.gameState?.phase === PHASE.CLOCK &&
+      !this.isProcessInputBlocked();
     const isSelfTurn = active && this.gameState?.turn?.player === "self";
 
     if (!active || !isSelfTurn || this.submitting) {
@@ -164,6 +166,7 @@ export class ClockController {
   canInteract() {
     return Boolean(
       this.gameState?.phase === PHASE.CLOCK &&
+      !this.isProcessInputBlocked() &&
       this.gameState?.turn?.player === "self" &&
       typeof this.gameEngine?.clockCard === "function" &&
       typeof this.gameEngine?.skipClockPhase === "function",
@@ -175,6 +178,13 @@ export class ClockController {
     this.selectedElement?.classList.remove(SELECTED_CLASS);
     this.selectedElement = null;
     this.selectedHandIndex = null;
+  }
+
+  /** @returns {boolean} */
+  isProcessInputBlocked() {
+    const stack = this.gameState?.ruleState?.processStack;
+    const current = Array.isArray(stack) ? stack[stack.length - 1] : null;
+    return current?.status === PROCESS_STATUS.WAITING_INPUT;
   }
 
   /** @returns {void} */
