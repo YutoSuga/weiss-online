@@ -839,10 +839,30 @@ ul {
   letter-spacing: 0.12em;
 }
 
-.card-slot.is-selected {
+.card-slot.is-selectable {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.55);
+  cursor: pointer;
+}
+
+.card-slot.is-selectable:hover {
+  outline-color: #93c5fd;
+  box-shadow: 0 0 13px rgba(59, 130, 246, 0.8);
+}
+
+.card-slot.is-unselectable {
+  opacity: 0.58;
+  cursor: default;
+}
+
+.card-slot.is-selected,
+.card-slot.is-selected:hover {
+  opacity: 1;
   outline: 3px solid #facc15;
   outline-offset: 2px;
   box-shadow: 0 0 14px rgba(250, 204, 21, 0.9);
+  cursor: pointer;
 }
 
 /* =========================================================

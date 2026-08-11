@@ -5,6 +5,13 @@ import {
 } from "../constants/process.js";
 
 const SELECTED_CLASS = "is-selected";
+const SELECTABLE_CLASS = "is-selectable";
+const UNSELECTABLE_CLASS = "is-unselectable";
+const SELECTION_CLASSES = Object.freeze([
+  SELECTABLE_CLASS,
+  UNSELECTABLE_CLASS,
+  SELECTED_CLASS,
+]);
 
 /**
  * LEVEL_UPのクロックカード単一選択と確定操作だけを管理する。
@@ -82,6 +89,7 @@ export class LevelUpController {
     this.unsubscribeRender?.();
     this.unsubscribeRender = null;
     this.clearSelection();
+    this.clearCandidateStates();
     this.button = null;
     this.initialized = false;
     this.submitting = false;
@@ -106,6 +114,7 @@ export class LevelUpController {
     this.button.hidden = !active;
     this.button.disabled = !active || this.selectedClockIndex === null ||
       this.submitting;
+    this.updateCandidateStates(active);
   }
 
   /** @param {MouseEvent} event @returns {void} */
@@ -130,6 +139,9 @@ export class LevelUpController {
     if (!Number.isInteger(clockIndex) || clockIndex < 0 || clockIndex > 6) {
       return;
     }
+    if (!this.gameState?.players?.[process.playerId]?.clock?.[clockIndex]) {
+      return;
+    }
 
     if (this.selectedClockIndex === clockIndex) {
       this.clearSelection();
@@ -137,9 +149,9 @@ export class LevelUpController {
       this.clearSelection();
       this.selectedClockIndex = clockIndex;
       this.selectedElement = slot;
-      slot.classList.add(SELECTED_CLASS);
     }
-    this.sync();
+    this.updateCandidateStates(process);
+    this.button.disabled = this.selectedClockIndex === null;
   }
 
   /** @param {MouseEvent} event @returns {void} */
@@ -184,5 +196,52 @@ export class LevelUpController {
     this.selectedElement?.classList.remove(SELECTED_CLASS);
     this.selectedElement = null;
     this.selectedClockIndex = null;
+  }
+
+  /** @returns {void} */
+  clearCandidateStates() {
+    this.rootElement
+      ?.querySelectorAll('.card-slot[data-zone="clock"]')
+      .forEach((slot) => slot.classList.remove(...SELECTION_CLASSES));
+  }
+
+  /**
+   * clock配列の0始まり位置に基づいて候補表示を反映する。
+   * clock[0..6]だけを候補とし、clock[7]以降は選択不可にする。
+   *
+   * @param {import("../core/processManager.js").Process|null} process
+   * @returns {void}
+   */
+  updateCandidateStates(process) {
+    this.clearCandidateStates();
+    if (!process) {
+      return;
+    }
+
+    const clock = this.gameState?.players?.[process.playerId]?.clock;
+    if (!Array.isArray(clock)) {
+      return;
+    }
+
+    this.rootElement
+      ?.querySelectorAll(
+        `.card-slot[data-owner="${process.playerId}"]` +
+        '[data-zone="clock"][data-index]',
+      )
+      .forEach((slot) => {
+        const clockIndex = Number(slot.dataset.index) - 1;
+        if (!Number.isInteger(clockIndex) || !clock[clockIndex] ||
+          !slot.dataset.cardId) {
+          return;
+        }
+
+        if (clockIndex > 6) {
+          slot.classList.add(UNSELECTABLE_CLASS);
+        } else if (clockIndex === this.selectedClockIndex) {
+          slot.classList.add(SELECTED_CLASS);
+        } else {
+          slot.classList.add(SELECTABLE_CLASS);
+        }
+      });
   }
 }

@@ -346,7 +346,48 @@ export class Renderer {
    * @returns {void}
    */
   renderClock(player, owner) {
+    this.syncClockSlots(owner, this.asArray(player.clock).length);
     this.renderFixedSlots(player.clock, owner, ZONE.CLOCK);
+  }
+
+  /**
+   * 7枚を超えるクロックも表示できるよう、超過分の表示スロットを同期する。
+   * 固定の1～7番スロットはHTML側に保持する。
+   *
+   * @param {'self'|'opponent'} owner
+   * @param {number} cardCount
+   * @returns {void}
+   */
+  syncClockSlots(owner, cardCount) {
+    const container = this.rootElement?.querySelector(
+      `.${owner}-clock .clock-slots`,
+    );
+    if (!(container instanceof HTMLElement)) {
+      return;
+    }
+
+    container
+      .querySelectorAll('[data-dynamic-clock-slot="true"]')
+      .forEach((slot) => slot.remove());
+
+    for (let index = 8; index <= cardCount; index += 1) {
+      const slot = container.ownerDocument.createElement("article");
+      slot.className = "card-slot";
+      slot.dataset.owner = owner;
+      slot.dataset.zone = ZONE.CLOCK;
+      slot.dataset.index = String(index);
+      slot.dataset.face = "up";
+      slot.dataset.position = "stand";
+      slot.dataset.cardId = "";
+      slot.dataset.dynamicClockSlot = "true";
+      slot.textContent = String(index);
+
+      if (owner === "opponent") {
+        container.prepend(slot);
+      } else {
+        container.append(slot);
+      }
+    }
   }
 
   /**
@@ -527,22 +568,23 @@ export class Renderer {
    */
   renderPlayerInfo(player, owner) {
     const panelSelector = owner === "self" ? ".self-info" : ".opponent-info";
-    const values = this.rootElement.querySelectorAll(
-      `${panelSelector} .player-status-item dd`,
-    );
+    const values = {
+      name: player.name ?? "",
+      hand: `${this.asArray(player.hand).length}枚`,
+      deck: `${this.asArray(player.deck?.cards).length}枚`,
+      "waiting-room": `${this.asArray(player.waitingRoom).length}枚`,
+      memory: `${this.asArray(player.memory).length}枚`,
+      clock: `${this.asArray(player.clock).length}枚`,
+      level: `${this.asArray(player.level).length}枚`,
+      stock: `${this.asArray(player.stock).length}枚`,
+    };
 
-    const counts = [
-      player.name ?? "",
-      `${this.asArray(player.hand).length}枚`,
-      `${this.asArray(player.deck?.cards).length}枚`,
-      `${this.asArray(player.waitingRoom).length}枚`,
-      `${this.asArray(player.memory).length}枚`,
-      `${this.asArray(player.stock).length}枚`,
-    ];
-
-    counts.forEach((value, index) => {
-      if (values[index]) {
-        values[index].textContent = value;
+    Object.entries(values).forEach(([name, value]) => {
+      const element = this.rootElement.querySelector(
+        `${panelSelector} [data-player-stat="${name}"]`,
+      );
+      if (element) {
+        element.textContent = value;
       }
     });
   }

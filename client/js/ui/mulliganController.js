@@ -1,4 +1,11 @@
 const SELECTED_CLASS = "is-selected";
+const SELECTABLE_CLASS = "is-selectable";
+const UNSELECTABLE_CLASS = "is-unselectable";
+const SELECTION_CLASSES = Object.freeze([
+  SELECTABLE_CLASS,
+  UNSELECTABLE_CLASS,
+  SELECTED_CLASS,
+]);
 
 /**
  * マリガン中の一時的なカード選択と確定操作だけを管理する。
@@ -90,6 +97,7 @@ export class MulliganController {
     this.button.hidden = !active;
     this.button.disabled = !selectable || this.submitting;
     this.updateButtonLabel();
+    this.updateCandidateStates(selectable);
   }
 
   /** @param {MouseEvent} event @returns {void} */
@@ -114,11 +122,10 @@ export class MulliganController {
 
     if (this.selectedIndexes.has(index)) {
       this.selectedIndexes.delete(index);
-      slot.classList.remove(SELECTED_CLASS);
     } else {
       this.selectedIndexes.add(index);
-      slot.classList.add(SELECTED_CLASS);
     }
+    this.updateCandidateStates(true);
     this.updateButtonLabel();
   }
 
@@ -158,9 +165,38 @@ export class MulliganController {
     this.selectedIndexes.clear();
     this.rootElement
       ?.querySelectorAll(
-        `.card-slot[data-owner="self"][data-zone="hand"].${SELECTED_CLASS}`,
+        '.card-slot[data-owner="self"][data-zone="hand"]',
       )
-      .forEach((slot) => slot.classList.remove(SELECTED_CLASS));
+      .forEach((slot) => slot.classList.remove(...SELECTION_CLASSES));
+  }
+
+  /**
+   * マリガン候補へ共通の選択表示状態を反映する。
+   * 現在は自分のマリガン中、存在する手札カードをすべて候補とする。
+   *
+   * @param {boolean} selectionActive
+   * @returns {void}
+   */
+  updateCandidateStates(selectionActive) {
+    this.rootElement
+      ?.querySelectorAll(
+        '.card-slot[data-owner="self"][data-zone="hand"][data-index]',
+      )
+      .forEach((slot) => {
+        slot.classList.remove(...SELECTION_CLASSES);
+        if (!selectionActive || !slot.dataset.cardId) {
+          return;
+        }
+
+        const index = Number(slot.dataset.index);
+        if (!Number.isInteger(index) || index < 1) {
+          slot.classList.add(UNSELECTABLE_CLASS);
+        } else if (this.selectedIndexes.has(index)) {
+          slot.classList.add(SELECTED_CLASS);
+        } else {
+          slot.classList.add(SELECTABLE_CLASS);
+        }
+      });
   }
 
   /** @returns {void} */
