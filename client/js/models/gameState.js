@@ -33,6 +33,13 @@ const PLAYER_SIDE_VALUES = Object.freeze(["self", "opponent"]);
  */
 
 /**
+ * @typedef {object} RuleState
+ * @property {unknown[]} processStack
+ * @property {unknown[]} pendingInterrupts
+ * @property {unknown[]} pendingChecks
+ */
+
+/**
  * 対戦全体の状態を管理する。
  * 描画やルール実行は、将来追加するRenderer/GameEngineの責務とする。
  */
@@ -49,6 +56,7 @@ export class GameState {
    * @param {boolean} [params.started=false] 通常ターン開始済みか
    * @param {Partial<MulliganState>} [params.mulliganState={}]
    * @param {Partial<MessageOverlayState>} [params.messageOverlay={}]
+   * @param {Partial<RuleState>} [params.ruleState={}]
    * @param {GameLogEntry[]} [params.log=[]]
    */
   constructor({
@@ -65,6 +73,7 @@ export class GameState {
     started = false,
     mulliganState = {},
     messageOverlay = {},
+    ruleState = {},
     log = [],
   }) {
     if (!(self instanceof Player) || !(opponent instanceof Player)) {
@@ -112,6 +121,20 @@ export class GameState {
 
     if (!Array.isArray(log)) {
       throw new TypeError("log must be an array.");
+    }
+
+    if (
+      ruleState === null ||
+      typeof ruleState !== "object" ||
+      Array.isArray(ruleState) ||
+      (ruleState.processStack != null &&
+        !Array.isArray(ruleState.processStack)) ||
+      (ruleState.pendingInterrupts != null &&
+        !Array.isArray(ruleState.pendingInterrupts)) ||
+      (ruleState.pendingChecks != null &&
+        !Array.isArray(ruleState.pendingChecks))
+    ) {
+      throw new TypeError("ruleState is invalid.");
     }
 
     if (
@@ -168,6 +191,13 @@ export class GameState {
       visible: messageOverlay.visible ?? false,
       title: messageOverlay.title ?? "",
       message: messageOverlay.message ?? "",
+    };
+
+    /** @type {RuleState} */
+    this.ruleState = {
+      processStack: [...(ruleState.processStack ?? [])],
+      pendingInterrupts: [...(ruleState.pendingInterrupts ?? [])],
+      pendingChecks: [...(ruleState.pendingChecks ?? [])],
     };
 
     /** @type {GameLogEntry[]} */

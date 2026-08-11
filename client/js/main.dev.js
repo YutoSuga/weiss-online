@@ -5,6 +5,7 @@
 
 import { Renderer } from "./core/renderer.js";
 import { GameEngine } from "./core/gameEngine.js";
+import { ProcessManager } from "./core/processManager.js";
 import { GameStartController } from "./ui/gameStartController.js";
 import { MulliganController } from "./ui/mulliganController.js";
 import { ClockController } from "./ui/clockController.js";
@@ -14,6 +15,7 @@ import { Player } from "./models/player.js";
 import { Card } from "./models/card.js";
 import { Deck } from "./models/deck.js";
 import { ZONE } from "./constants/zone.js";
+import { PROCESS_STATUS, PROCESS_TYPE } from "./constants/process.js";
 
 const TEST_DECK_SIZE = 50;
 const AUTOMATIC_OPPONENT_MULLIGAN_DELAY_MS = 3000;
@@ -120,6 +122,8 @@ const gameEngine = new GameEngine({
   renderer,
 });
 
+const processManager = new ProcessManager(gameState);
+
 const gameStartController = new GameStartController({
   gameEngine,
   gameState,
@@ -214,6 +218,9 @@ window.renderer = renderer;
 window.gameState = gameState;
 window.Card = Card;
 window.gameEngine = gameEngine;
+window.processManager = processManager;
+window.PROCESS_TYPE = PROCESS_TYPE;
+window.PROCESS_STATUS = PROCESS_STATUS;
 window.gameStartController = gameStartController;
 window.mulliganController = mulliganController;
 window.clockController = clockController;
