@@ -897,6 +897,85 @@ ul {
   overflow-wrap: anywhere;
 }
 
+.dev-stack-section {
+  margin-bottom: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #92400e;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+}
+
+.dev-stack-title {
+  display: block;
+  margin-bottom: 6px;
+  color: #fde68a;
+  font-size: 12px;
+}
+
+.dev-stack-list {
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.dev-stack-empty {
+  margin: 0;
+  color: #9ca3af;
+}
+
+.dev-process-item {
+  margin-bottom: 6px;
+  padding: 6px;
+  border: 1px solid #4b5563;
+  border-radius: 4px;
+  background: rgba(31, 41, 55, 0.9);
+}
+
+.dev-process-item:last-child {
+  margin-bottom: 0;
+}
+
+.dev-process-item.is-current {
+  border-color: #fbbf24;
+}
+
+.dev-process-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.dev-process-current {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: #d97706;
+  color: #fff7ed;
+  font-size: 9px;
+}
+
+.dev-process-details {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 2px 4px;
+  margin: 0;
+}
+
+.dev-process-details dt {
+  color: #9ca3af;
+}
+
+.dev-process-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.dev-process-context {
+  grid-column: 1 / -1;
+  margin-top: 2px;
+  color: #d1d5db;
+}
+
 .dev-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
