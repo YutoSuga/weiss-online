@@ -10,6 +10,10 @@ import {
   LEVEL_UP_STEP,
   REFRESH_STEP,
 } from "../constants/process.js";
+import {
+  DEFEAT_REASON,
+  RULE_CHECK_RESULT,
+} from "../constants/ruleCheck.js";
 import { FACE, POSITION } from "../models/card.js";
 import { GameState } from "../models/gameState.js";
 import { ProcessManager } from "./processManager.js";
@@ -31,6 +35,7 @@ const MULLIGAN_MESSAGES = Object.freeze({
   self: "交換する手札を選択してください。",
   opponent: "相手が手札交換中です",
 });
+const PLAYER_IDS = Object.freeze(["self", "opponent"]);
 
 /**
  * ゲームルールの進行とGameStateの更新を担当する。
@@ -81,6 +86,10 @@ export class GameEngine {
     const { first, second } = this.gameState.turnOrder;
 
     this.gameState.started = false;
+    this.gameState.gameResult.finished = false;
+    this.gameState.gameResult.winner = null;
+    this.gameState.gameResult.loser = null;
+    this.gameState.gameResult.reason = null;
     this.gameState.players[first].deck.shuffle();
     this.gameState.players[second].deck.shuffle();
     this.gameState.turn.player = null;
@@ -248,12 +257,18 @@ export class GameEngine {
    * @returns {void}
    */
   nextPhase() {
+    if (this.gameState.gameResult.finished) {
+      throw new Error("Cannot advance phases after the game has finished.");
+    }
     if (this.gameState.mulliganState.active) {
       throw new Error("Cannot advance phases during mulligan.");
     }
 
     if (this.#isWaitingForProcessInput()) {
       throw new Error("Cannot advance phases while a Process is waiting for input.");
+    }
+    if (this.#hasPendingInterruptSelection()) {
+      throw new Error("Cannot advance phases while interrupt order is pending.");
     }
 
     const nextPhase = this.getNextPhase();
@@ -525,9 +540,8 @@ export class GameEngine {
           break;
         }
         case REFRESH_STEP.COMPLETE:
-          this.processManager.popProcess();
           this.addLog(refreshProcess.playerId, "リフレッシュが完了しました。");
-          this.render();
+          this.completeCurrentProcess();
           return refreshProcess;
         default:
           throw new RangeError(
@@ -631,10 +645,9 @@ export class GameEngine {
           this.render();
           break;
         case LEVEL_UP_STEP.COMPLETE:
-          this.processManager.popProcess();
           this.addLog(levelUpProcess.playerId, "レベルアップが完了しました。");
           this.#restorePhaseMessageOverlay();
-          this.render();
+          this.completeCurrentProcess();
           return levelUpProcess;
         default:
           throw new RangeError(`Unknown LEVEL_UP step: ${levelUpProcess.step}.`);
@@ -676,6 +689,225 @@ export class GameEngine {
     this.executeLevelUpProcess();
 
     return this.gameState.players[playerId].level.at(-1);
+  }
+
+  /**
+   * 現在の両プレイヤー状態を読み取り、共通ルール事象を判定する。
+   * GameState、Process、ログ、表示には副作用を与えない。
+   *
+   * @returns {{checkedPlayers: string[], turnPlayer: string, defeatCandidates: object[], defeats: object[], interrupts: object[], winner: string|null, loser: string|null, reason: string|null, simultaneousDefeatRule: object}}
+   */
+  runRuleCheck() {
+    const turnPlayer = this.gameState.turn.player;
+    this.#assertPlayerId(turnPlayer);
+
+    const interrupts = [];
+    const defeatCandidates = [];
+
+    PLAYER_IDS.forEach((playerId) => {
+      const player = this.gameState.players[playerId];
+      const deckEmpty = player.deck.cards.length === 0;
+      const waitingRoomEmpty = player.waitingRoom.length === 0;
+      const levelUpOccurred = player.clock.length >= 7;
+      const levelUpExecutable = levelUpOccurred && player.level.length < 3;
+
+      if (deckEmpty) {
+        interrupts.push({
+          type: PROCESS_TYPE.REFRESH,
+          playerId,
+          occurred: true,
+          executable: !waitingRoomEmpty,
+          canResolveEmptyDeckAndWaitingRoom: !waitingRoomEmpty,
+        });
+      }
+
+      if (levelUpOccurred) {
+        interrupts.push({
+          type: PROCESS_TYPE.LEVEL_UP,
+          playerId,
+          occurred: true,
+          executable: levelUpExecutable,
+          canResolveEmptyDeckAndWaitingRoom: levelUpExecutable,
+        });
+      }
+
+      if (player.level.length >= 4) {
+        defeatCandidates.push({
+          playerId,
+          reason: DEFEAT_REASON.LEVEL_LIMIT,
+          deferred: false,
+          deferredBy: [],
+        });
+      } else if (player.level.length >= 3 && levelUpOccurred) {
+        defeatCandidates.push({
+          playerId,
+          reason: DEFEAT_REASON.LEVEL_AND_CLOCK,
+          deferred: false,
+          deferredBy: [],
+        });
+      }
+
+      if (deckEmpty && waitingRoomEmpty) {
+        const deferredBy = levelUpExecutable
+          ? [{ type: PROCESS_TYPE.LEVEL_UP, playerId }]
+          : [];
+        defeatCandidates.push({
+          playerId,
+          reason: DEFEAT_REASON.EMPTY_DECK_AND_WAITING_ROOM,
+          deferred: deferredBy.length > 0,
+          deferredBy,
+        });
+      }
+    });
+
+    const defeats = defeatCandidates
+      .filter((candidate) => !candidate.deferred)
+      .map(({ playerId, reason }) => ({ playerId, reason }));
+    const defeatedPlayers = [...new Set(defeats.map(({ playerId }) => playerId))];
+    let winner = null;
+    let loser = null;
+    let reason = null;
+
+    if (defeatedPlayers.length >= 2) {
+      winner = turnPlayer;
+      loser = PLAYER_IDS.find((playerId) => playerId !== winner) ?? null;
+    } else if (defeatedPlayers.length === 1) {
+      [loser] = defeatedPlayers;
+      winner = PLAYER_IDS.find((playerId) => playerId !== loser) ?? null;
+    }
+    if (loser) {
+      reason = defeats.find((defeat) => defeat.playerId === loser)?.reason ?? null;
+    }
+
+    return {
+      checkedPlayers: [...PLAYER_IDS],
+      turnPlayer,
+      defeatCandidates,
+      defeats,
+      interrupts,
+      winner,
+      loser,
+      reason,
+      simultaneousDefeatRule: {
+        winnerPlayerId: turnPlayer,
+        appliesOnlyAfterBothDefeatsAreConfirmed: true,
+      },
+    };
+  }
+
+  /**
+   * 共通Rule Checkの結果から、続行・割り込み・敗北を決定する。
+   * 通常のCheck Pointはこのメソッドを呼び、runRuleCheck()を直接呼ばない。
+   *
+   * @returns {string} RULE_CHECK_RESULTのいずれか
+   */
+  resolveRuleCheck() {
+    if (this.gameState.gameResult.finished) {
+      return RULE_CHECK_RESULT.GAME_OVER;
+    }
+
+    const result = this.runRuleCheck();
+    this.gameState.ruleState.pendingInterrupts.splice(
+      0,
+      this.gameState.ruleState.pendingInterrupts.length,
+    );
+
+    if (result.defeats.length > 0) {
+      this.finishGame(result);
+      return RULE_CHECK_RESULT.GAME_OVER;
+    }
+
+    const executableInterrupts = this.#uniqueInterrupts(
+      result.interrupts.filter((interrupt) => interrupt.executable),
+    );
+
+    if (executableInterrupts.length === 0) {
+      return RULE_CHECK_RESULT.CONTINUE;
+    }
+
+    if (executableInterrupts.length > 1) {
+      this.gameState.ruleState.pendingInterrupts.push(
+        ...executableInterrupts.map(({ type, playerId }) => ({ type, playerId })),
+      );
+      this.render();
+      return RULE_CHECK_RESULT.WAITING_INTERRUPT_SELECTION;
+    }
+
+    const [interrupt] = executableInterrupts;
+    if (interrupt.type === PROCESS_TYPE.REFRESH) {
+      this.startRefresh(interrupt.playerId);
+    } else if (interrupt.type === PROCESS_TYPE.LEVEL_UP) {
+      this.startLevelUp(interrupt.playerId);
+    } else {
+      throw new RangeError(`Unsupported interrupt type: ${interrupt.type}.`);
+    }
+    return RULE_CHECK_RESULT.INTERRUPTED;
+  }
+
+  /**
+   * 現在Processを終了し、最新状態を再チェックする共通出口。
+   * CONTINUE時はスタック下の既知Processを保存済みstepから再開する。
+   *
+   * @returns {string}
+   */
+  completeCurrentProcess() {
+    const completedProcess = this.processManager.popProcess();
+    if (!completedProcess) {
+      return RULE_CHECK_RESULT.CONTINUE;
+    }
+
+    const result = this.resolveRuleCheck();
+    if (result === RULE_CHECK_RESULT.CONTINUE) {
+      this.executeCurrentProcess();
+      this.render();
+    }
+    return result;
+  }
+
+  /** 現在の既知Processを保存済みstepから再開する。 */
+  executeCurrentProcess() {
+    const process = this.processManager.getCurrentProcess();
+    if (!process || process.status === PROCESS_STATUS.WAITING_INPUT) {
+      return process;
+    }
+    if (process.type === PROCESS_TYPE.REFRESH) {
+      return this.executeRefreshProcess();
+    }
+    if (process.type === PROCESS_TYPE.LEVEL_UP) {
+      return this.executeLevelUpProcess();
+    }
+    return process;
+  }
+
+  /**
+   * 敗北確定結果をGameStateと永続表示用messageOverlayへ反映する。
+   *
+   * @param {{winner: 'self'|'opponent', loser: 'self'|'opponent', reason: string}} result
+   * @returns {void}
+   */
+  finishGame(result) {
+    const { winner, loser, reason } = result;
+    this.#assertPlayerId(winner);
+    this.#assertPlayerId(loser);
+    if (winner === loser || typeof reason !== "string") {
+      throw new TypeError("finishGame requires distinct winner/loser and a reason.");
+    }
+
+    this.gameState.gameResult.finished = true;
+    this.gameState.gameResult.winner = winner;
+    this.gameState.gameResult.loser = loser;
+    this.gameState.gameResult.reason = reason;
+    this.gameState.ruleState.pendingInterrupts.splice(
+      0,
+      this.gameState.ruleState.pendingInterrupts.length,
+    );
+    this.gameState.messageOverlay.visible = true;
+    this.gameState.messageOverlay.title = "GAME OVER";
+    this.gameState.messageOverlay.message = winner === "self"
+      ? "勝者はあなたです"
+      : "勝者は相手です";
+    this.addLog(loser, `ゲームが終了しました（${reason}）。`);
+    this.render();
   }
 
   /**
@@ -926,6 +1158,27 @@ export class GameEngine {
       PROCESS_STATUS.WAITING_INPUT;
   }
 
+  /** @returns {boolean} */
+  #hasPendingInterruptSelection() {
+    return this.gameState.ruleState.pendingInterrupts.length > 1;
+  }
+
+  /**
+   * @param {object[]} interrupts
+   * @returns {object[]}
+   */
+  #uniqueInterrupts(interrupts) {
+    const seen = new Set();
+    return interrupts.filter(({ type, playerId }) => {
+      const key = `${type}:${playerId}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  }
+
   /**
    * @param {unknown} playerId
    * @returns {asserts playerId is 'self'|'opponent'}
@@ -944,8 +1197,14 @@ export class GameEngine {
    * @returns {asserts playerId is 'self'|'opponent'}
    */
   #assertClockAction(playerId) {
+    if (this.gameState.gameResult.finished) {
+      throw new Error("CLOCK action is unavailable after game over.");
+    }
     if (this.#isWaitingForProcessInput()) {
       throw new Error("CLOCK action is blocked while a Process awaits input.");
+    }
+    if (this.#hasPendingInterruptSelection()) {
+      throw new Error("CLOCK action is blocked while interrupt order is pending.");
     }
 
     if (this.gameState.phase !== PHASE.CLOCK) {

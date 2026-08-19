@@ -417,3 +417,85 @@ runRuleCheck()を再実行
 - ゲーム終了後の入力停止、表示、ログ、通信同期
 - カード効果による新しい割り込みと救済可能性の定義方法
 
+## 14. Phase E: Rule Check Resolution
+
+### 14.1 判定と解決の分離
+
+`runRuleCheck()`は現在状態の判定だけを行い、副作用を持たない。通常ゲーム進行のCheck Pointから直接呼ばず、原則として`resolveRuleCheck()`から呼ぶ。DEV・テストが診断目的で直接呼ぶことだけを例外とする。
+
+`resolveRuleCheck()`は判定結果から次の制御を決定し、`RULE_CHECK_RESULT`のいずれかを返す。
+
+- `CONTINUE`: 敗北も実行可能interruptもなく、呼び出し元が次stepへ進める。
+- `INTERRUPTED`: 実行可能interruptが1件あり、対応Processへ制御を移した。
+- `WAITING_INTERRUPT_SELECTION`: 実行可能interruptが複数あり、順序選択待ちになった。
+- `GAME_OVER`: 敗北を確定し、ゲームを終了した。
+
+優先順位は、敗北確定、interrupt、CONTINUEの順とする。
+
+### 14.2 Check Point
+
+Check Pointの一覧や位置をGameStateへ保存しない。各上位ルール処理が、自身のどこで`resolveRuleCheck()`を呼ぶかを知る。`drawCard()`、`drawCards()`、`moveHandCardToClock()`、`moveWaitingRoomToDeck()`、`Deck.shuffle()`などの低レベル操作は、自動Rule Checkを行わない。
+
+Process内のCheck Pointでは、割り込み後の再開位置となる「次に実行するstep」を先に保存してから`resolveRuleCheck()`を呼ぶ。
+
+### 14.3 interrupt 0件・1件・複数件
+
+実行可能interruptが0件なら`CONTINUE`とする。1件なら`startRefresh(playerId)`または`startLevelUp(playerId)`を使い、ProcessManager経由でProcessを開始する。
+
+2件以上ならProcessを開始せず、最新の判定結果から次の候補形式で`pendingInterrupts`を再構築する。
+
+```js
+{
+  type: PROCESS_TYPE.REFRESH | PROCESS_TYPE.LEVEL_UP,
+  playerId: "self" | "opponent",
+}
+```
+
+同一性は`type + playerId`で判定し、以前の配列へ差分追加しない。このため繰り返し解決しても重複しない。順序選択UIと、選択後のProcess開始は後続Phaseで実装する。
+
+### 14.4 敗北確定
+
+`runRuleCheck()`は`defeatCandidates`に加え、保留されていない確定結果を`defeats`として返す。`resolveRuleCheck()`は候補から確定可否を再判断しない。
+
+- `level.length >= 4`: `LEVEL_LIMIT`で確定。
+- `level.length >= 3 && clock.length >= 7`: `LEVEL_AND_CLOCK`で確定し、LEVEL_UPを実行しない。
+- `deck.length === 0 && waitingRoom.length === 0`: `EMPTY_DECK_AND_WAITING_ROOM`。ただし同じプレイヤーのLEVEL_UPが実行可能なら保留し、LEVEL_UP解決後の再チェックで確定し直す。
+
+両プレイヤーの敗北が同じチェックで確定した場合は、`turn.player`を勝者、他方を敗者とする。この勝敗は`runRuleCheck()`内で完結させる。
+
+### 14.5 Process完了と再チェック
+
+共通interrupt Processは`completeCurrentProcess()`を出口にする。
+
+```text
+Process完了
+  ↓
+ProcessManager.popProcess()
+  ↓
+resolveRuleCheck()
+  ↓ CONTINUEの場合
+スタック下の既知Processを保存済みstepから再開
+```
+
+REFRESHやLEVEL_UP自身は、次に再開するProcessや残りinterruptを判断しない。LEVEL_UPの`WAIT_FOR_SELECTION / WAITING_INPUT`中は従来どおり入力を待ち、選択後に完了出口へ到達する。
+
+### 14.6 ゲーム終了
+
+`finishGame()`は`gameState.gameResult`へ`finished / winner / loser / reason`を保存し、既存messageOverlayを永続的なGAME OVER表示へ更新する。
+
+- self勝利: `勝者はあなたです`
+- opponent勝利: `勝者は相手です`
+
+通常フェイズの一時表示タイマーはGameEngineに存在しないため、別の状態変更がない限りGAME OVER表示は消えない。ゲーム終了後のフェイズ進行とCLOCK操作は拒否する。
+
+### 14.7 将来のカード効果
+
+カード効果自身がルール上のCheck Pointを定義する。`runRuleCheck()`は個別カード効果の内容や、敗北を回避できる効果を知らない。`effectQueue`とProcessの接続は引き続きTODOとする。
+
+### 14.8 Phase Eに含めないもの
+
+- CLOCK_ACTION / DRAW_ACTIONのProcess化
+- 実ゲーム進行へのCheck Point組み込み
+- interrupt順序選択UI・Controller
+- `pendingChecks`とREFRESH_PENALTY
+- effectQueue、カード効果、Attack、Trigger Check、Damage

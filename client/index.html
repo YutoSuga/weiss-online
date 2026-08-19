@@ -359,6 +359,24 @@
       </div>
     </section>
 
+    <section class="dev-rule-check-section" aria-label="Rule Check">
+      <strong class="dev-stack-title">Rule Check</strong>
+      <dl class="dev-rule-check-results">
+        <div>
+          <dt>resolve</dt>
+          <dd data-dev-rule-resolution>-</dd>
+        </div>
+        <div>
+          <dt>pending</dt>
+          <dd data-dev-pending-interrupts>[]</dd>
+        </div>
+        <div>
+          <dt>check</dt>
+          <dd data-dev-rule-check-result>-</dd>
+        </div>
+      </dl>
+    </section>
+
     <div class="dev-actions">
       <button type="button" data-dev-action="next-phase">次フェイズ</button>
       <button type="button" data-dev-action="draw-self">自分1枚ドロー</button>
@@ -369,6 +387,8 @@
       <button type="button" data-dev-action="hand-to-clock">手札を1枚クロックに置く</button>
       <button type="button" data-dev-action="deck-to-clock">山札を1枚クロックに置く</button>
       <button type="button" data-dev-action="test-level-up">レベルアップ</button>
+      <button type="button" data-dev-action="check-rules">共通チェック確認</button>
+      <button type="button" data-dev-action="resolve-rules">Rule Check解決</button>
     </div>
   </aside>
 

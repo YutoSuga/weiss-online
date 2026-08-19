@@ -20,6 +20,8 @@ export class DevController {
     /** @type {null|(() => boolean)} */
     this.unsubscribeRender = null;
     this.initialized = false;
+    this.lastRuleCheckResult = null;
+    this.lastRuleCheckResolution = null;
     this.boundHandleClick = this.handleClick.bind(this);
     this.boundSync = this.sync.bind(this);
   }
@@ -92,6 +94,30 @@ export class DevController {
     this.#setStatus("turn-number", this.#formatValue(this.gameState?.turn?.number));
     this.#setStatus("phase", this.#formatValue(this.gameState?.phase));
     this.updateProcessStackView();
+    this.updateRuleCheckView();
+  }
+
+  /** Rule Checkの直近結果とpendingInterruptsを読み取り専用で表示する。 */
+  updateRuleCheckView() {
+    if (!this.panel) {
+      return;
+    }
+    const resolution = this.panel.querySelector("[data-dev-rule-resolution]");
+    const pending = this.panel.querySelector("[data-dev-pending-interrupts]");
+    const result = this.panel.querySelector("[data-dev-rule-check-result]");
+    if (resolution) {
+      resolution.textContent = this.#formatValue(this.lastRuleCheckResolution);
+    }
+    if (pending) {
+      pending.textContent = this.#formatJson(
+        this.gameState?.ruleState?.pendingInterrupts ?? [],
+      );
+    }
+    if (result) {
+      result.textContent = this.lastRuleCheckResult == null
+        ? "-"
+        : this.#formatJson(this.lastRuleCheckResult);
+    }
   }
 
   /**
@@ -190,6 +216,22 @@ export class DevController {
             this.gameEngine,
             "self",
           );
+          break;
+        case "check-rules":
+          this.lastRuleCheckResult = this.#requireMethod(
+            this.gameEngine,
+            "runRuleCheck",
+          ).call(this.gameEngine);
+          break;
+        case "resolve-rules":
+          this.lastRuleCheckResolution = this.#requireMethod(
+            this.gameEngine,
+            "resolveRuleCheck",
+          ).call(this.gameEngine);
+          this.lastRuleCheckResult = this.#requireMethod(
+            this.gameEngine,
+            "runRuleCheck",
+          ).call(this.gameEngine);
           break;
         default:
           return;
@@ -342,6 +384,20 @@ export class DevController {
     try {
       const text = JSON.stringify(context);
       return text.length <= 120 ? text : `${text.slice(0, 117)}...`;
+    } catch {
+      return "[unserializable]";
+    }
+  }
+
+  /**
+   * @private
+   * @param {unknown} value
+   * @returns {string}
+   */
+  #formatJson(value) {
+    try {
+      const text = JSON.stringify(value);
+      return text.length <= 800 ? text : `${text.slice(0, 797)}...`;
     } catch {
       return "[unserializable]";
     }

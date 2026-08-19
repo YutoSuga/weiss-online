@@ -108,7 +108,7 @@ COMPLETE
     ↓ processStackからREFRESHをpop
 ```
 
-REFRESHのstatusは全stepで`PROCESS_STATUS.RUNNING`とする。REFRESHの下に別Processがある場合、pop後はそのProcessが自然に現在Processへ戻るが、Phase Bでは自動再開処理を行わない。
+REFRESHのstatusは全stepで`PROCESS_STATUS.RUNNING`とする。Phase E以降、完了時は`completeCurrentProcess()`を通り、pop後に`resolveRuleCheck()`で最新状態を再判定する。結果がCONTINUEなら、下にある既知Processを保存済みstepから再開する。
 
 控え室が空でもREFRESHは拒否せず、移動枚数0枚の安全なno-opとしてシャッフルと完了まで実行する。これは開発用の明示実行を安全にするためであり、敗北条件を意味しない。
 
@@ -149,7 +149,7 @@ COMPLETE (running)
 
 候補は常に現在のGameStateの`clock[0..6]`から導出し、Process contextへカード、カードID、候補配列を複製しない。contextは開始時に空で、入力確定後に`selectedClockIndex`だけを保持する。選択解決時にもクロック状態とインデックスを再検証する。
 
-`WAIT_FOR_SELECTION`中は通常フェイズ進行とCLOCK操作を停止し、LevelUpControllerだけが入力を受け付ける。完了後はLEVEL_UPをpopし、下にあるProcessを自然に現在Processへ戻す。自動再開処理は行わない。
+`WAIT_FOR_SELECTION`中は通常フェイズ進行とCLOCK操作を停止し、LevelUpControllerだけが入力を受け付ける。Phase E以降、完了時は`completeCurrentProcess()`を通ってpop・再Rule Checkを行い、CONTINUEなら下にある既知Processを保存済みstepから再開する。
 
 Phase Cに含めないもの：
 

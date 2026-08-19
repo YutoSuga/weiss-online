@@ -40,6 +40,14 @@ const PLAYER_SIDE_VALUES = Object.freeze(["self", "opponent"]);
  */
 
 /**
+ * @typedef {object} GameResult
+ * @property {boolean} finished
+ * @property {'self'|'opponent'|null} winner
+ * @property {'self'|'opponent'|null} loser
+ * @property {string|null} reason
+ */
+
+/**
  * 対戦全体の状態を管理する。
  * 描画やルール実行は、将来追加するRenderer/GameEngineの責務とする。
  */
@@ -57,6 +65,7 @@ export class GameState {
    * @param {Partial<MulliganState>} [params.mulliganState={}]
    * @param {Partial<MessageOverlayState>} [params.messageOverlay={}]
    * @param {Partial<RuleState>} [params.ruleState={}]
+   * @param {Partial<GameResult>} [params.gameResult={}]
    * @param {GameLogEntry[]} [params.log=[]]
    */
   constructor({
@@ -74,6 +83,7 @@ export class GameState {
     mulliganState = {},
     messageOverlay = {},
     ruleState = {},
+    gameResult = {},
     log = [],
   }) {
     if (!(self instanceof Player) || !(opponent instanceof Player)) {
@@ -150,6 +160,20 @@ export class GameState {
       throw new TypeError("messageOverlay is invalid.");
     }
 
+    if (
+      gameResult === null ||
+      typeof gameResult !== "object" ||
+      (gameResult.finished != null &&
+        typeof gameResult.finished !== "boolean") ||
+      (gameResult.winner != null &&
+        !PLAYER_SIDE_VALUES.includes(gameResult.winner)) ||
+      (gameResult.loser != null &&
+        !PLAYER_SIDE_VALUES.includes(gameResult.loser)) ||
+      (gameResult.reason != null && typeof gameResult.reason !== "string")
+    ) {
+      throw new TypeError("gameResult is invalid.");
+    }
+
     /** @type {{self: Player, opponent: Player}} */
     this.players = { self, opponent };
 
@@ -198,6 +222,14 @@ export class GameState {
       processStack: [...(ruleState.processStack ?? [])],
       pendingInterrupts: [...(ruleState.pendingInterrupts ?? [])],
       pendingChecks: [...(ruleState.pendingChecks ?? [])],
+    };
+
+    /** @type {GameResult} */
+    this.gameResult = {
+      finished: gameResult.finished ?? false,
+      winner: gameResult.winner ?? null,
+      loser: gameResult.loser ?? null,
+      reason: gameResult.reason ?? null,
     };
 
     /** @type {GameLogEntry[]} */

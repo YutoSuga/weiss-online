@@ -927,6 +927,37 @@ ul {
   font-size: 11px;
 }
 
+.dev-rule-check-section {
+  margin-bottom: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #92400e;
+  font-size: 11px;
+}
+
+.dev-rule-check-results {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.dev-rule-check-results > div {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 4px;
+}
+
+.dev-rule-check-results dt {
+  color: #9ca3af;
+}
+
+.dev-rule-check-results dd {
+  max-height: 72px;
+  margin: 0;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
 .dev-stack-title {
   display: block;
   margin-bottom: 6px;

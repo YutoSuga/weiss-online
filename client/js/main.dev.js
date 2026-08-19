@@ -17,6 +17,7 @@ import { Card } from "./models/card.js";
 import { Deck } from "./models/deck.js";
 import { ZONE } from "./constants/zone.js";
 import { PROCESS_STATUS, PROCESS_TYPE } from "./constants/process.js";
+import { DEFEAT_REASON, RULE_CHECK_RESULT } from "./constants/ruleCheck.js";
 
 const TEST_DECK_SIZE = 50;
 const AUTOMATIC_OPPONENT_MULLIGAN_DELAY_MS = 3000;
@@ -232,6 +233,8 @@ window.gameEngine = gameEngine;
 window.processManager = processManager;
 window.PROCESS_TYPE = PROCESS_TYPE;
 window.PROCESS_STATUS = PROCESS_STATUS;
+window.RULE_CHECK_RESULT = RULE_CHECK_RESULT;
+window.DEFEAT_REASON = DEFEAT_REASON;
 window.gameStartController = gameStartController;
 window.mulliganController = mulliganController;
 window.clockController = clockController;
