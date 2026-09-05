@@ -5,6 +5,7 @@ import {
 } from "../constants/phase.js";
 import { ZONE } from "../constants/zone.js";
 import {
+  DRAW_STEP,
   PROCESS_STATUS,
   PROCESS_TYPE,
   LEVEL_UP_STEP,
@@ -356,15 +357,67 @@ export class GameEngine {
   }
 
   /**
-   * 現在ターンのプレイヤーが通常の1枚ドローを行う。
+   * 現在ターンのDRAW Processを開始する。
+   * 1枚ドロー後のCheck Pointから割り込みできるよう、再開stepをProcessへ保存する。
    *
    * @private
-   * @returns {void}
+   * @returns {import("./processManager.js").Process}
    */
   startDrawPhase() {
     const playerId = this.gameState.turn.player;
     this.#assertPlayerId(playerId);
-    this.drawCards(playerId, 1);
+
+    const process = this.processManager.pushProcess({
+      type: PROCESS_TYPE.DRAW_PHASE,
+      playerId,
+      step: DRAW_STEP.DRAW_CARD,
+      status: PROCESS_STATUS.RUNNING,
+      context: {},
+    });
+
+    this.executeDrawPhaseProcess();
+    return process;
+  }
+
+  /**
+   * スタック最上段のDRAW Processを、保存済みstepから実行する。
+   * Check Pointで割り込みが始まった場合は、その場で処理を停止する。
+   *
+   * @returns {import("./processManager.js").Process|null}
+   */
+  executeDrawPhaseProcess() {
+    const drawProcess = this.processManager.getCurrentProcess();
+    if (!drawProcess) {
+      return null;
+    }
+
+    if (drawProcess.type !== PROCESS_TYPE.DRAW_PHASE) {
+      throw new Error("The current Process is not DRAW_PHASE.");
+    }
+
+    while (this.processManager.getCurrentProcess() === drawProcess) {
+      switch (drawProcess.step) {
+        case DRAW_STEP.DRAW_CARD:
+          this.drawCards(drawProcess.playerId, 1);
+          this.processManager.updateStep(DRAW_STEP.CHECK_POINT);
+          break;
+        case DRAW_STEP.CHECK_POINT: {
+          this.processManager.updateStep(DRAW_STEP.COMPLETE);
+          const result = this.resolveRuleCheck();
+          if (result !== RULE_CHECK_RESULT.CONTINUE) {
+            return drawProcess;
+          }
+          break;
+        }
+        case DRAW_STEP.COMPLETE:
+          this.completeCurrentProcess();
+          return drawProcess;
+        default:
+          throw new RangeError(`Unknown DRAW_PHASE step: ${drawProcess.step}.`);
+      }
+    }
+
+    return drawProcess;
   }
 
   /**
@@ -870,6 +923,9 @@ export class GameEngine {
     }
     if (process.type === PROCESS_TYPE.REFRESH) {
       return this.executeRefreshProcess();
+    }
+    if (process.type === PROCESS_TYPE.DRAW_PHASE) {
+      return this.executeDrawPhaseProcess();
     }
     if (process.type === PROCESS_TYPE.LEVEL_UP) {
       return this.executeLevelUpProcess();

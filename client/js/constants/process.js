@@ -26,6 +26,13 @@ export const PROCESS_STATUS_VALUES = Object.freeze(
   Object.values(PROCESS_STATUS),
 );
 
+/** DRAW_PHASE Processで次に実行する処理。 */
+export const DRAW_STEP = Object.freeze({
+  DRAW_CARD: "draw_card",
+  CHECK_POINT: "check_point",
+  COMPLETE: "complete",
+});
+
 /**
  * REFRESH Processで次に実行する処理。
  */
