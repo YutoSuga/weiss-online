@@ -2,6 +2,13 @@ import { PHASE } from "../constants/phase.js";
 import { PROCESS_STATUS } from "../constants/process.js";
 
 const SELECTED_CLASS = "is-selected";
+const SELECTABLE_CLASS = "is-selectable";
+const UNSELECTABLE_CLASS = "is-unselectable";
+const SELECTION_CLASSES = Object.freeze([
+  SELECTED_CLASS,
+  SELECTABLE_CLASS,
+  UNSELECTABLE_CLASS,
+]);
 
 /**
  * CLOCKフェイズ中の一時的な手札選択と確定操作だけを管理する。
@@ -28,6 +35,7 @@ export class ClockController {
     this.unsubscribeRender = null;
     this.initialized = false;
     this.submitting = false;
+    this.hasAppliedCandidateStates = false;
     this.boundHandleRootClick = this.handleRootClick.bind(this);
     this.boundHandleButtonClick = this.handleButtonClick.bind(this);
     this.boundSync = this.sync.bind(this);
@@ -71,6 +79,9 @@ export class ClockController {
     this.unsubscribeRender?.();
     this.unsubscribeRender = null;
     this.clearSelection();
+    if (this.hasAppliedCandidateStates) {
+      this.clearCandidateStates();
+    }
     this.button = null;
     this.initialized = false;
     this.submitting = false;
@@ -103,6 +114,12 @@ export class ClockController {
     this.button.hidden = !active;
     this.button.disabled = !isSelfTurn || this.submitting;
     this.updateButtonLabel();
+
+    if (isSelfTurn && !this.submitting) {
+      this.updateCandidateStates(true);
+    } else if (this.hasAppliedCandidateStates) {
+      this.clearCandidateStates();
+    }
   }
 
   /** @param {MouseEvent} event @returns {void} */
@@ -131,8 +148,9 @@ export class ClockController {
       this.clearSelection();
       this.selectedHandIndex = handIndex;
       this.selectedElement = slot;
-      slot.classList.add(SELECTED_CLASS);
     }
+
+    this.updateCandidateStates(true);
     this.updateButtonLabel();
   }
 
@@ -178,6 +196,59 @@ export class ClockController {
     this.selectedElement?.classList.remove(SELECTED_CLASS);
     this.selectedElement = null;
     this.selectedHandIndex = null;
+  }
+
+  /**
+   * Clear shared card-selection classes from the self hand slots.
+   *
+   * @returns {void}
+   */
+  clearCandidateStates() {
+    const slots = this.rootElement?.querySelectorAll(
+      '.card-slot[data-owner="self"][data-zone="hand"]',
+    );
+
+    slots?.forEach((slot) => {
+      slot.classList.remove(...SELECTION_CLASSES);
+    });
+    this.hasAppliedCandidateStates = false;
+  }
+
+  /**
+   * Apply the existing shared selection UI to CLOCK hand candidates.
+   *
+   * @param {boolean} selectionActive Whether the self player can select a card.
+   * @returns {void}
+   */
+  updateCandidateStates(selectionActive) {
+    this.clearCandidateStates();
+
+    if (!selectionActive) {
+      return;
+    }
+
+    const slots = this.rootElement?.querySelectorAll(
+      '.card-slot[data-owner="self"][data-zone="hand"][data-index]',
+    );
+
+    slots?.forEach((slot) => {
+      if (!slot.dataset.cardId) {
+        return;
+      }
+
+      const handIndex = Number(slot.dataset.index);
+      if (!Number.isInteger(handIndex) || handIndex < 1) {
+        slot.classList.add(UNSELECTABLE_CLASS);
+        return;
+      }
+
+      slot.classList.add(
+        handIndex === this.selectedHandIndex
+          ? SELECTED_CLASS
+          : SELECTABLE_CLASS,
+      );
+    });
+    this.hasAppliedCandidateStates = true;
   }
 
   /** @returns {boolean} */

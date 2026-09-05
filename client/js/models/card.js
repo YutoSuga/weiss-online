@@ -1,4 +1,9 @@
-import { ZONE, ZONE_VALUES } from "../constants/zone.js";
+import {
+  VISIBILITY,
+  ZONE,
+  ZONE_VALUES,
+  ZONE_VISIBILITY,
+} from "../constants/zone.js";
 
 /**
  * カードの表裏。
@@ -20,6 +25,7 @@ export const POSITION = Object.freeze({
 const OWNER_VALUES = Object.freeze(["self", "opponent"]);
 const FACE_VALUES = Object.freeze(Object.values(FACE));
 const POSITION_VALUES = Object.freeze(Object.values(POSITION));
+const VISIBILITY_VALUES = Object.freeze(Object.values(VISIBILITY));
 
 /**
  * 値が許可された文字列か検証する。
@@ -128,6 +134,7 @@ export class Card {
    * @param {string|null} [params.row=null] 舞台等の行
    * @param {number|null} [params.index=null] ゾーン内の位置
    * @param {'up'|'down'} [params.face=FACE.DOWN] 表裏
+   * @param {'public'|'owner_only'|'opponent_only'|'hidden'|null} [params.visibilityOverride=null] Zone標準visibilityを上書きする例外状態
    * @param {'stand'|'rest'|'reverse'} [params.position=POSITION.STAND] 向き
    * @param {number|null} [params.currentPower=params.basePower] 現在パワー
    * @param {number|null} [params.currentSoul=params.baseSoul] 現在ソウル
@@ -149,6 +156,7 @@ export class Card {
     row = null,
     index = null,
     face = FACE.DOWN,
+    visibilityOverride = null,
     position = POSITION.STAND,
     currentPower = basePower,
     currentSoul = baseSoul,
@@ -173,6 +181,9 @@ export class Card {
     assertString("row", row, { nullable: true });
     assertIndex(index);
     assertEnumValue("face", face, FACE_VALUES);
+    if (visibilityOverride !== null) {
+      assertEnumValue("visibilityOverride", visibilityOverride, VISIBILITY_VALUES);
+    }
     assertEnumValue("position", position, POSITION_VALUES);
     assertNumber("currentPower", currentPower, { nullable: true });
     assertNumber("currentSoul", currentSoul, { nullable: true });
@@ -194,6 +205,7 @@ export class Card {
     this.row = row;
     this.index = index;
     this.face = face;
+    this.visibilityOverride = visibilityOverride;
     this.position = position;
     this.currentPower = currentPower;
     this.currentSoul = currentSoul;
@@ -232,6 +244,32 @@ export class Card {
   }
 
   /**
+   * Zone標準とカード個別overrideから実効visibilityを返す。
+   * 通常visibilityをCardへ保存せず、現在のzoneから都度導出する。
+   *
+   * @returns {'public'|'owner_only'|'opponent_only'|'hidden'}
+   */
+  getEffectiveVisibility() {
+    return this.visibilityOverride ?? ZONE_VISIBILITY[this.zone];
+  }
+
+  /**
+   * カード効果などによるvisibilityの例外状態を設定する。
+   * nullを指定すると現在zoneの標準visibilityへ戻る。
+   *
+   * @param {'public'|'owner_only'|'opponent_only'|'hidden'|null} visibilityOverride
+   * @returns {Card}
+   */
+  setVisibilityOverride(visibilityOverride) {
+    if (visibilityOverride !== null) {
+      assertEnumValue("visibilityOverride", visibilityOverride, VISIBILITY_VALUES);
+    }
+
+    this.visibilityOverride = visibilityOverride;
+    return this;
+  }
+
+  /**
    * カードの向きを変更する。
    *
    * @param {'stand'|'rest'|'reverse'} position
@@ -266,6 +304,7 @@ export class Card {
       row: this.row,
       index: this.index,
       face: this.face,
+      visibilityOverride: this.visibilityOverride,
       position: this.position,
       currentPower: this.currentPower,
       currentSoul: this.currentSoul,

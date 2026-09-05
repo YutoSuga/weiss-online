@@ -1,4 +1,4 @@
-import { ZONE } from "../constants/zone.js";
+import { VISIBILITY, ZONE, ZONE_VISIBILITY } from "../constants/zone.js";
 import { PHASE } from "../constants/phase.js";
 
 const OWNERS = Object.freeze(["self", "opponent"]);
@@ -25,9 +25,11 @@ const DEFAULT_FACE = Object.freeze({
 export class Renderer {
   /**
    * @param {ParentNode|null} rootElement 描画対象を含むルート要素
+   * @param {{viewerId?: 'self'|'opponent'}} [options] 描画視点
    */
-  constructor(rootElement) {
+  constructor(rootElement, { viewerId = "self" } = {}) {
     this.rootElement = rootElement ?? null;
+    this.viewerId = OWNERS.includes(viewerId) ? viewerId : "self";
     /** @type {WeakMap<HTMLElement, () => void>} */
     this.handScrollHandlers = new WeakMap();
   }
@@ -700,8 +702,7 @@ export class Renderer {
     slot.dataset.owner = owner;
     slot.dataset.zone = zone;
     slot.dataset.index = String(index);
-    slot.dataset.face =
-      typeof card.face === "string" ? card.face : DEFAULT_FACE[zone] ?? "up";
+    slot.dataset.face = this.resolveRenderedFace(card, owner, zone);
     slot.dataset.position =
       typeof card.position === "string" ? card.position : "stand";
 
@@ -717,6 +718,68 @@ export class Renderer {
     if (label) {
       slot.title = label;
     }
+  }
+
+  /**
+   * Cardの個別overrideを優先し、未設定時はzone標準visibilityを導出する。
+   * Card以外の防御的な描画入力にも対応する。
+   *
+   * @param {object} card
+   * @param {string} zone
+   * @returns {string}
+   */
+  resolveEffectiveVisibility(card, zone) {
+    if (typeof card?.getEffectiveVisibility === "function") {
+      return card.getEffectiveVisibility();
+    }
+
+    if (typeof card?.visibilityOverride === "string") {
+      return card.visibilityOverride;
+    }
+
+    return ZONE_VISIBILITY[card?.zone] ?? ZONE_VISIBILITY[zone] ?? VISIBILITY.HIDDEN;
+  }
+
+  /**
+   * 現在のviewerがカード内容を見る権限を持つか判定する。
+   *
+   * @param {object} card
+   * @param {'self'|'opponent'} owner
+   * @param {string} visibility
+   * @returns {boolean}
+   */
+  canViewerSeeCard(card, owner, visibility) {
+    const cardOwner = OWNERS.includes(card?.owner) ? card.owner : owner;
+
+    switch (visibility) {
+      case VISIBILITY.PUBLIC:
+        return true;
+      case VISIBILITY.OWNER_ONLY:
+        return this.viewerId === cardOwner;
+      case VISIBILITY.OPPONENT_ONLY:
+        return this.viewerId !== cardOwner;
+      case VISIBILITY.HIDDEN:
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * visibilityを先に判定し、閲覧できる場合だけ物理的なfaceを反映する。
+   *
+   * @param {object} card
+   * @param {'self'|'opponent'} owner
+   * @param {string} zone
+   * @returns {'up'|'down'}
+   */
+  resolveRenderedFace(card, owner, zone) {
+    const visibility = this.resolveEffectiveVisibility(card, zone);
+    const canView = this.canViewerSeeCard(card, owner, visibility);
+    const face = typeof card?.face === "string"
+      ? card.face
+      : DEFAULT_FACE[zone] ?? "up";
+
+    return canView && face === "up" ? "up" : "down";
   }
 
   /**
