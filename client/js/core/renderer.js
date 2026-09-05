@@ -28,6 +28,8 @@ export class Renderer {
    */
   constructor(rootElement) {
     this.rootElement = rootElement ?? null;
+    /** @type {WeakMap<HTMLElement, () => void>} */
+    this.handScrollHandlers = new WeakMap();
   }
 
   /**
@@ -360,6 +362,55 @@ export class Renderer {
       slot.dataset.cardId = "";
       container.append(slot);
     }
+
+    if (handArea instanceof HTMLElement) {
+      this.bindHandScroll(container, handArea);
+      this.updateHandScrollIndicators(container, handArea);
+    }
+  }
+
+  /**
+   * 手札スクロール位置の監視を一度だけ登録する。
+   * グラデーション表示だけを更新し、GameStateは変更しない。
+   *
+   * @param {HTMLElement} container
+   * @param {HTMLElement} handArea
+   * @returns {void}
+   */
+  bindHandScroll(container, handArea) {
+    if (this.handScrollHandlers.has(container)) {
+      return;
+    }
+
+    const handleScroll = () => {
+      this.updateHandScrollIndicators(container, handArea);
+    };
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    this.handScrollHandlers.set(container, handleScroll);
+  }
+
+  /**
+   * 手札スクロール領域の左右に未表示カードがあるかを属性へ反映する。
+   * 端判定の丸め誤差は1pxまで許容する。
+   *
+   * @param {HTMLElement} container
+   * @param {HTMLElement} handArea
+   * @returns {void}
+   */
+  updateHandScrollIndicators(container, handArea) {
+    const maximumScrollLeft = Math.max(
+      0,
+      container.scrollWidth - container.clientWidth,
+    );
+    const isScrollable =
+      handArea.dataset.handScrollable === "true" && maximumScrollLeft > 1;
+    const canScrollLeft = isScrollable && container.scrollLeft > 1;
+    const canScrollRight =
+      isScrollable && container.scrollLeft < maximumScrollLeft - 1;
+
+    handArea.dataset.handCanScrollLeft = String(canScrollLeft);
+    handArea.dataset.handCanScrollRight = String(canScrollRight);
   }
 
   /**

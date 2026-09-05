@@ -303,6 +303,36 @@ ul {
   position: relative;
 }
 
+/* Scroll affordances: only reveal a fade toward unshown hand cards. */
+.hand-area[data-hand-can-scroll-left="true"]::before,
+.hand-area[data-hand-can-scroll-right="true"]::after {
+  position: absolute;
+  z-index: 1;
+  top: 30px;
+  bottom: 8px;
+  width: 28px;
+  content: "";
+  pointer-events: none;
+}
+
+.hand-area[data-hand-can-scroll-left="true"]::before {
+  left: 12px;
+  background: linear-gradient(
+    to right,
+    rgba(17, 24, 39, 0.82),
+    rgba(17, 24, 39, 0)
+  );
+}
+
+.hand-area[data-hand-can-scroll-right="true"]::after {
+  right: 12px;
+  background: linear-gradient(
+    to left,
+    rgba(17, 24, 39, 0.82),
+    rgba(17, 24, 39, 0)
+  );
+}
+
 /* =========================================================
    Playmat grid
    Columns: narrow | narrow | stage | wide | utility
