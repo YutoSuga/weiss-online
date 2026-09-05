@@ -272,6 +272,7 @@ ul {
   flex: none;
   flex-direction: column;
   align-self: center;
+  isolation: isolate;
   gap: 6px;
   width: var(--hand-current-w);
   max-width: var(--playmat-grid-w);
@@ -309,7 +310,8 @@ ul {
   display: flex;
   align-items: center;
   position: absolute;
-  z-index: 1;
+  /* Hand cards receive incremental inline z-index values from Renderer. */
+  z-index: 100;
   top: 30px;
   bottom: 8px;
   width: 36px;
