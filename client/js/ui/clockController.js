@@ -1,5 +1,9 @@
 import { PHASE } from "../constants/phase.js";
-import { PROCESS_STATUS } from "../constants/process.js";
+import {
+  CLOCK_STEP,
+  PROCESS_STATUS,
+  PROCESS_TYPE,
+} from "../constants/process.js";
 
 const SELECTED_CLASS = "is-selected";
 const SELECTABLE_CLASS = "is-selectable";
@@ -98,8 +102,7 @@ export class ClockController {
       return;
     }
 
-    const active = this.gameState?.phase === PHASE.CLOCK &&
-      !this.isProcessInputBlocked();
+    const active = this.getActiveProcess() !== null;
     const isSelfTurn = active && this.gameState?.turn?.player === "self";
 
     if (!active || !isSelfTurn || this.submitting) {
@@ -184,7 +187,7 @@ export class ClockController {
   canInteract() {
     return Boolean(
       this.gameState?.phase === PHASE.CLOCK &&
-      !this.isProcessInputBlocked() &&
+      this.getActiveProcess() !== null &&
       this.gameState?.turn?.player === "self" &&
       typeof this.gameEngine?.clockCard === "function" &&
       typeof this.gameEngine?.skipClockPhase === "function",
@@ -251,11 +254,20 @@ export class ClockController {
     this.hasAppliedCandidateStates = true;
   }
 
-  /** @returns {boolean} */
-  isProcessInputBlocked() {
+  /**
+   * 自分が操作できるCLOCK Processの選択待ち状態を返す。
+   *
+   * @returns {object|null}
+   */
+  getActiveProcess() {
     const stack = this.gameState?.ruleState?.processStack;
-    const current = Array.isArray(stack) ? stack[stack.length - 1] : null;
-    return current?.status === PROCESS_STATUS.WAITING_INPUT;
+    const process = Array.isArray(stack) ? stack.at(-1) : null;
+
+    return process?.type === PROCESS_TYPE.CLOCK_PHASE &&
+      process.step === CLOCK_STEP.WAIT_FOR_SELECTION &&
+      process.status === PROCESS_STATUS.WAITING_INPUT
+      ? process
+      : null;
   }
 
   /** @returns {void} */

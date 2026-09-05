@@ -5,6 +5,7 @@ import {
 } from "../constants/phase.js";
 import { ZONE } from "../constants/zone.js";
 import {
+  CLOCK_STEP,
   DRAW_STEP,
   PROCESS_STATUS,
   PROCESS_TYPE,
@@ -421,32 +422,45 @@ export class GameEngine {
   }
 
   /**
-   * CLOCKフェイズへ入り、現在のプレイヤーからの操作を待つ。
-   * カード移動やドローは、プレイヤーが行動を確定するまで実行しない。
+   * CLOCKフェイズの選択待ちProcessを開始する。
    *
-   * @returns {void}
+   * @returns {import("./processManager.js").Process}
    */
   startClockPhase() {
-    this.#assertPlayerId(this.gameState.turn.player);
+    const playerId = this.gameState.turn.player;
+    this.#assertPlayerId(playerId);
+
+    return this.processManager.pushProcess({
+      type: PROCESS_TYPE.CLOCK_PHASE,
+      playerId,
+      step: CLOCK_STEP.WAIT_FOR_SELECTION,
+      status: PROCESS_STATUS.WAITING_INPUT,
+      context: {},
+    });
   }
 
   /**
-   * 手札1枚をクロックへ置き、確定した処理単位ごとに描画して2枚引く。
-   * handIndexはCard.indexと同じ1始まりで扱う。
+   * CLOCK Processの選択を確定し、保存済みstepから処理を進める。
    *
    * @param {'self'|'opponent'} playerId
    * @param {number} handIndex
    * @returns {import("../models/card.js").Card} クロックへ置いたカード
    */
   clockCard(playerId, handIndex) {
-    this.#assertClockAction(playerId);
-    const card = this.moveHandCardToClock(playerId, handIndex);
+    const clockProcess = this.#assertClockAction(playerId);
+    const player = this.gameState.players[playerId];
+    if (!Number.isInteger(handIndex) || handIndex < 1) {
+      throw new TypeError("handIndex must be a positive integer.");
+    }
+    const card = player.hand[handIndex - 1];
+    if (!card) {
+      throw new RangeError("handIndex is outside the hand.");
+    }
 
-    this.addLog(playerId, "手札を1枚クロックに置きました。");
-    this.render();
-    this.drawCards(playerId, 2);
-    this.render();
-    this.nextPhase();
+    clockProcess.context.handIndex = handIndex;
+    this.processManager.updateStep(CLOCK_STEP.MOVE_TO_CLOCK);
+    this.processManager.updateStatus(PROCESS_STATUS.RUNNING);
+    this.executeClockPhaseProcess();
 
     return card;
   }
@@ -460,7 +474,92 @@ export class GameEngine {
   skipClockPhase(playerId) {
     this.#assertClockAction(playerId);
     this.addLog(playerId, "クロックに置かず次のフェイズへ進みました。");
-    this.nextPhase();
+    this.processManager.updateStep(CLOCK_STEP.COMPLETE);
+    this.processManager.updateStatus(PROCESS_STATUS.RUNNING);
+    this.executeClockPhaseProcess();
+  }
+
+  /**
+   * スタック最上段のCLOCK Processを、保存済みstepから実行する。
+   * Check Pointで割り込みが始まった場合は、その場で処理を停止する。
+   *
+   * @returns {import("./processManager.js").Process|null}
+   */
+  executeClockPhaseProcess() {
+    const clockProcess = this.processManager.getCurrentProcess();
+    if (!clockProcess) {
+      return null;
+    }
+
+    if (clockProcess.type !== PROCESS_TYPE.CLOCK_PHASE) {
+      throw new Error("The current Process is not CLOCK_PHASE.");
+    }
+
+    while (this.processManager.getCurrentProcess() === clockProcess) {
+      switch (clockProcess.step) {
+        case CLOCK_STEP.WAIT_FOR_SELECTION:
+          if (clockProcess.status !== PROCESS_STATUS.WAITING_INPUT) {
+            throw new Error("CLOCK selection step must be waiting for input.");
+          }
+          return clockProcess;
+        case CLOCK_STEP.MOVE_TO_CLOCK:
+          this.moveHandCardToClock(
+            clockProcess.playerId,
+            clockProcess.context.handIndex,
+          );
+          this.processManager.updateStep(CLOCK_STEP.CHECK_POINT_AFTER_CLOCK);
+          this.addLog(clockProcess.playerId, "手札を1枚クロックに置きました。");
+          this.render();
+          break;
+        case CLOCK_STEP.CHECK_POINT_AFTER_CLOCK: {
+          this.processManager.updateStep(CLOCK_STEP.DRAW_1);
+          const result = this.resolveRuleCheck();
+          if (result !== RULE_CHECK_RESULT.CONTINUE) {
+            return clockProcess;
+          }
+          break;
+        }
+        case CLOCK_STEP.DRAW_1:
+          this.drawCards(clockProcess.playerId, 1);
+          this.processManager.updateStep(CLOCK_STEP.CHECK_POINT_AFTER_DRAW_1);
+          break;
+        case CLOCK_STEP.CHECK_POINT_AFTER_DRAW_1: {
+          this.processManager.updateStep(CLOCK_STEP.DRAW_2);
+          const result = this.resolveRuleCheck();
+          if (result !== RULE_CHECK_RESULT.CONTINUE) {
+            return clockProcess;
+          }
+          break;
+        }
+        case CLOCK_STEP.DRAW_2:
+          this.drawCards(clockProcess.playerId, 1);
+          this.processManager.updateStep(CLOCK_STEP.CHECK_POINT_AFTER_DRAW_2);
+          break;
+        case CLOCK_STEP.CHECK_POINT_AFTER_DRAW_2: {
+          this.processManager.updateStep(CLOCK_STEP.COMPLETE);
+          const result = this.resolveRuleCheck();
+          if (result !== RULE_CHECK_RESULT.CONTINUE) {
+            return clockProcess;
+          }
+          break;
+        }
+        case CLOCK_STEP.COMPLETE: {
+          const result = this.completeCurrentProcess();
+          if (
+            result === RULE_CHECK_RESULT.CONTINUE &&
+            !this.gameState.gameResult.finished &&
+            this.gameState.phase === PHASE.CLOCK
+          ) {
+            this.nextPhase();
+          }
+          return clockProcess;
+        }
+        default:
+          throw new RangeError(`Unknown CLOCK_PHASE step: ${clockProcess.step}.`);
+      }
+    }
+
+    return clockProcess;
   }
 
   /**
@@ -924,6 +1023,9 @@ export class GameEngine {
     if (process.type === PROCESS_TYPE.REFRESH) {
       return this.executeRefreshProcess();
     }
+    if (process.type === PROCESS_TYPE.CLOCK_PHASE) {
+      return this.executeClockPhaseProcess();
+    }
     if (process.type === PROCESS_TYPE.DRAW_PHASE) {
       return this.executeDrawPhaseProcess();
     }
@@ -1247,14 +1349,11 @@ export class GameEngine {
 
   /**
    * @param {unknown} playerId
-   * @returns {asserts playerId is 'self'|'opponent'}
+   * @returns {import("./processManager.js").Process}
    */
   #assertClockAction(playerId) {
     if (this.gameState.gameResult.finished) {
       throw new Error("CLOCK action is unavailable after game over.");
-    }
-    if (this.#isWaitingForProcessInput()) {
-      throw new Error("CLOCK action is blocked while a Process awaits input.");
     }
     if (this.#hasPendingInterruptSelection()) {
       throw new Error("CLOCK action is blocked while interrupt order is pending.");
@@ -1268,6 +1367,18 @@ export class GameEngine {
     if (this.gameState.turn.player !== playerId) {
       throw new Error(`It is not ${playerId}'s turn.`);
     }
+
+    const process = this.processManager.getCurrentProcess();
+    if (
+      process?.type !== PROCESS_TYPE.CLOCK_PHASE ||
+      process.playerId !== playerId ||
+      process.step !== CLOCK_STEP.WAIT_FOR_SELECTION ||
+      process.status !== PROCESS_STATUS.WAITING_INPUT
+    ) {
+      throw new Error("CLOCK action is unavailable outside its selection Process.");
+    }
+
+    return process;
   }
 
   /**
