@@ -7,6 +7,7 @@ export const PROCESS_TYPE = Object.freeze({
   CLOCK_PHASE: "clock_phase",
   DRAW_PHASE: "draw_phase",
   REFRESH: "refresh",
+  REFRESH_PENALTY: "refresh_penalty",
   LEVEL_UP: "level_up",
 });
 
@@ -52,6 +53,13 @@ export const CLOCK_STEP = Object.freeze({
 export const REFRESH_STEP = Object.freeze({
   MOVE_WAITING_ROOM_TO_DECK: "move_waiting_room_to_deck",
   SHUFFLE_DECK: "shuffle_deck",
+  COMPLETE: "complete",
+});
+
+/** REFRESH_PENALTY Processで次に実行する処理。 */
+export const REFRESH_PENALTY_STEP = Object.freeze({
+  MOVE_TOP_CARD: "move_top_card",
+  CHECK_POINT: "check_point",
   COMPLETE: "complete",
 });
 

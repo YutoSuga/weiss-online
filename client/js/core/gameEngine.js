@@ -10,6 +10,7 @@ import {
   PROCESS_STATUS,
   PROCESS_TYPE,
   LEVEL_UP_STEP,
+  REFRESH_PENALTY_STEP,
   REFRESH_STEP,
 } from "../constants/process.js";
 import {
@@ -691,6 +692,10 @@ export class GameEngine {
           break;
         }
         case REFRESH_STEP.COMPLETE:
+          this.gameState.ruleState.pendingChecks.push({
+            type: PROCESS_TYPE.REFRESH_PENALTY,
+            playerId: refreshProcess.playerId,
+          });
           this.addLog(refreshProcess.playerId, "リフレッシュが完了しました。");
           this.completeCurrentProcess();
           return refreshProcess;
@@ -702,6 +707,75 @@ export class GameEngine {
     }
 
     return refreshProcess;
+  }
+
+  /**
+   * REFRESH完了で発生したリフレッシュペナルティを実行する。
+   * pendingChecksからのconsumeは、呼び出し元のresolveRuleCheckが担当する。
+   *
+   * @param {'self'|'opponent'} playerId
+   * @returns {import("./processManager.js").Process}
+   */
+  startRefreshPenalty(playerId) {
+    this.#assertPlayerId(playerId);
+
+    const process = this.processManager.pushProcess({
+      type: PROCESS_TYPE.REFRESH_PENALTY,
+      playerId,
+      step: REFRESH_PENALTY_STEP.MOVE_TOP_CARD,
+      status: PROCESS_STATUS.RUNNING,
+      context: {},
+    });
+
+    this.addLog(playerId, "リフレッシュペナルティを開始しました。");
+    this.executeRefreshPenaltyProcess();
+    return process;
+  }
+
+  /**
+   * スタック最上段のREFRESH_PENALTY Processを保存済みstepから実行する。
+   * ペナルティカードをクロックへ置いた後は、必ずCheck Pointで停止判定する。
+   *
+   * @returns {import("./processManager.js").Process|null}
+   */
+  executeRefreshPenaltyProcess() {
+    const penaltyProcess = this.processManager.getCurrentProcess();
+    if (!penaltyProcess) {
+      return null;
+    }
+
+    if (penaltyProcess.type !== PROCESS_TYPE.REFRESH_PENALTY) {
+      throw new Error("The current Process is not REFRESH_PENALTY.");
+    }
+
+    while (this.processManager.getCurrentProcess() === penaltyProcess) {
+      switch (penaltyProcess.step) {
+        case REFRESH_PENALTY_STEP.MOVE_TOP_CARD:
+          this.moveDeckCardToClock(penaltyProcess.playerId);
+          this.processManager.updateStep(REFRESH_PENALTY_STEP.CHECK_POINT);
+          this.addLog(penaltyProcess.playerId, "山札から1枚をクロックに置きました。");
+          this.render();
+          break;
+        case REFRESH_PENALTY_STEP.CHECK_POINT: {
+          this.processManager.updateStep(REFRESH_PENALTY_STEP.COMPLETE);
+          const result = this.resolveRuleCheck();
+          if (result !== RULE_CHECK_RESULT.CONTINUE) {
+            return penaltyProcess;
+          }
+          break;
+        }
+        case REFRESH_PENALTY_STEP.COMPLETE:
+          this.addLog(penaltyProcess.playerId, "リフレッシュペナルティが完了しました。");
+          this.completeCurrentProcess();
+          return penaltyProcess;
+        default:
+          throw new RangeError(
+            `Unknown REFRESH_PENALTY step: ${penaltyProcess.step}.`,
+          );
+      }
+    }
+
+    return penaltyProcess;
   }
 
   /**
@@ -970,24 +1044,36 @@ export class GameEngine {
     const executableInterrupts = this.#uniqueInterrupts(
       result.interrupts.filter((interrupt) => interrupt.executable),
     );
+    const pendingCheckCandidates = this.#getExecutablePendingChecks();
+    const executionCandidates = [
+      ...executableInterrupts,
+      ...pendingCheckCandidates,
+    ];
 
-    if (executableInterrupts.length === 0) {
+    if (executionCandidates.length === 0) {
       return RULE_CHECK_RESULT.CONTINUE;
     }
 
-    if (executableInterrupts.length > 1) {
+    if (executionCandidates.length > 1) {
       this.gameState.ruleState.pendingInterrupts.push(
-        ...executableInterrupts.map(({ type, playerId }) => ({ type, playerId })),
+        ...executionCandidates.map(({ type, playerId, pendingCheckIndex }) => ({
+          type,
+          playerId,
+          ...(Number.isInteger(pendingCheckIndex) ? { pendingCheckIndex } : {}),
+        })),
       );
       this.render();
       return RULE_CHECK_RESULT.WAITING_INTERRUPT_SELECTION;
     }
 
-    const [interrupt] = executableInterrupts;
+    const [interrupt] = executionCandidates;
     if (interrupt.type === PROCESS_TYPE.REFRESH) {
       this.startRefresh(interrupt.playerId);
     } else if (interrupt.type === PROCESS_TYPE.LEVEL_UP) {
       this.startLevelUp(interrupt.playerId);
+    } else if (interrupt.type === PROCESS_TYPE.REFRESH_PENALTY) {
+      this.#consumePendingCheck(interrupt.pendingCheckIndex);
+      this.startRefreshPenalty(interrupt.playerId);
     } else {
       throw new RangeError(`Unsupported interrupt type: ${interrupt.type}.`);
     }
@@ -1022,6 +1108,9 @@ export class GameEngine {
     }
     if (process.type === PROCESS_TYPE.REFRESH) {
       return this.executeRefreshProcess();
+    }
+    if (process.type === PROCESS_TYPE.REFRESH_PENALTY) {
+      return this.executeRefreshPenaltyProcess();
     }
     if (process.type === PROCESS_TYPE.CLOCK_PHASE) {
       return this.executeClockPhaseProcess();
@@ -1332,6 +1421,54 @@ export class GameEngine {
       seen.add(key);
       return true;
     });
+  }
+
+  /**
+   * 現在実行できるpendingChecksをRule Check候補へ変換する。
+   * 1件ごとの配列位置を保持し、同種の複数ペナルティを区別する。
+   *
+   * @returns {Array<{type: string, playerId: 'self'|'opponent', pendingCheckIndex: number}>}
+   */
+  #getExecutablePendingChecks() {
+    const pendingChecks = this.gameState.ruleState.pendingChecks;
+    if (!Array.isArray(pendingChecks)) {
+      return [];
+    }
+
+    return pendingChecks.flatMap((check, pendingCheckIndex) => {
+      if (
+        check?.type !== PROCESS_TYPE.REFRESH_PENALTY ||
+        !PLAYER_IDS.includes(check.playerId)
+      ) {
+        return [];
+      }
+
+      return [{
+        type: PROCESS_TYPE.REFRESH_PENALTY,
+        playerId: check.playerId,
+        pendingCheckIndex,
+      }];
+    });
+  }
+
+  /**
+   * Process開始が決定したpendingCheckを一度だけ取り除く。
+   *
+   * @param {number} pendingCheckIndex
+   * @returns {object}
+   */
+  #consumePendingCheck(pendingCheckIndex) {
+    const pendingChecks = this.gameState.ruleState.pendingChecks;
+    if (!Number.isInteger(pendingCheckIndex) || pendingCheckIndex < 0) {
+      throw new TypeError("pendingCheckIndex must be a non-negative integer.");
+    }
+
+    const [check] = pendingChecks.splice(pendingCheckIndex, 1);
+    if (!check || check.type !== PROCESS_TYPE.REFRESH_PENALTY) {
+      throw new Error("The REFRESH_PENALTY pendingCheck does not exist.");
+    }
+
+    return check;
   }
 
   /**
