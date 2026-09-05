@@ -306,30 +306,44 @@ ul {
 /* Scroll affordances: only reveal a fade toward unshown hand cards. */
 .hand-area[data-hand-can-scroll-left="true"]::before,
 .hand-area[data-hand-can-scroll-right="true"]::after {
+  display: flex;
+  align-items: center;
   position: absolute;
   z-index: 1;
   top: 30px;
   bottom: 8px;
-  width: 28px;
-  content: "";
+  width: 36px;
+  color: rgba(249, 250, 251, 0.96);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
   pointer-events: none;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 .hand-area[data-hand-can-scroll-left="true"]::before {
   left: 12px;
+  justify-content: flex-start;
+  padding-left: 4px;
+  content: "\2039";
   background: linear-gradient(
     to right,
-    rgba(17, 24, 39, 0.82),
-    rgba(17, 24, 39, 0)
+    rgba(17, 24, 39, 0.94) 0%,
+    rgba(17, 24, 39, 0.64) 38%,
+    rgba(17, 24, 39, 0) 100%
   );
 }
 
 .hand-area[data-hand-can-scroll-right="true"]::after {
   right: 12px;
+  justify-content: flex-end;
+  padding-right: 4px;
+  content: "\203a";
   background: linear-gradient(
     to left,
-    rgba(17, 24, 39, 0.82),
-    rgba(17, 24, 39, 0)
+    rgba(17, 24, 39, 0.94) 0%,
+    rgba(17, 24, 39, 0.64) 38%,
+    rgba(17, 24, 39, 0) 100%
   );
 }
 
