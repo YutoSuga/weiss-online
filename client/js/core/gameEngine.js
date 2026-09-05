@@ -14,7 +14,7 @@ import {
   DEFEAT_REASON,
   RULE_CHECK_RESULT,
 } from "../constants/ruleCheck.js";
-import { FACE, POSITION } from "../models/card.js";
+import { POSITION } from "../models/card.js";
 import { GameState } from "../models/gameState.js";
 import { ProcessManager } from "./processManager.js";
 
@@ -470,7 +470,6 @@ export class GameEngine {
       row: null,
       index: player.clock.length + 1,
     });
-    card.setFace(FACE.UP);
     card.setPosition(POSITION.STAND);
     player.clock.push(card);
     this.#reindexCards(player.deck.cards);
@@ -572,7 +571,6 @@ export class GameEngine {
         row: null,
         index: player.deck.cards.length + 1,
       });
-      card.setFace(FACE.DOWN);
       card.setPosition(POSITION.STAND);
       player.deck.addBottom(card);
     });
@@ -1125,7 +1123,6 @@ export class GameEngine {
     player.clock.splice(0, 7);
     candidates.forEach((card, candidateIndex) => {
       card.owner = playerId;
-      card.setFace(FACE.UP);
       card.setPosition(POSITION.STAND);
 
       if (candidateIndex === selectedClockIndex) {

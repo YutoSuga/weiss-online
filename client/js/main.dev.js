@@ -72,7 +72,6 @@ function createTestCard(owner, sequence) {
     zone: ZONE.DECK,
     row: null,
     index: null,
-    face: "down",
     position: "stand",
   });
 }

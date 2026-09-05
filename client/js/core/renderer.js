@@ -1,5 +1,6 @@
 import { VISIBILITY, ZONE, ZONE_VISIBILITY } from "../constants/zone.js";
 import { PHASE } from "../constants/phase.js";
+import { FACE } from "../models/card.js";
 
 const OWNERS = Object.freeze(["self", "opponent"]);
 const TURN_PLAYER_LABELS = Object.freeze({
@@ -775,11 +776,7 @@ export class Renderer {
   resolveRenderedFace(card, owner, zone) {
     const visibility = this.resolveEffectiveVisibility(card, zone);
     const canView = this.canViewerSeeCard(card, owner, visibility);
-    const face = typeof card?.face === "string"
-      ? card.face
-      : DEFAULT_FACE[zone] ?? "up";
-
-    return canView && face === "up" ? "up" : "down";
+    return canView && card?.face !== FACE.DOWN ? "up" : "down";
   }
 
   /**

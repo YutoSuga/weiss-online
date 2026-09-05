@@ -133,7 +133,7 @@ export class Card {
    * @param {string} [params.zone=ZONE.DECK] 現在のゾーン
    * @param {string|null} [params.row=null] 舞台等の行
    * @param {number|null} [params.index=null] ゾーン内の位置
-   * @param {'up'|'down'} [params.face=FACE.DOWN] 表裏
+   * @param {'up'|'down'|null} [params.face=null] 明示的な表裏指定。nullはZone由来の通常表示
    * @param {'public'|'owner_only'|'opponent_only'|'hidden'|null} [params.visibilityOverride=null] Zone標準visibilityを上書きする例外状態
    * @param {'stand'|'rest'|'reverse'} [params.position=POSITION.STAND] 向き
    * @param {number|null} [params.currentPower=params.basePower] 現在パワー
@@ -155,7 +155,7 @@ export class Card {
     zone = ZONE.DECK,
     row = null,
     index = null,
-    face = FACE.DOWN,
+    face = null,
     visibilityOverride = null,
     position = POSITION.STAND,
     currentPower = basePower,
@@ -180,7 +180,9 @@ export class Card {
     assertEnumValue("zone", zone, ZONE_VALUES);
     assertString("row", row, { nullable: true });
     assertIndex(index);
-    assertEnumValue("face", face, FACE_VALUES);
+    if (face !== null) {
+      assertEnumValue("face", face, FACE_VALUES);
+    }
     if (visibilityOverride !== null) {
       assertEnumValue("visibilityOverride", visibilityOverride, VISIBILITY_VALUES);
     }
@@ -234,11 +236,13 @@ export class Card {
   /**
    * カードの表裏を変更する。
    *
-   * @param {'up'|'down'} face
+   * @param {'up'|'down'|null} face
    * @returns {Card}
    */
   setFace(face) {
-    assertEnumValue("face", face, FACE_VALUES);
+    if (face !== null) {
+      assertEnumValue("face", face, FACE_VALUES);
+    }
     this.face = face;
     return this;
   }
