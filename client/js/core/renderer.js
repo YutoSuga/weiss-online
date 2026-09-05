@@ -19,7 +19,7 @@ const DEFAULT_FACE = Object.freeze({
 });
 
 /**
- * GameStateの現在状態を、board v6.0の固定カード枠へ反映する。
+ * GameStateの現在状態を、board v6.0のカード枠へ反映する。
  * ゲーム状態の変更やルール判定、入力イベントの処理は行わない。
  */
 export class Renderer {
@@ -265,7 +265,7 @@ export class Renderer {
   }
 
   /**
-   * Rendererが利用する固定カード枠を空表示へ戻す。
+   * Rendererが利用する現在のカード枠を空表示へ戻す。
    *
    * @returns {void}
    */
@@ -317,7 +317,116 @@ export class Renderer {
    * @returns {void}
    */
   renderHand(player, owner) {
-    this.renderFixedSlots(player.hand, owner, ZONE.HAND, 7);
+    const cards = this.asArray(player.hand);
+    this.syncHandSlots(owner, cards.length);
+    this.renderFixedSlots(cards, owner, ZONE.HAND);
+  }
+
+  /**
+   * GameStateの手札枚数と同数になるよう表示スロットを同期する。
+   * 手札のdata-indexは既存仕様どおり1始まりとする。
+   *
+   * @param {'self'|'opponent'} owner
+   * @param {number} cardCount
+   * @returns {void}
+   */
+  syncHandSlots(owner, cardCount) {
+    const container = this.rootElement?.querySelector(
+      `.${owner}-hand .hand-slots`,
+    );
+    if (!(container instanceof HTMLElement)) {
+      return;
+    }
+
+    const handArea = container.closest(".hand-area");
+    if (handArea instanceof HTMLElement) {
+      this.updateHandAreaWidth(handArea, cardCount);
+    }
+
+    const existingSlots = [...container.querySelectorAll(
+      `.card-slot[data-owner="${owner}"][data-zone="${ZONE.HAND}"]`,
+    )];
+
+    existingSlots.slice(cardCount).forEach((slot) => slot.remove());
+
+    for (let index = existingSlots.length + 1; index <= cardCount; index += 1) {
+      const slot = container.ownerDocument.createElement("article");
+      slot.className = "card-slot";
+      slot.dataset.owner = owner;
+      slot.dataset.zone = ZONE.HAND;
+      slot.dataset.index = String(index);
+      slot.dataset.face = owner === "opponent" ? "down" : "up";
+      slot.dataset.position = "stand";
+      slot.dataset.cardId = "";
+      container.append(slot);
+    }
+  }
+
+  /**
+   * CSS変数の実寸値から手札枠の幅を確定する。
+   * unitlessカスタムプロパティのCSS乗算に依存せず、ブラウザ間で同じ幅にする。
+   *
+   * @param {HTMLElement} handArea
+   * @param {number} cardCount
+   * @returns {void}
+   */
+  updateHandAreaWidth(handArea, cardCount) {
+    const view = handArea.ownerDocument?.defaultView;
+    if (!view || typeof view.getComputedStyle !== "function") {
+      return;
+    }
+
+    const styles = view.getComputedStyle(handArea);
+    const cardWidth = Number.parseFloat(
+      styles.getPropertyValue("--hand-card-w"),
+    );
+    const gap = Number.parseFloat(styles.getPropertyValue("--hand-gap"));
+    const inlineSpace = Number.parseFloat(
+      styles.getPropertyValue("--hand-inline-space"),
+    );
+    const minimumCount = Number.parseInt(
+      styles.getPropertyValue("--hand-visible-min"),
+      10,
+    );
+    const targetMaximumCount = Number.parseInt(
+      styles.getPropertyValue("--hand-visible-target"),
+      10,
+    );
+    const safeMaximumWidth = Number.parseFloat(styles.maxWidth);
+
+    if (
+      ![
+        cardWidth,
+        gap,
+        inlineSpace,
+        minimumCount,
+        targetMaximumCount,
+        safeMaximumWidth,
+      ].every(Number.isFinite)
+    ) {
+      return;
+    }
+
+    const safeMaximumCount = Math.max(
+      1,
+      Math.floor(
+        (safeMaximumWidth - inlineSpace + gap) / (cardWidth + gap),
+      ),
+    );
+    const maximumCount = Math.min(targetMaximumCount, safeMaximumCount);
+    const visibleCount = Math.min(
+      maximumCount,
+      Math.max(minimumCount, cardCount),
+    );
+    const requiredWidth = cardWidth * visibleCount +
+      gap * Math.max(visibleCount - 1, 0) +
+      inlineSpace;
+    const width = Math.min(requiredWidth, safeMaximumWidth);
+
+    handArea.style.setProperty("--hand-current-w", `${width}px`);
+    handArea.dataset.handCardCount = String(cardCount);
+    handArea.dataset.handVisibleCount = String(visibleCount);
+    handArea.dataset.handScrollable = String(cardCount > visibleCount);
   }
 
   /**

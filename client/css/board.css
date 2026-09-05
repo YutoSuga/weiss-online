@@ -73,7 +73,12 @@
   );
 
   /* Hands */
-  --hand-w: calc(var(--hand-card-w) * 7 + 8px * 6 + 32px);
+  --hand-gap: 8px;
+  --hand-inline-space: 32px;
+  --hand-visible-min: 7;
+  /* The renderer also caps this target at the hand area's safe max-width. */
+  --hand-visible-target: 13;
+  --hand-current-w: 528px;
   --hand-h: calc(var(--hand-card-h) + 44px);
 }
 
@@ -268,7 +273,8 @@ ul {
   flex-direction: column;
   align-self: center;
   gap: 6px;
-  width: var(--hand-w);
+  width: var(--hand-current-w);
+  max-width: var(--playmat-grid-w);
   min-height: var(--hand-h);
   padding: 8px 12px;
   border: 1px solid var(--border-zone);
@@ -279,8 +285,17 @@ ul {
 .hand-area .zone-body {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  justify-content: safe center;
+  gap: var(--hand-gap);
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
+.hand-area[data-hand-scrollable="true"] .zone-body {
+  justify-content: flex-start;
+  overflow-x: auto;
 }
 
 .opponent-hand,
@@ -531,6 +546,7 @@ ul {
 }
 
 .hand-area .card-slot {
+  flex: 0 0 var(--hand-card-w);
   width: var(--hand-card-w);
   height: var(--hand-card-h);
 }
