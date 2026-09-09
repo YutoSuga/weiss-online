@@ -1,0 +1,12 @@
+#CD/UT
+設計書の修正内容に応じてCDとUTを行う。
+
+修正内容は下記のmdを参照してください。
+work/機能追加・改善/テーマ２/設計書修正レポート.md
+
+- CD / UT を以下のプロンプトに従って行う
+  - [`prompt\01.CD\CD_Executor.md`](../prompt/01.CD/CD_Executor.md)
+  - [`prompt\02.UT1\単体テスト_Executor.md`](../prompt/02.UT1/単体テスト_Executor.md)
+
+- CD・UT の作業内容をレポートにまとめる（**修正内容との差分が分かる形**で）
+  結果は work/機能追加・改善/テーマ２/CD・UTレポート.md に保存してください
