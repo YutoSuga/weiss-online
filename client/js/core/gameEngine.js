@@ -7,6 +7,7 @@ import { ZONE } from "../constants/zone.js";
 import {
   CLOCK_STEP,
   DRAW_STEP,
+  MAIN_STEP,
   PROCESS_STATUS,
   PROCESS_TYPE,
   LEVEL_UP_STEP,
@@ -336,6 +337,9 @@ export class GameEngine {
       case PHASE.CLOCK:
         this.startClockPhase();
         break;
+      case PHASE.MAIN:
+        this.startMainPhase();
+        break;
       default:
         break;
     }
@@ -438,6 +442,90 @@ export class GameEngine {
       status: PROCESS_STATUS.WAITING_INPUT,
       context: {},
     });
+  }
+
+  /**
+   * MAINフェイズの入力待ちProcessを開始する。
+   * MAIN内の個別Actionは将来このProcessの上に積む。
+   *
+   * @returns {import("./processManager.js").Process}
+   */
+  startMainPhase() {
+    const playerId = this.gameState.turn.player;
+    this.#assertPlayerId(playerId);
+
+    const process = this.processManager.pushProcess({
+      type: PROCESS_TYPE.MAIN_PHASE,
+      playerId,
+      step: MAIN_STEP.START,
+      status: PROCESS_STATUS.RUNNING,
+      context: {},
+    });
+
+    this.executeMainPhaseProcess();
+    return process;
+  }
+
+  /**
+   * MAIN Processを保存済みstepから実行する。
+   * F-1ではプレイヤーの終了操作を待つだけで、カードActionは実行しない。
+   *
+   * @returns {import("./processManager.js").Process|null}
+   */
+  executeMainPhaseProcess() {
+    const mainProcess = this.processManager.getCurrentProcess();
+    if (!mainProcess) {
+      return null;
+    }
+
+    if (mainProcess.type !== PROCESS_TYPE.MAIN_PHASE) {
+      throw new Error("The current Process is not MAIN_PHASE.");
+    }
+
+    while (this.processManager.getCurrentProcess() === mainProcess) {
+      switch (mainProcess.step) {
+        case MAIN_STEP.START:
+          this.processManager.updateStep(MAIN_STEP.WAITING_INPUT);
+          this.processManager.updateStatus(PROCESS_STATUS.WAITING_INPUT);
+          return mainProcess;
+        case MAIN_STEP.WAITING_INPUT:
+          if (mainProcess.status !== PROCESS_STATUS.WAITING_INPUT) {
+            throw new Error("MAIN phase input step must be waiting for input.");
+          }
+          return mainProcess;
+        case MAIN_STEP.END_MAIN:
+          this.processManager.updateStep(MAIN_STEP.COMPLETE);
+          break;
+        case MAIN_STEP.COMPLETE: {
+          const result = this.completeCurrentProcess();
+          if (
+            result === RULE_CHECK_RESULT.CONTINUE &&
+            !this.gameState.gameResult.finished &&
+            this.gameState.phase === PHASE.MAIN
+          ) {
+            this.nextPhase();
+          }
+          return mainProcess;
+        }
+        default:
+          throw new RangeError(`Unknown MAIN_PHASE step: ${mainProcess.step}.`);
+      }
+    }
+
+    return mainProcess;
+  }
+
+  /**
+   * MAINフェイズを終了し、次フェイズへ進める。
+   *
+   * @param {'self'|'opponent'} playerId
+   * @returns {void}
+   */
+  endMainPhase(playerId) {
+    this.#assertMainPhaseAction(playerId);
+    this.processManager.updateStep(MAIN_STEP.END_MAIN);
+    this.processManager.updateStatus(PROCESS_STATUS.RUNNING);
+    this.executeMainPhaseProcess();
   }
 
   /**
@@ -1118,6 +1206,9 @@ export class GameEngine {
     if (process.type === PROCESS_TYPE.DRAW_PHASE) {
       return this.executeDrawPhaseProcess();
     }
+    if (process.type === PROCESS_TYPE.MAIN_PHASE) {
+      return this.executeMainPhaseProcess();
+    }
     if (process.type === PROCESS_TYPE.LEVEL_UP) {
       return this.executeLevelUpProcess();
     }
@@ -1513,6 +1604,39 @@ export class GameEngine {
       process.status !== PROCESS_STATUS.WAITING_INPUT
     ) {
       throw new Error("CLOCK action is unavailable outside its selection Process.");
+    }
+
+    return process;
+  }
+
+  /**
+   * @param {'self'|'opponent'} playerId
+   * @returns {import("./processManager.js").Process}
+   */
+  #assertMainPhaseAction(playerId) {
+    if (this.gameState.gameResult.finished) {
+      throw new Error("MAIN action is unavailable after game over.");
+    }
+    if (this.#hasPendingInterruptSelection()) {
+      throw new Error("MAIN action is blocked while interrupt order is pending.");
+    }
+    if (this.gameState.phase !== PHASE.MAIN) {
+      throw new Error("MAIN action is only available during MAIN phase.");
+    }
+
+    this.#assertPlayerId(playerId);
+    if (this.gameState.turn.player !== playerId) {
+      throw new Error(`It is not ${playerId}'s turn.`);
+    }
+
+    const process = this.processManager.getCurrentProcess();
+    if (
+      process?.type !== PROCESS_TYPE.MAIN_PHASE ||
+      process.playerId !== playerId ||
+      process.step !== MAIN_STEP.WAITING_INPUT ||
+      process.status !== PROCESS_STATUS.WAITING_INPUT
+    ) {
+      throw new Error("MAIN action is unavailable outside its input Process.");
     }
 
     return process;

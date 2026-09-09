@@ -6,6 +6,7 @@ export const PROCESS_TYPE = Object.freeze({
   CLOCK_ACTION: "clock_action",
   CLOCK_PHASE: "clock_phase",
   DRAW_PHASE: "draw_phase",
+  MAIN_PHASE: "main_phase",
   REFRESH: "refresh",
   REFRESH_PENALTY: "refresh_penalty",
   LEVEL_UP: "level_up",
@@ -44,6 +45,14 @@ export const CLOCK_STEP = Object.freeze({
   CHECK_POINT_AFTER_DRAW_1: "check_point_after_draw_1",
   DRAW_2: "draw_2",
   CHECK_POINT_AFTER_DRAW_2: "check_point_after_draw_2",
+  COMPLETE: "complete",
+});
+
+/** MAIN_PHASE Processで次に実行する処理。 */
+export const MAIN_STEP = Object.freeze({
+  START: "start",
+  WAITING_INPUT: "waiting_input",
+  END_MAIN: "end_main",
   COMPLETE: "complete",
 });
 
