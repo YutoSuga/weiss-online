@@ -22,6 +22,7 @@ export class DevController {
     this.initialized = false;
     this.lastRuleCheckResult = null;
     this.lastRuleCheckResolution = null;
+    this.isCollapsed = false;
     this.boundHandleClick = this.handleClick.bind(this);
     this.boundSync = this.sync.bind(this);
   }
@@ -51,6 +52,7 @@ export class DevController {
     this.panel = panel;
     this.panel.hidden = false;
     this.panel.addEventListener("click", this.boundHandleClick);
+    this.#setCollapsed(false);
 
     if (typeof this.gameEngine?.onRender === "function") {
       this.unsubscribeRender = this.gameEngine.onRender(this.boundSync);
@@ -170,6 +172,18 @@ export class DevController {
    * @returns {void}
    */
   handleClick(event) {
+    const toggleButton = event.target instanceof Element
+      ? event.target.closest("[data-dev-panel-toggle]")
+      : null;
+
+    if (
+      toggleButton instanceof HTMLButtonElement &&
+      this.panel?.contains(toggleButton)
+    ) {
+      this.#setCollapsed(!this.isCollapsed);
+      return;
+    }
+
     const button = event.target instanceof Element
       ? event.target.closest("[data-dev-action]")
       : null;
@@ -286,6 +300,38 @@ export class DevController {
       throw new Error("DevController: self deck is empty.");
     }
     this.#requireMethod(this.gameEngine, "render").call(this.gameEngine);
+  }
+
+  /**
+   * 折りたたみ状態をDEV UI内だけに反映する。
+   * GameStateやゲーム進行には書き込まない。
+   *
+   * @private
+   * @param {boolean} collapsed
+   * @returns {void}
+   */
+  #setCollapsed(collapsed) {
+    if (!this.panel) {
+      return;
+    }
+
+    this.isCollapsed = Boolean(collapsed);
+    this.panel.classList.toggle("is-collapsed", this.isCollapsed);
+
+    const content = this.panel.querySelector("[data-dev-panel-content]");
+    if (content instanceof HTMLElement) {
+      content.hidden = this.isCollapsed;
+    }
+
+    const toggleButton = this.panel.querySelector("[data-dev-panel-toggle]");
+    if (toggleButton instanceof HTMLButtonElement) {
+      toggleButton.textContent = this.isCollapsed ? "+" : "−";
+      toggleButton.setAttribute("aria-expanded", String(!this.isCollapsed));
+      toggleButton.setAttribute(
+        "aria-label",
+        this.isCollapsed ? "DEVパネルを展開する" : "DEVパネルを折りたたむ",
+      );
+    }
   }
 
   /**

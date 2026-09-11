@@ -332,54 +332,76 @@
   </div>
 
   <aside class="dev-panel" data-role="dev-panel" hidden>
-    <strong class="dev-panel-title">DEV</strong>
+    <header class="dev-panel-header">
+      <strong class="dev-panel-title">DEV</strong>
+      <button
+        class="dev-panel-toggle"
+        type="button"
+        data-dev-panel-toggle
+        aria-controls="dev-panel-content"
+        aria-expanded="true"
+        aria-label="DEVパネルを折りたたむ"
+      >−</button>
+    </header>
 
-    <dl class="dev-status-list">
-      <div><dt>started</dt><dd data-dev-status="started">-</dd></div>
-      <div><dt>turn</dt><dd data-dev-status="turn-player">-</dd></div>
-      <div><dt>turnNo</dt><dd data-dev-status="turn-number">-</dd></div>
-      <div><dt>phase</dt><dd data-dev-status="phase">-</dd></div>
-    </dl>
+    <div class="dev-panel-content" id="dev-panel-content" data-dev-panel-content>
+      <section class="dev-category" aria-labelledby="dev-state-title">
+        <h2 class="dev-category-title" id="dev-state-title">State</h2>
+        <dl class="dev-status-list">
+          <div><dt>started</dt><dd data-dev-status="started">-</dd></div>
+          <div><dt>turn</dt><dd data-dev-status="turn-player">-</dd></div>
+          <div><dt>turnNo</dt><dd data-dev-status="turn-number">-</dd></div>
+          <div><dt>phase</dt><dd data-dev-status="phase">-</dd></div>
+        </dl>
+      </section>
 
-    <section class="dev-stack-section" aria-label="Process Stack">
-      <strong class="dev-stack-title">
-        Process Stack: <span data-dev-stack-count>0</span>
-      </strong>
-      <div class="dev-stack-list" data-dev-stack-list>
-        <p class="dev-stack-empty">(empty)</p>
-      </div>
-    </section>
+      <section class="dev-category" aria-labelledby="dev-process-rule-title">
+        <h2 class="dev-category-title" id="dev-process-rule-title">Process / Rule</h2>
 
-    <section class="dev-rule-check-section" aria-label="Rule Check">
-      <strong class="dev-stack-title">Rule Check</strong>
-      <dl class="dev-rule-check-results">
-        <div>
-          <dt>resolve</dt>
-          <dd data-dev-rule-resolution>-</dd>
+        <section class="dev-stack-section" aria-label="Process Stack">
+          <strong class="dev-stack-title">
+            Process Stack: <span data-dev-stack-count>0</span>
+          </strong>
+          <div class="dev-stack-list" data-dev-stack-list>
+            <p class="dev-stack-empty">(empty)</p>
+          </div>
+        </section>
+
+        <section class="dev-rule-check-section" aria-label="Rule Check">
+          <strong class="dev-stack-title">Rule Check</strong>
+          <dl class="dev-rule-check-results">
+            <div>
+              <dt>resolve</dt>
+              <dd data-dev-rule-resolution>-</dd>
+            </div>
+            <div>
+              <dt>pending</dt>
+              <dd data-dev-pending-interrupts>[]</dd>
+            </div>
+            <div>
+              <dt>check</dt>
+              <dd data-dev-rule-check-result>-</dd>
+            </div>
+          </dl>
+        </section>
+      </section>
+
+      <section class="dev-category" aria-labelledby="dev-actions-title">
+        <h2 class="dev-category-title" id="dev-actions-title">Actions</h2>
+        <div class="dev-actions">
+          <button type="button" data-dev-action="next-phase">次フェイズ</button>
+          <button type="button" data-dev-action="draw-self">自分1枚ドロー</button>
+          <button type="button" data-dev-action="draw-opponent">相手1枚ドロー</button>
+          <button type="button" data-dev-action="redraw">再描画</button>
+          <button type="button" data-dev-action="refresh-stack">Stack確認</button>
+          <button type="button" data-dev-action="test-refresh">リフレッシュ</button>
+          <button type="button" data-dev-action="hand-to-clock">手札を1枚クロックに置く</button>
+          <button type="button" data-dev-action="deck-to-clock">山札を1枚クロックに置く</button>
+          <button type="button" data-dev-action="test-level-up">レベルアップ</button>
+          <button type="button" data-dev-action="check-rules">共通チェック確認</button>
+          <button type="button" data-dev-action="resolve-rules">Rule Check解決</button>
         </div>
-        <div>
-          <dt>pending</dt>
-          <dd data-dev-pending-interrupts>[]</dd>
-        </div>
-        <div>
-          <dt>check</dt>
-          <dd data-dev-rule-check-result>-</dd>
-        </div>
-      </dl>
-    </section>
-
-    <div class="dev-actions">
-      <button type="button" data-dev-action="next-phase">次フェイズ</button>
-      <button type="button" data-dev-action="draw-self">自分1枚ドロー</button>
-      <button type="button" data-dev-action="draw-opponent">相手1枚ドロー</button>
-      <button type="button" data-dev-action="redraw">再描画</button>
-      <button type="button" data-dev-action="refresh-stack">Stack確認</button>
-      <button type="button" data-dev-action="test-refresh">リフレッシュ</button>
-      <button type="button" data-dev-action="hand-to-clock">手札を1枚クロックに置く</button>
-      <button type="button" data-dev-action="deck-to-clock">山札を1枚クロックに置く</button>
-      <button type="button" data-dev-action="test-level-up">レベルアップ</button>
-      <button type="button" data-dev-action="check-rules">共通チェック確認</button>
-      <button type="button" data-dev-action="resolve-rules">Rule Check解決</button>
+      </section>
     </div>
   </aside>
 
