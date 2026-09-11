@@ -68,6 +68,7 @@ Card {
 - `text`と`flavorText`の保存形式
 - 既存`toJSON()` / `fromJSON()`の通信形式の互換性
 - CardMasterのロード・キャッシュ・検証方法
+- 将来CardMasterが持つ画像情報は、右カード詳細を描画するRendererへ供給する。画像プロパティ名と保存先は現時点では確定せず、現在のCardへは追加しない
 
 CardMasterは対戦Card instanceとは分離し、Repository内データとして管理する方向である。ただし、現在`client/js/data/cards/`等のデータディレクトリは存在しないため、保存パスは未確定とする。将来JSON、DB、APIへ移行可能な読み出し境界を設ける。
 

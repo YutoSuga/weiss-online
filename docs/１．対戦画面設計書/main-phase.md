@@ -2,8 +2,8 @@
 
 ## 目的と適用範囲
 
-本書は、将来実装するMAIN Phaseと、通常のCHARACTERプレイ・舞台内移動の設計基準を定義する。
-現時点のゲーム実装には`MAIN_PHASE` Process、MAIN用Controller、カード由来Actionは存在しない。本書はそれらを実装する際の設計であり、現在のJS/HTML/CSSの挙動を変更するものではない。
+本書は、MAIN Phaseと、通常のCHARACTERプレイ・舞台内移動の設計基準を定義する。
+現時点では`MAIN_PHASE` ProcessとF-2Aの手札CHARACTER選択・Destination表示まで実装済みである。カード配置、Play Cost、Replacement、舞台内移動は後続Phaseで実装する。
 
 本書でいうプレイヤーは、現在の画面視点での`self`を指す。`self` / `opponent`は`GameState.players`の現在の役割名であり、将来の通信層で視点へ変換する。
 
@@ -24,13 +24,13 @@ Controller（ユーザー入力）
 - `Renderer`はゲームルールやActionの妥当性を判断しない。
 - Controllerが持つ一時的な選択状態はGameStateへ保存しない。これは既存のMulliganController、ClockController、LevelUpControllerと同じ方針である。
 
-既存の`PROCESS_TYPE`には`DRAW_PHASE`、`CLOCK_PHASE`、`REFRESH`、`REFRESH_PENALTY`、`LEVEL_UP`がある。MAIN用のProcess Typeとstep定数は**将来追加**する。
+既存の`PROCESS_TYPE`には`DRAW_PHASE`、`CLOCK_PHASE`、`MAIN_PHASE`、`REFRESH`、`REFRESH_PENALTY`、`LEVEL_UP`がある。現在の`MAIN_STEP`は`START`、`WAITING_INPUT`、`END_MAIN`、`COMPLETE`である。
 
 ## MAIN_PHASE Process（v1設計）
 
 MAIN Phase中は、終了を選択されるまでMAIN_PHASE Processを`processStack`上に保持する。1回のActionでProcessを終了しない。
 
-将来の定数名候補は`PROCESS_TYPE.MAIN_PHASE`と`MAIN_STEP`である。実装時に既存`constants/process.js`の命名規則へ合わせて追加する。
+F-2Aのカード選択中もProcessは`WAITING_INPUT`のまま維持する。`CARD_SELECTED`、`ACTION_SELECT`、`ACTION_PROCESS`は将来のAction実装候補であり、F-2Aでは追加しない。
 
 ```text
 START
@@ -81,7 +81,7 @@ WAITING_INPUT
 - 盤面の空白部分または「選択を解除」で選択を解除する。
 - Actionが1件だけでも自動実行しない。ActionボタンまたはDestinationの明示選択を必須とする。
 
-`selectedCard`、候補Destination、確認ダイアログの表示状態はController/UIローカル状態である。GameEngineへ渡すのは、選択済みのカードIDまたは現在のzone/indexと、確定済みActionだけとする。
+`selectedCard`、候補Destination、確認ダイアログの表示状態はController/UIローカル状態である。F-2Aでは`MainPhaseController`が一時選択を保持し、`GameEngine.canSelectCardForMain()`と`getMainDestinationCandidates()`をQueryとして利用する。GameEngineへ確定済みActionを渡す処理はF-2B以降で追加する。
 
 ## 右サイドバー
 

@@ -269,7 +269,23 @@
       <section class="info-panel card-detail-panel">
         <h2>カード説明</h2>
         <div class="card-detail">
-          <p>カードを選択してください。</p>
+          <p data-card-detail-empty>カードを選択してください。</p>
+          <dl class="card-detail-fields" data-card-detail-fields hidden>
+            <div><dt>名前</dt><dd data-card-detail="name">-</dd></div>
+            <div><dt>種類</dt><dd data-card-detail="type">-</dd></div>
+            <div><dt>レベル</dt><dd data-card-detail="level">-</dd></div>
+            <div><dt>コスト</dt><dd data-card-detail="cost">-</dd></div>
+            <div><dt>パワー</dt><dd data-card-detail="power">-</dd></div>
+            <div><dt>ソウル</dt><dd data-card-detail="soul">-</dd></div>
+            <div><dt>特徴</dt><dd data-card-detail="traits">-</dd></div>
+            <div class="card-detail-text"><dt>テキスト</dt><dd data-card-detail="text">-</dd></div>
+          </dl>
+          <button
+            class="card-detail-action"
+            type="button"
+            data-action="clear-main-selection"
+            hidden
+          >選択を解除</button>
         </div>
       </section>
 
@@ -389,14 +405,16 @@
       <section class="dev-category" aria-labelledby="dev-actions-title">
         <h2 class="dev-category-title" id="dev-actions-title">Actions</h2>
         <div class="dev-actions">
-          <button type="button" data-dev-action="next-phase">次フェイズ</button>
+            <button type="button" data-dev-action="next-phase">次フェイズ</button>
+            <button type="button" data-dev-action="skip-opponent-clock">相手クロックをスキップ</button>
           <button type="button" data-dev-action="draw-self">自分1枚ドロー</button>
           <button type="button" data-dev-action="draw-opponent">相手1枚ドロー</button>
           <button type="button" data-dev-action="redraw">再描画</button>
           <button type="button" data-dev-action="refresh-stack">Stack確認</button>
           <button type="button" data-dev-action="test-refresh">リフレッシュ</button>
           <button type="button" data-dev-action="hand-to-clock">手札を1枚クロックに置く</button>
-          <button type="button" data-dev-action="deck-to-clock">山札を1枚クロックに置く</button>
+            <button type="button" data-dev-action="deck-to-clock">山札を1枚クロックに置く</button>
+            <button type="button" data-dev-action="deck-to-stock">自分山札TOP→ストック</button>
           <button type="button" data-dev-action="test-level-up">レベルアップ</button>
           <button type="button" data-dev-action="check-rules">共通チェック確認</button>
           <button type="button" data-dev-action="resolve-rules">Rule Check解決</button>

@@ -40,6 +40,13 @@ const MULLIGAN_MESSAGES = Object.freeze({
   opponent: "相手が手札交換中です",
 });
 const PLAYER_IDS = Object.freeze(["self", "opponent"]);
+const MAIN_STAGE_DESTINATIONS = Object.freeze([
+  Object.freeze({ owner: "self", zone: ZONE.STAGE, row: "front", index: 1 }),
+  Object.freeze({ owner: "self", zone: ZONE.STAGE, row: "front", index: 2 }),
+  Object.freeze({ owner: "self", zone: ZONE.STAGE, row: "front", index: 3 }),
+  Object.freeze({ owner: "self", zone: ZONE.STAGE, row: "back", index: 1 }),
+  Object.freeze({ owner: "self", zone: ZONE.STAGE, row: "back", index: 2 }),
+]);
 
 /**
  * ゲームルールの進行とGameStateの更新を担当する。
@@ -445,6 +452,52 @@ export class GameEngine {
   }
 
   /**
+   * F-2Aで手札カードをMAIN選択UIの対象にできるか返す。
+   * Level、Color、Cost条件はF-2Bで判定する。
+   *
+   * @param {unknown} card
+   * @param {'self'|'opponent'} playerId
+   * @returns {boolean}
+   */
+  canSelectCardForMain(card, playerId) {
+    if (playerId !== "self" || this.gameState.turn.player !== playerId) {
+      return false;
+    }
+
+    const process = this.processManager.getCurrentProcess();
+    const hand = this.gameState.players[playerId]?.hand;
+
+    return Boolean(
+      this.gameState.phase === PHASE.MAIN &&
+      process?.type === PROCESS_TYPE.MAIN_PHASE &&
+      process.playerId === playerId &&
+      process.step === MAIN_STEP.WAITING_INPUT &&
+      process.status === PROCESS_STATUS.WAITING_INPUT &&
+      Array.isArray(hand) &&
+      hand.includes(card) &&
+      card?.owner === playerId &&
+      card?.zone === ZONE.HAND &&
+      card?.cardType === "character",
+    );
+  }
+
+  /**
+   * F-2Aで選択カードから表示する自分のStage候補5枠を返す。
+   * 空枠と使用中枠を区別せず、カード移動は行わない。
+   *
+   * @param {unknown} card
+   * @param {'self'|'opponent'} playerId
+   * @returns {{owner: 'self', zone: string, row: string, index: number}[]}
+   */
+  getMainDestinationCandidates(card, playerId) {
+    if (!this.canSelectCardForMain(card, playerId)) {
+      return [];
+    }
+
+    return MAIN_STAGE_DESTINATIONS.map((destination) => ({ ...destination }));
+  }
+
+  /**
    * MAINフェイズの入力待ちProcessを開始する。
    * MAIN内の個別Actionは将来このProcessの上に積む。
    *
@@ -713,6 +766,35 @@ export class GameEngine {
     });
     card.setPosition(POSITION.STAND);
     player.clock.push(card);
+    this.#reindexCards(player.deck.cards);
+    return card;
+  }
+
+  /**
+   * 指定プレイヤーの山札上から1枚をストック上へ移動する。
+   * DEV補助用の低レベル操作であり、Rule CheckやProcess開始は行わない。
+   *
+   * @param {'self'|'opponent'} playerId
+   * @returns {import("../models/card.js").Card|null}
+   */
+  moveDeckCardToStock(playerId) {
+    this.#assertPlayerId(playerId);
+    const player = this.gameState.players[playerId];
+    const card = player.deck.draw();
+
+    if (!card) {
+      return null;
+    }
+
+    card.owner = playerId;
+    card.moveTo({
+      zone: ZONE.STOCK,
+      row: null,
+      index: player.stock.length + 1,
+    });
+    card.setPosition(POSITION.STAND);
+    card.setFace(null);
+    player.stock.push(card);
     this.#reindexCards(player.deck.cards);
     return card;
   }

@@ -5,7 +5,7 @@
 export class DevController {
   /**
    * @param {object} params
-   * @param {{nextPhase?: Function, drawCards?: Function, render?: Function, onRender?: Function}} params.gameEngine
+   * @param {{nextPhase?: Function, skipClockPhase?: Function, drawCards?: Function, moveDeckCardToStock?: Function, render?: Function, onRender?: Function}} params.gameEngine
    * @param {import("../models/gameState.js").GameState} params.gameState
    * @param {{render?: Function}} params.renderer
    * @param {Document|Element|null} [params.rootElement=document]
@@ -199,6 +199,9 @@ export class DevController {
         case "next-phase":
           this.#requireMethod(this.gameEngine, "nextPhase").call(this.gameEngine);
           break;
+        case "skip-opponent-clock":
+          this.#skipOpponentClock();
+          break;
         case "draw-self":
           this.#drawCard("self");
           break;
@@ -224,6 +227,9 @@ export class DevController {
           break;
         case "deck-to-clock":
           this.#moveDeckCardToClock();
+          break;
+        case "deck-to-stock":
+          this.#moveDeckCardToStock();
           break;
         case "test-level-up":
           this.#requireMethod(this.gameEngine, "startLevelUp").call(
@@ -298,6 +304,39 @@ export class DevController {
     ).call(this.gameEngine, "self");
     if (!card) {
       throw new Error("DevController: self deck is empty.");
+    }
+    this.#requireMethod(this.gameEngine, "render").call(this.gameEngine);
+  }
+
+  /** @returns {void} */
+  #skipOpponentClock() {
+    const currentProcess = this.gameEngine?.processManager?.getCurrentProcess?.();
+    if (
+      this.gameState?.phase !== "clock" ||
+      this.gameState?.turn?.player !== "opponent" ||
+      currentProcess?.type !== "clock_phase" ||
+      currentProcess?.playerId !== "opponent" ||
+      currentProcess?.status !== "waiting_input"
+    ) {
+      console.warn("DevController: opponent CLOCK is not waiting for input.");
+      return;
+    }
+
+    this.#requireMethod(this.gameEngine, "skipClockPhase").call(
+      this.gameEngine,
+      "opponent",
+    );
+  }
+
+  /** @returns {void} */
+  #moveDeckCardToStock() {
+    const card = this.#requireMethod(
+      this.gameEngine,
+      "moveDeckCardToStock",
+    ).call(this.gameEngine, "self");
+    if (!card) {
+      console.warn("DevController: self deck is empty.");
+      return;
     }
     this.#requireMethod(this.gameEngine, "render").call(this.gameEngine);
   }

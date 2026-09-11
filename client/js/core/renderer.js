@@ -158,6 +158,61 @@ export class Renderer {
   }
 
   /**
+   * MAINで選択中のカード情報を右サイドバーへ表示する。
+   * 選択状態自体は保持せず、渡されたCardの現在値だけを描画する。
+   *
+   * @param {object|null} card
+   * @param {{showClearSelection?: boolean}} [options]
+   * @returns {void}
+   */
+  renderCardDetail(card, { showClearSelection = false } = {}) {
+    const panel = this.rootElement?.querySelector(".card-detail-panel");
+    if (!(panel instanceof HTMLElement)) {
+      return;
+    }
+
+    const emptyMessage = panel.querySelector("[data-card-detail-empty]");
+    const details = panel.querySelector("[data-card-detail-fields]");
+    const clearButton = panel.querySelector('[data-action="clear-main-selection"]');
+    const hasCard = Boolean(card && typeof card === "object");
+
+    if (emptyMessage instanceof HTMLElement) {
+      emptyMessage.hidden = hasCard;
+    }
+    if (details instanceof HTMLElement) {
+      details.hidden = !hasCard;
+    }
+    if (clearButton instanceof HTMLButtonElement) {
+      clearButton.hidden = !hasCard || !showClearSelection;
+    }
+
+    if (!hasCard) {
+      panel.querySelectorAll("[data-card-detail]").forEach((element) => {
+        element.textContent = "-";
+      });
+      return;
+    }
+
+    const values = {
+      name: card.name,
+      type: card.cardType,
+      level: card.level,
+      cost: card.cost,
+      power: card.currentPower ?? card.basePower,
+      soul: card.currentSoul ?? card.baseSoul,
+      traits: Array.isArray(card.traits) ? card.traits.join(" / ") : "",
+      text: card.text,
+    };
+
+    Object.entries(values).forEach(([name, value]) => {
+      const element = panel.querySelector(`[data-card-detail="${name}"]`);
+      if (element) {
+        element.textContent = value == null || value === "" ? "-" : String(value);
+      }
+    });
+  }
+
+  /**
    * GameStateのログを既存のログ領域へ時系列順に描画する。
    * 描画前にログ項目だけを消去するため、再描画しても重複しない。
    *

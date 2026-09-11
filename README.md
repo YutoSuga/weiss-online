@@ -74,7 +74,7 @@ Interrupt Process
 
 ## 現在地点
 
-**Phase F-1：MAIN_PHASE基盤 完了**
+**Phase F-2A：MAINカード選択 / Destination UI 完了**
 
 現在、CLOCKフェイズの完了後には以下の流れが成立します。
 
@@ -90,7 +90,7 @@ MAIN_PHASE COMPLETE
 CLIMAX
 ```
 
-`MAIN_PHASE` は `WAITING_INPUT` 中も `processStack` 上に保持されます。MAIN Phase内でのカード選択、配置、移動などの実際のActionは、まだ実装していません。
+`MAIN_PHASE` は `WAITING_INPUT` 中も `processStack` 上に保持されます。自分の手札のCHARACTERを選択し、カード詳細と自分のStage 5枠のDestination候補を表示できます。選択はUIローカル状態であり、カード配置・Replacement・Cost支払いはまだ実装していません。
 
 ## 開発ロードマップ
 
@@ -103,17 +103,17 @@ CLIMAX
 - [x] Draw Phase Process
 - [x] Clock Phase Process
 - [x] Phase F-1 MAIN Phase基盤
-- [ ] **Phase F-2A MAINカード選択 / Destination UI（NEXT）**
-- [ ] Phase F-2B Character Hand → Stage
+- [x] Phase F-2A MAINカード選択 / Destination UI
+- [ ] **Phase F-2B Character Hand → Stage（NEXT）**
 - [ ] Phase F-2C Stage → Stage
 - [ ] Phase F-3 CardMaster / CardAbility v1
 - [ ] Phase F-4 ACT Ability v1
 - [ ] Phase F-5 AUTO Ability基盤
 - [ ] Phase F-6 CONTINUOUS Ability基盤
 
-### NEXT：Phase F-2A MAINカード選択 / Destination UI
+### Phase F-2A：MAINカード選択 / Destination UI
 
-予定している内容です。
+実装済みの内容です。
 
 - 自分のHANDのCHARACTERをクリック / タップして選択する
 - 選択状態をController / UIローカルで保持する
@@ -124,7 +124,7 @@ CLIMAX
 
 確定前の選択状態はGameStateに保存せず、Controller / UIローカルで扱います。
 
-### Phase F-2B：Character Hand → Stage
+### NEXT：Phase F-2B Character Hand → Stage
 
 予定している内容です。
 
@@ -186,14 +186,14 @@ HANDから使用中Stageへ置く場合は**Replacement**、Stageから使用中
 
 READMEは現在地点と概要を扱い、詳細な仕様は `docs/` を参照してください。
 
-- [MAIN Phase設計（F-2以降を含む詳細案）](docs/main-phase.md)
-- [CardMaster / CardAbility設計](docs/card-ability.md)
-- [UI操作仕様](docs/１．設計/ui-rules.md)
-- [Process基盤設計](docs/１．設計/Process.md)
-- [Rule Check設計](docs/１．設計/RuleCheck.md)
-- [JavaScript仕様](docs/１．設計/js-spec.md)
-- [HTML仕様](docs/１．設計/html-spec.md)
-- [レイアウト仕様](docs/１．設計/layout.md)
+- [MAIN Phase設計（F-2以降を含む詳細案）](docs/１．対戦画面設計書/main-phase.md)
+- [CardMaster / CardAbility設計](docs/１．対戦画面設計書/card-ability.md)
+- [UI操作仕様](docs/１．対戦画面設計書/ui-rules.md)
+- [Process基盤設計](docs/１．対戦画面設計書/Process.md)
+- [Rule Check設計](docs/１．対戦画面設計書/RuleCheck.md)
+- [JavaScript仕様](docs/１．対戦画面設計書/js-spec.md)
+- [HTML仕様](docs/１．対戦画面設計書/html-spec.md)
+- [レイアウト仕様](docs/１．対戦画面設計書/layout.md)
 
 ## 将来候補
 

@@ -154,6 +154,7 @@ clockController.init();
 const mainPhaseController = new MainPhaseController({
   gameEngine,
   gameState,
+  renderer,
   rootElement: document,
 });
 mainPhaseController.init();
