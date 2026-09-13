@@ -280,6 +280,7 @@
             <div><dt>特徴</dt><dd data-card-detail="traits">-</dd></div>
             <div class="card-detail-text"><dt>テキスト</dt><dd data-card-detail="text">-</dd></div>
           </dl>
+          <p class="card-play-disabled-reason" data-card-play-disabled-reason hidden></p>
           <button
             class="card-detail-action"
             type="button"
@@ -347,6 +348,14 @@
     </aside>
   </div>
 
+  <aside class="replacement-confirmation" data-replacement-confirmation hidden aria-label="置き換え確認">
+    <p>この場所にはカードがあります。</p>
+    <div class="replacement-confirmation-actions">
+      <button type="button" data-replacement-action="replace">置き換える</button>
+      <button type="button" data-replacement-action="back">戻る</button>
+    </div>
+  </aside>
+
   <aside class="dev-panel" data-role="dev-panel" hidden>
     <header class="dev-panel-header">
       <strong class="dev-panel-title">DEV</strong>
@@ -407,6 +416,7 @@
         <div class="dev-actions">
             <button type="button" data-dev-action="next-phase">次フェイズ</button>
             <button type="button" data-dev-action="skip-opponent-clock">相手クロックをスキップ</button>
+            <button type="button" data-dev-action="end-opponent-main">相手メイン終了</button>
           <button type="button" data-dev-action="draw-self">自分1枚ドロー</button>
           <button type="button" data-dev-action="draw-opponent">相手1枚ドロー</button>
           <button type="button" data-dev-action="redraw">再描画</button>

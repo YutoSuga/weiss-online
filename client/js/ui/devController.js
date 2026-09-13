@@ -5,7 +5,7 @@
 export class DevController {
   /**
    * @param {object} params
-   * @param {{nextPhase?: Function, skipClockPhase?: Function, drawCards?: Function, moveDeckCardToStock?: Function, render?: Function, onRender?: Function}} params.gameEngine
+   * @param {{nextPhase?: Function, skipClockPhase?: Function, endMainPhase?: Function, drawCards?: Function, moveDeckCardToStock?: Function, render?: Function, onRender?: Function}} params.gameEngine
    * @param {import("../models/gameState.js").GameState} params.gameState
    * @param {{render?: Function}} params.renderer
    * @param {Document|Element|null} [params.rootElement=document]
@@ -202,6 +202,9 @@ export class DevController {
         case "skip-opponent-clock":
           this.#skipOpponentClock();
           break;
+        case "end-opponent-main":
+          this.#endOpponentMain();
+          break;
         case "draw-self":
           this.#drawCard("self");
           break;
@@ -323,6 +326,27 @@ export class DevController {
     }
 
     this.#requireMethod(this.gameEngine, "skipClockPhase").call(
+      this.gameEngine,
+      "opponent",
+    );
+  }
+
+  /** @returns {void} */
+  #endOpponentMain() {
+    const currentProcess = this.gameEngine?.processManager?.getCurrentProcess?.();
+    if (
+      this.gameState?.phase !== "main" ||
+      this.gameState?.turn?.player !== "opponent" ||
+      currentProcess?.type !== "main_phase" ||
+      currentProcess?.playerId !== "opponent" ||
+      currentProcess?.step !== "waiting_input" ||
+      currentProcess?.status !== "waiting_input"
+    ) {
+      console.warn("DevController: opponent MAIN is not waiting for input.");
+      return;
+    }
+
+    this.#requireMethod(this.gameEngine, "endMainPhase").call(
       this.gameEngine,
       "opponent",
     );

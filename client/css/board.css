@@ -80,6 +80,7 @@
   --hand-visible-target: 13;
   --hand-current-w: 528px;
   --hand-h: calc(var(--hand-card-h) + 44px);
+  --stock-normal-offset: 18px;
 }
 
 * {
@@ -263,6 +264,35 @@ ul {
 .card-detail-action[hidden] {
   display: none;
 }
+
+.card-play-disabled-reason {
+  margin: 10px 0 0;
+  padding: 8px;
+  border: 1px solid #ef4444;
+  border-radius: 6px;
+  background: rgba(127, 29, 29, 0.45);
+  color: #fecaca;
+  font-size: 12px;
+}
+
+.replacement-confirmation {
+  position: fixed;
+  z-index: 1050;
+  left: 50%;
+  top: 50%;
+  width: min(320px, calc(100vw - 32px));
+  padding: 16px;
+  transform: translate(-50%, -50%);
+  border: 2px solid #60a5fa;
+  border-radius: 8px;
+  background: #111827;
+  color: #f9fafb;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+}
+
+.replacement-confirmation[hidden] { display: none; }
+.replacement-confirmation-actions { display: flex; gap: 8px; }
+.replacement-confirmation-actions button { flex: 1; min-height: 36px; cursor: pointer; }
 
 .end-turn-button {
   width: 100%;
@@ -503,7 +533,7 @@ ul {
 
 .opponent-playmat .stock-zone {
   grid-column: 5;
-  grid-row: 3;
+  grid-row: 2 / span 2;
 }
 
 /* Self: preserve the established arrangement; utility is column 5. */
@@ -615,7 +645,8 @@ ul {
 }
 
 .stock-zone {
-  min-height: 206px;
+  align-self: stretch;
+  min-height: 0;
 }
 
 .memory-zone {
@@ -830,6 +861,8 @@ ul {
    ========================================================= */
 
 .stock-zone .zone-body {
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -838,7 +871,8 @@ ul {
   position: relative;
   display: block;
   width: 100%;
-  min-height: 96px;
+  height: 100%;
+  min-height: 0;
 }
 
 .stock-zone .card-row .card-slot,
@@ -849,39 +883,8 @@ ul {
   transform: translateX(-50%) rotate(90deg);
 }
 
-.stock-zone .card-row .card-slot:nth-child(1),
-.stock-zone .stock-slots .card-slot:nth-child(1) {
-  top: 0;
-}
-
-.stock-zone .card-row .card-slot:nth-child(2),
-.stock-zone .stock-slots .card-slot:nth-child(2) {
-  top: 18px;
-}
-
-.stock-zone .card-row .card-slot:nth-child(3),
-.stock-zone .stock-slots .card-slot:nth-child(3) {
-  top: 36px;
-}
-
-.stock-zone .card-row .card-slot:nth-child(4),
-.stock-zone .stock-slots .card-slot:nth-child(4) {
-  top: 54px;
-}
-
-.stock-zone .card-row .card-slot:nth-child(5),
-.stock-zone .stock-slots .card-slot:nth-child(5) {
-  top: 72px;
-}
-
-.stock-zone .card-row .card-slot:nth-child(6),
-.stock-zone .stock-slots .card-slot:nth-child(6) {
-  top: 90px;
-}
-
-.stock-zone .card-row .card-slot:nth-child(7),
-.stock-zone .stock-slots .card-slot:nth-child(7) {
-  top: 108px;
+.stock-zone .card-slot[data-card-id=""] {
+  display: none;
 }
 
 .stock-zone .card-slot {

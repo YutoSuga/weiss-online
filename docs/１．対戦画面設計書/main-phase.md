@@ -3,7 +3,7 @@
 ## 目的と適用範囲
 
 本書は、MAIN Phaseと、通常のCHARACTERプレイ・舞台内移動の設計基準を定義する。
-現時点では`MAIN_PHASE` ProcessとF-2Aの手札CHARACTER選択・Destination表示まで実装済みである。カード配置、Play Cost、Replacement、舞台内移動は後続Phaseで実装する。
+現時点では`MAIN_PHASE` Process、F-2Aの選択UI、F-2BのHandからStageへのCHARACTERプレイ、Play Cost、Replacementまで実装済みである。舞台内移動はF-2Cで実装する。
 
 本書でいうプレイヤーは、現在の画面視点での`self`を指す。`self` / `opponent`は`GameState.players`の現在の役割名であり、将来の通信層で視点へ変換する。
 
@@ -24,7 +24,9 @@ Controller（ユーザー入力）
 - `Renderer`はゲームルールやActionの妥当性を判断しない。
 - Controllerが持つ一時的な選択状態はGameStateへ保存しない。これは既存のMulliganController、ClockController、LevelUpControllerと同じ方針である。
 
-既存の`PROCESS_TYPE`には`DRAW_PHASE`、`CLOCK_PHASE`、`MAIN_PHASE`、`REFRESH`、`REFRESH_PENALTY`、`LEVEL_UP`がある。現在の`MAIN_STEP`は`START`、`WAITING_INPUT`、`END_MAIN`、`COMPLETE`である。
+既存の`PROCESS_TYPE`には`DRAW_PHASE`、`CLOCK_PHASE`、`MAIN_PHASE`、`PLAY_CHARACTER`、`REFRESH`、`REFRESH_PENALTY`、`LEVEL_UP`がある。現在の`MAIN_STEP`は`START`、`WAITING_INPUT`、`END_MAIN`、`COMPLETE`である。
+
+`PLAY_CHARACTER`は`MAIN_PHASE / WAITING_INPUT`の上へ積む子Action Processで、`VALIDATE → PAY_COST → REMOVE_EXISTING → MOVE_TO_STAGE → CHECK_POINT → COMPLETE`の順に処理する。`VALIDATE`完了前にはゲーム状態を変更しない。`CHECK_POINT`では先にresume先を`COMPLETE`へ保存してから`resolveRuleCheck()`を呼び、割り込み後は保存済みstepから再開する。完了時は`completeCurrentProcess()`でpopし、親の`MAIN_PHASE / WAITING_INPUT`へ戻る。
 
 ## MAIN_PHASE Process（v1設計）
 
@@ -189,7 +191,7 @@ Action名の候補は`PLAY_TO_STAGE`、`MOVE_STAGE`、`SWAP_STAGE`である。�
 - AUTO/CONTINUOUS能力の完全実装
 - Drag & Drop
 - 全Phase共通の公開カード閲覧（Global Card Inspection）
-- MAIN Actionごとの個別Process仕様
+- Stageカードの選択、Stage内Move / Swap
 - 色・カード種別・Action Typeの定数化
 
 ## 既存資料との注意点

@@ -90,7 +90,7 @@ MAIN_PHASE COMPLETE
 CLIMAX
 ```
 
-`MAIN_PHASE` は `WAITING_INPUT` 中も `processStack` 上に保持されます。自分の手札のCHARACTERを選択し、カード詳細と自分のStage 5枠のDestination候補を表示できます。選択はUIローカル状態であり、カード配置・Replacement・Cost支払いはまだ実装していません。
+`MAIN_PHASE` は `WAITING_INPUT` 中も `processStack` 上に保持されます。自分の手札のCHARACTERを選択し、Level・Color・Stock条件を満たす場合は、`PLAY_CHARACTER` ProcessでStageへプレイできます。
 
 ## 開発ロードマップ
 
@@ -104,8 +104,8 @@ CLIMAX
 - [x] Clock Phase Process
 - [x] Phase F-1 MAIN Phase基盤
 - [x] Phase F-2A MAINカード選択 / Destination UI
-- [ ] **Phase F-2B Character Hand → Stage（NEXT）**
-- [ ] Phase F-2C Stage → Stage
+- [x] Phase F-2B Character Hand → Stage
+- [ ] **Phase F-2C Stage → Stage（NEXT）**
 - [ ] Phase F-3 CardMaster / CardAbility v1
 - [ ] Phase F-4 ACT Ability v1
 - [ ] Phase F-5 AUTO Ability基盤
@@ -124,9 +124,9 @@ CLIMAX
 
 確定前の選択状態はGameStateに保存せず、Controller / UIローカルで扱います。
 
-### NEXT：Phase F-2B Character Hand → Stage
+### Phase F-2B：Character Hand → Stage
 
-予定している内容です。
+実装済みの内容です。
 
 - CHARACTER判定、Level条件、Color条件の確認
 - Stockと基本Play Costの支払い可能判定
@@ -136,7 +136,7 @@ CLIMAX
 
 基本Play Costは、将来の `CardMaster.cost` に相当するカード固有のコストです。Ability Costとは別概念です。
 
-### Phase F-2C：Stage → Stage
+### NEXT：Phase F-2C Stage → Stage
 
 予定している内容です。
 

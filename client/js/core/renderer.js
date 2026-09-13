@@ -33,6 +33,8 @@ export class Renderer {
     this.viewerId = OWNERS.includes(viewerId) ? viewerId : "self";
     /** @type {WeakMap<HTMLElement, () => void>} */
     this.handScrollHandlers = new WeakMap();
+    /** @type {WeakMap<HTMLElement, ResizeObserver>} */
+    this.stockResizeObservers = new WeakMap();
   }
 
   /**
@@ -162,10 +164,10 @@ export class Renderer {
    * 選択状態自体は保持せず、渡されたCardの現在値だけを描画する。
    *
    * @param {object|null} card
-   * @param {{showClearSelection?: boolean}} [options]
+   * @param {{showClearSelection?: boolean, playDisabledReason?: string|null}} [options]
    * @returns {void}
    */
-  renderCardDetail(card, { showClearSelection = false } = {}) {
+  renderCardDetail(card, { showClearSelection = false, playDisabledReason = null } = {}) {
     const panel = this.rootElement?.querySelector(".card-detail-panel");
     if (!(panel instanceof HTMLElement)) {
       return;
@@ -174,6 +176,7 @@ export class Renderer {
     const emptyMessage = panel.querySelector("[data-card-detail-empty]");
     const details = panel.querySelector("[data-card-detail-fields]");
     const clearButton = panel.querySelector('[data-action="clear-main-selection"]');
+    const disabledReason = panel.querySelector("[data-card-play-disabled-reason]");
     const hasCard = Boolean(card && typeof card === "object");
 
     if (emptyMessage instanceof HTMLElement) {
@@ -184,6 +187,12 @@ export class Renderer {
     }
     if (clearButton instanceof HTMLButtonElement) {
       clearButton.hidden = !hasCard || !showClearSelection;
+    }
+    if (disabledReason instanceof HTMLElement) {
+      disabledReason.hidden = !hasCard || !playDisabledReason;
+      disabledReason.textContent = playDisabledReason
+        ? `プレイできません：${playDisabledReason}`
+        : "";
     }
 
     if (!hasCard) {
@@ -623,7 +632,114 @@ export class Renderer {
    * @returns {void}
    */
   renderStock(player, owner) {
-    this.renderFixedSlots(player.stock, owner, ZONE.STOCK);
+    const cards = this.asArray(player.stock);
+    this.syncStockSlots(owner, cards.length);
+    this.renderFixedSlots(cards, owner, ZONE.STOCK);
+    this.updateStockStackLayout(owner);
+  }
+
+  /**
+   * Stock枚数と同数まで表示スロットを増やす。既存の1～7番枠は維持する。
+   *
+   * @param {'self'|'opponent'} owner
+   * @param {number} cardCount
+   * @returns {void}
+   */
+  syncStockSlots(owner, cardCount) {
+    const container = this.rootElement?.querySelector(
+      `.${owner}-playmat .stock-slots`,
+    );
+    if (!(container instanceof HTMLElement)) {
+      return;
+    }
+
+    container
+      .querySelectorAll('[data-dynamic-stock-slot="true"]')
+      .forEach((slot) => slot.remove());
+
+    for (let index = 8; index <= cardCount; index += 1) {
+      const slot = container.ownerDocument.createElement("article");
+      slot.className = "card-slot";
+      slot.dataset.owner = owner;
+      slot.dataset.zone = ZONE.STOCK;
+      slot.dataset.index = String(index);
+      slot.dataset.face = "down";
+      slot.dataset.position = "stand";
+      slot.dataset.cardId = "";
+      slot.dataset.dynamicStockSlot = "true";
+      container.append(slot);
+    }
+
+    this.observeStockContainer(container, owner);
+  }
+
+  /**
+   * 通常offsetで収まらない場合だけ、Stock全枚数が枠内へ収まる値に圧縮する。
+   *
+   * @param {'self'|'opponent'} owner
+   * @returns {void}
+   */
+  updateStockStackLayout(owner) {
+    const container = this.rootElement?.querySelector(
+      `.${owner}-playmat .stock-slots`,
+    );
+    if (!(container instanceof HTMLElement)) {
+      return;
+    }
+
+    const slots = [...container.querySelectorAll('.card-slot[data-card-id]:not([data-card-id=""])')]
+      .sort((left, right) => Number(left.dataset.index) - Number(right.dataset.index));
+    if (slots.length === 0) {
+      container.dataset.stockCompressed = "false";
+      return;
+    }
+
+    const view = container.ownerDocument?.defaultView;
+    const styles = view?.getComputedStyle(container);
+    const normalOffset = Number.parseFloat(
+      styles?.getPropertyValue("--stock-normal-offset") ?? "",
+    );
+    const cardHeight = slots[0].getBoundingClientRect().height;
+    const availableStackSpace = container.clientHeight;
+    const fittedOffset = slots.length > 1
+      ? Math.max(0, (availableStackSpace - cardHeight) / (slots.length - 1))
+      : 0;
+    const offset = slots.length > 1
+      ? Math.min(normalOffset, fittedOffset)
+      : 0;
+    const compressed = slots.length > 1 &&
+      Number.isFinite(normalOffset) &&
+      offset < normalOffset;
+
+    slots.forEach((slot, index) => {
+      slot.style.top = `${index * offset}px`;
+    });
+    container.dataset.stockCompressed = String(compressed);
+    container.style.setProperty("--stock-offset", `${offset}px`);
+  }
+
+  /**
+   * Viewport等によるStock枠の実寸変化時にもoffsetを再計算する。
+   *
+   * @param {HTMLElement} container
+   * @param {'self'|'opponent'} owner
+   * @returns {void}
+   */
+  observeStockContainer(container, owner) {
+    if (this.stockResizeObservers.has(container)) {
+      return;
+    }
+
+    const ResizeObserverClass = container.ownerDocument?.defaultView?.ResizeObserver;
+    if (typeof ResizeObserverClass !== "function") {
+      return;
+    }
+
+    const observer = new ResizeObserverClass(() => {
+      this.updateStockStackLayout(owner);
+    });
+    observer.observe(container);
+    this.stockResizeObservers.set(container, observer);
   }
 
   /**

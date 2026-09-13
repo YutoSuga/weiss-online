@@ -16,13 +16,12 @@ const SELECTION_CLASSES = Object.freeze([
 ]);
 
 /**
- * MAINフェイズの終了操作とF-2Aの一時的なカード選択UIを管理する。
- * カード移動やPlay条件の完全判定は行わない。
+ * MAINフェイズの終了、カード選択、Character Play確認UIを管理する。
  */
 export class MainPhaseController {
   /**
    * @param {object} [params]
-   * @param {{endMainPhase: Function, canSelectCardForMain?: Function, getMainDestinationCandidates?: Function, onRender?: Function}} params.gameEngine
+   * @param {{endMainPhase: Function, canSelectCardForMain?: Function, getMainDestinationCandidates?: Function, getCharacterPlayDisabledReason?: Function, playCharacterToStage?: Function, onRender?: Function}} params.gameEngine
    * @param {import("../models/gameState.js").GameState} params.gameState
    * @param {{renderCardDetail?: Function}} params.renderer
    * @param {Document|Element|null} [params.rootElement=document]
@@ -36,10 +35,14 @@ export class MainPhaseController {
     this.selectedCard = null;
     /** @type {number|null} */
     this.selectedHandIndex = null;
+    /** @type {{row:string,index:number}|null} */
+    this.pendingDestination = null;
     /** @type {HTMLButtonElement|null} */
     this.button = null;
     /** @type {HTMLButtonElement|null} */
     this.clearSelectionButton = null;
+    /** @type {HTMLElement|null} */
+    this.replacementPanel = null;
     /** @type {null|(() => boolean)} */
     this.unsubscribeRender = null;
     this.initialized = false;
@@ -49,6 +52,7 @@ export class MainPhaseController {
     this.boundHandleButtonClick = this.handleButtonClick.bind(this);
     this.boundHandleClearSelectionClick = this.handleClearSelectionClick.bind(this);
     this.boundSync = this.sync.bind(this);
+    this.boundHandleReplacementClick = this.handleReplacementClick.bind(this);
   }
 
   /** @returns {MainPhaseController} */
@@ -77,12 +81,14 @@ export class MainPhaseController {
 
     this.button = button;
     this.clearSelectionButton = clearSelectionButton;
+    this.replacementPanel = this.rootElement.querySelector("[data-replacement-confirmation]");
     this.rootElement.addEventListener("click", this.boundHandleRootClick);
     this.button.addEventListener("click", this.boundHandleButtonClick);
     this.clearSelectionButton.addEventListener(
       "click",
       this.boundHandleClearSelectionClick,
     );
+    this.replacementPanel?.addEventListener("click", this.boundHandleReplacementClick);
     if (typeof this.gameEngine?.onRender === "function") {
       this.unsubscribeRender = this.gameEngine.onRender(this.boundSync);
     }
@@ -100,6 +106,7 @@ export class MainPhaseController {
         "click",
         this.boundHandleClearSelectionClick,
       );
+      this.replacementPanel?.removeEventListener("click", this.boundHandleReplacementClick);
     }
     this.unsubscribeRender?.();
     this.unsubscribeRender = null;
@@ -107,6 +114,7 @@ export class MainPhaseController {
     this.clearCandidateStates();
     this.button = null;
     this.clearSelectionButton = null;
+    this.replacementPanel = null;
     this.initialized = false;
     this.submitting = false;
   }
@@ -158,6 +166,9 @@ export class MainPhaseController {
       '.stage-slot[data-owner="self"][data-zone="stage"]',
     );
     if (destination && this.rootElement.contains(destination)) {
+      if (destination.dataset.mainDestination === "true") {
+        this.handleDestinationClick(destination);
+      }
       return;
     }
 
@@ -177,6 +188,59 @@ export class MainPhaseController {
     }
   }
 
+  /** @param {HTMLElement} slot */
+  handleDestinationClick(slot) {
+    if (!this.selectedCard) return;
+    const destination = { row: slot.dataset.row, index: Number(slot.dataset.index) };
+    const existing = this.gameState.players.self.stage.find(
+      (card) => card.row === destination.row && card.index === destination.index,
+    );
+    if (existing) {
+      this.pendingDestination = destination;
+      if (this.replacementPanel instanceof HTMLElement) this.replacementPanel.hidden = false;
+      return;
+    }
+    this.submitCharacterPlay(destination);
+  }
+
+  /** @param {MouseEvent} event */
+  handleReplacementClick(event) {
+    const button = event.target instanceof Element
+      ? event.target.closest("[data-replacement-action]")
+      : null;
+    if (!(button instanceof HTMLButtonElement)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (button.dataset.replacementAction === "back") {
+      this.closeReplacementConfirmation();
+    } else if (button.dataset.replacementAction === "replace" && this.pendingDestination) {
+      this.submitCharacterPlay(this.pendingDestination);
+    }
+  }
+
+  /** @param {{row:string,index:number}} destination */
+  submitCharacterPlay(destination) {
+    const card = this.selectedCard;
+    if (!card || this.submitting) return;
+    this.submitting = true;
+    try {
+      this.gameEngine.playCharacterToStage(card, "self", destination);
+      this.clearSelection();
+    } catch (error) {
+      console.error("MainPhaseController: Character Play failed.", error);
+      this.closeReplacementConfirmation();
+      this.updateSelectionView();
+    } finally {
+      this.submitting = false;
+      this.sync();
+    }
+  }
+
+  closeReplacementConfirmation() {
+    this.pendingDestination = null;
+    if (this.replacementPanel instanceof HTMLElement) this.replacementPanel.hidden = true;
+  }
+
   /** @param {HTMLElement} slot @returns {void} */
   handleHandCardClick(slot) {
     const handIndex = Number(slot.dataset.index);
@@ -187,6 +251,8 @@ export class MainPhaseController {
     if (!this.gameEngine?.canSelectCardForMain?.(card, "self")) {
       return;
     }
+
+    this.closeReplacementConfirmation();
 
     if (this.selectedCard === card) {
       this.clearSelection();
@@ -239,7 +305,9 @@ export class MainPhaseController {
       this.gameState?.turn?.player === "self" &&
       typeof this.gameEngine?.endMainPhase === "function" &&
       typeof this.gameEngine?.canSelectCardForMain === "function" &&
-      typeof this.gameEngine?.getMainDestinationCandidates === "function",
+      typeof this.gameEngine?.getMainDestinationCandidates === "function" &&
+      typeof this.gameEngine?.getCharacterPlayDisabledReason === "function" &&
+      typeof this.gameEngine?.playCharacterToStage === "function",
     );
   }
 
@@ -258,6 +326,7 @@ export class MainPhaseController {
   clearSelection() {
     this.selectedCard = null;
     this.selectedHandIndex = null;
+    this.closeReplacementConfirmation();
     this.clearDestinationStates();
     this.renderer?.renderCardDetail?.(null);
   }
@@ -304,8 +373,13 @@ export class MainPhaseController {
       return;
     }
 
+    const playDisabledReason = this.gameEngine.getCharacterPlayDisabledReason(
+      this.selectedCard,
+      "self",
+    );
     this.renderer?.renderCardDetail?.(this.selectedCard, {
       showClearSelection: true,
+      playDisabledReason,
     });
     const destinations = this.gameEngine.getMainDestinationCandidates(
       this.selectedCard,

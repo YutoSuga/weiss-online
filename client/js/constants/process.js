@@ -7,6 +7,7 @@ export const PROCESS_TYPE = Object.freeze({
   CLOCK_PHASE: "clock_phase",
   DRAW_PHASE: "draw_phase",
   MAIN_PHASE: "main_phase",
+  PLAY_CHARACTER: "play_character",
   REFRESH: "refresh",
   REFRESH_PENALTY: "refresh_penalty",
   LEVEL_UP: "level_up",
@@ -53,6 +54,16 @@ export const MAIN_STEP = Object.freeze({
   START: "start",
   WAITING_INPUT: "waiting_input",
   END_MAIN: "end_main",
+  COMPLETE: "complete",
+});
+
+/** HandのCHARACTERをStageへプレイするAction Process。 */
+export const PLAY_CHARACTER_STEP = Object.freeze({
+  VALIDATE: "validate",
+  PAY_COST: "pay_cost",
+  REMOVE_EXISTING: "remove_existing",
+  MOVE_TO_STAGE: "move_to_stage",
+  CHECK_POINT: "check_point",
   COMPLETE: "complete",
 });
 

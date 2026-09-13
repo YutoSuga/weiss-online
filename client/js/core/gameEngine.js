@@ -8,6 +8,7 @@ import {
   CLOCK_STEP,
   DRAW_STEP,
   MAIN_STEP,
+  PLAY_CHARACTER_STEP,
   PROCESS_STATUS,
   PROCESS_TYPE,
   LEVEL_UP_STEP,
@@ -490,11 +491,128 @@ export class GameEngine {
    * @returns {{owner: 'self', zone: string, row: string, index: number}[]}
    */
   getMainDestinationCandidates(card, playerId) {
-    if (!this.canSelectCardForMain(card, playerId)) {
+    if (this.getCharacterPlayDisabledReason(card, playerId) !== null) {
       return [];
     }
 
     return MAIN_STAGE_DESTINATIONS.map((destination) => ({ ...destination }));
+  }
+
+  /** Characterを現在のMAINでStageへプレイできない理由。nullはプレイ可能。 */
+  getCharacterPlayDisabledReason(card, playerId) {
+    if (!this.canSelectCardForMain(card, playerId)) {
+      return "CHARACTERを選択できるMAIN操作状態ではありません。";
+    }
+    return this.#getCharacterPlayRuleDisabledReason(card, playerId);
+  }
+
+  /** @returns {boolean} */
+  canPlayCharacterToStage(card, playerId) {
+    return this.getCharacterPlayDisabledReason(card, playerId) === null;
+  }
+
+  /** Hand Character PlayをMAIN_PHASEの子Processとして開始する。 */
+  playCharacterToStage(card, playerId, destination) {
+    this.#assertMainPhaseAction(playerId);
+    const reason = this.getCharacterPlayDisabledReason(card, playerId);
+    if (reason) throw new Error(reason);
+    if (!this.#isMainStageDestination(destination, playerId)) {
+      throw new Error("Invalid Stage destination.");
+    }
+    const process = this.processManager.pushProcess({
+      type: PROCESS_TYPE.PLAY_CHARACTER,
+      playerId,
+      step: PLAY_CHARACTER_STEP.VALIDATE,
+      status: PROCESS_STATUS.RUNNING,
+      context: {
+        cardId: card.id,
+        destination: { row: destination.row, index: destination.index },
+      },
+    });
+    this.executePlayCharacterProcess();
+    return process;
+  }
+
+  /** PLAY_CHARACTERを保存済みstepから実行する。 */
+  executePlayCharacterProcess() {
+    const process = this.processManager.getCurrentProcess();
+    if (!process || process.type !== PROCESS_TYPE.PLAY_CHARACTER) return process;
+    const player = this.gameState.players[process.playerId];
+    const destination = process.context.destination;
+    const getHandCard = () => player.hand.find((card) => card.id === process.context.cardId);
+    while (this.processManager.getCurrentProcess() === process) {
+      switch (process.step) {
+        case PLAY_CHARACTER_STEP.VALIDATE: {
+          const card = getHandCard();
+          const parent = this.gameState.ruleState.processStack.at(-2);
+          const reason = this.#getCharacterPlayRuleDisabledReason(card, process.playerId);
+          const invalidParent =
+            this.gameState.phase !== PHASE.MAIN ||
+            this.gameState.turn.player !== process.playerId ||
+            parent?.type !== PROCESS_TYPE.MAIN_PHASE ||
+            parent.playerId !== process.playerId ||
+            parent.step !== MAIN_STEP.WAITING_INPUT ||
+            parent.status !== PROCESS_STATUS.WAITING_INPUT;
+          if (reason || invalidParent || !this.#isMainStageDestination(destination, process.playerId)) {
+            this.processManager.popProcess();
+            throw new Error(reason ?? "Character Play context is no longer valid.");
+          }
+          this.processManager.updateStep(PLAY_CHARACTER_STEP.PAY_COST);
+          break;
+        }
+        case PLAY_CHARACTER_STEP.PAY_COST: {
+          const card = getHandCard();
+          for (let count = 0; count < card.cost; count += 1) {
+            const costCard = player.stock.pop();
+            costCard.moveTo({ zone: ZONE.WAITING_ROOM, row: null, index: player.waitingRoom.length + 1 });
+            costCard.setPosition(POSITION.STAND);
+            costCard.setFace(null);
+            player.waitingRoom.push(costCard);
+          }
+          this.processManager.updateStep(PLAY_CHARACTER_STEP.REMOVE_EXISTING);
+          break;
+        }
+        case PLAY_CHARACTER_STEP.REMOVE_EXISTING: {
+          const existingIndex = player.stage.findIndex(
+            (card) => card.row === destination.row && card.index === destination.index,
+          );
+          if (existingIndex >= 0) {
+            const [existing] = player.stage.splice(existingIndex, 1);
+            existing.moveTo({ zone: ZONE.WAITING_ROOM, row: null, index: player.waitingRoom.length + 1 });
+            existing.setPosition(POSITION.STAND);
+            existing.setFace(null);
+            player.waitingRoom.push(existing);
+          }
+          this.processManager.updateStep(PLAY_CHARACTER_STEP.MOVE_TO_STAGE);
+          break;
+        }
+        case PLAY_CHARACTER_STEP.MOVE_TO_STAGE: {
+          const handIndex = player.hand.findIndex((card) => card.id === process.context.cardId);
+          const [card] = player.hand.splice(handIndex, 1);
+          this.#reindexCards(player.hand);
+          card.moveTo({ zone: ZONE.STAGE, row: destination.row, index: destination.index });
+          card.setPosition(POSITION.STAND);
+          card.setFace(null);
+          player.stage.push(card);
+          this.addLog(process.playerId, `${card.name}を舞台に出しました。`);
+          this.processManager.updateStep(PLAY_CHARACTER_STEP.CHECK_POINT);
+          this.render();
+          break;
+        }
+        case PLAY_CHARACTER_STEP.CHECK_POINT: {
+          this.processManager.updateStep(PLAY_CHARACTER_STEP.COMPLETE);
+          const result = this.resolveRuleCheck();
+          if (result !== RULE_CHECK_RESULT.CONTINUE) return process;
+          break;
+        }
+        case PLAY_CHARACTER_STEP.COMPLETE:
+          this.completeCurrentProcess();
+          return process;
+        default:
+          throw new RangeError(`Unknown PLAY_CHARACTER step: ${process.step}.`);
+      }
+    }
+    return process;
   }
 
   /**
@@ -1291,6 +1409,9 @@ export class GameEngine {
     if (process.type === PROCESS_TYPE.MAIN_PHASE) {
       return this.executeMainPhaseProcess();
     }
+    if (process.type === PROCESS_TYPE.PLAY_CHARACTER) {
+      return this.executePlayCharacterProcess();
+    }
     if (process.type === PROCESS_TYPE.LEVEL_UP) {
       return this.executeLevelUpProcess();
     }
@@ -1722,6 +1843,29 @@ export class GameEngine {
     }
 
     return process;
+  }
+
+  /** @returns {boolean} */
+  #isMainStageDestination(destination, playerId) {
+    return playerId === "self" && MAIN_STAGE_DESTINATIONS.some(
+      (candidate) =>
+        destination?.row === candidate.row &&
+        destination?.index === candidate.index,
+    );
+  }
+
+  /** UI状態に依存しないCharacter基本プレイ条件。 */
+  #getCharacterPlayRuleDisabledReason(card, playerId) {
+    const player = this.gameState.players[playerId];
+    if (!card || !player?.hand.includes(card) || card.owner !== playerId || card.zone !== ZONE.HAND || card.cardType !== "character") {
+      return "CHARACTERが手札にありません。";
+    }
+    if (card.level > player.level.length) return "レベル条件を満たしていません。";
+    if (card.level >= 1 && ![...player.level, ...player.clock].some((zoneCard) => zoneCard.color === card.color)) {
+      return "必要な色条件を満たしていません。";
+    }
+    if (player.stock.length < card.cost) return "ストックが不足しています。";
+    return null;
   }
 
   /**
