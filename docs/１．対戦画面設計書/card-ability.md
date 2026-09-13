@@ -2,7 +2,13 @@
 
 ## 目的と適用範囲
 
-本書は、カード種類の固定データ、対戦中のCard instance、CardAbilityを将来分離・実装するための設計基準を定義する。現時点では`CardMaster` class、`CardAbility` class、Ability Engine、カードデータディレクトリはいずれも未実装である。本書は実装計画であり、ゲーム実装を変更しない。
+本書は、カード種類の固定データ、対戦中のCard instance、CardAbilityを将来分離・実装するための設計基準を定義する。現時点では`CardMaster` class、`CardAbility` class、Ability Engine、正式なCardMasterデータディレクトリはいずれも未実装である。本書は実装計画であり、ゲーム実装を変更しない。
+
+## F-2B実地確認用の暫定カード定義
+
+Phase F-2BのLevel・Color・Cost条件を実画面で確認するため、`client/data/test-cards.json` に固定情報だけを持つ暫定カード定義を置く。開発用ローダーは定義を検証し、既存の`Card` constructorへ固定情報とowner・zone等の初期状態を渡して、独立したCard instanceからDeckを生成する。
+
+JSONの`id`は暫定的な定義識別子である。複数枚を生成する際はowner・定義ID・copy番号から一意な`Card.id`を作るが、`masterId`は導入しない。このJSON schemaを最終仕様とはせず、Phase F-3でCardMaster、instance ID、ロード・検証方法へ移行する。
 
 ## 現在のCard実装
 

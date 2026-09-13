@@ -136,6 +136,8 @@ CLIMAX
 
 基本Play Costは、将来の `CardMaster.cost` に相当するカード固有のコストです。Ability Costとは別概念です。
 
+開発用の初期Deckは `client/data/test-cards.json` の暫定定義から生成し、Level・Color・Cost条件を実画面で確認できます。正式なCardMaster化はPhase F-3で行います。
+
 ### NEXT：Phase F-2C Stage → Stage
 
 予定している内容です。

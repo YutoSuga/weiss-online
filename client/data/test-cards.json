@@ -1,0 +1,80 @@
+[
+  {
+    "id": "test-char-red-lv0-c0",
+    "name": "テストキャラ 赤 Lv0 C0",
+    "cardType": "character",
+    "level": 0,
+    "cost": 0,
+    "color": "red",
+    "basePower": 3000,
+    "baseSoul": 1,
+    "trigger": [],
+    "traits": ["テスト"],
+    "text": "F-2Bテスト用 Level 0 / Cost 0"
+  },
+  {
+    "id": "test-char-red-lv1-c0",
+    "name": "テストキャラ 赤 Lv1 C0",
+    "cardType": "character",
+    "level": 1,
+    "cost": 0,
+    "color": "red",
+    "basePower": 4500,
+    "baseSoul": 1,
+    "trigger": [],
+    "traits": ["テスト"],
+    "text": "F-2Bテスト用 Level 1 / Cost 0"
+  },
+  {
+    "id": "test-char-blue-lv1-c1",
+    "name": "テストキャラ 青 Lv1 C1",
+    "cardType": "character",
+    "level": 1,
+    "cost": 1,
+    "color": "blue",
+    "basePower": 6000,
+    "baseSoul": 1,
+    "trigger": ["soul"],
+    "traits": ["テスト"],
+    "text": "F-2Bテスト用 Level 1 / Cost 1"
+  },
+  {
+    "id": "test-char-red-lv1-c2",
+    "name": "テストキャラ 赤 Lv1 C2",
+    "cardType": "character",
+    "level": 1,
+    "cost": 2,
+    "color": "red",
+    "basePower": 7000,
+    "baseSoul": 1,
+    "trigger": ["soul"],
+    "traits": ["テスト"],
+    "text": "F-2Bテスト用 Level 1 / Cost 2"
+  },
+  {
+    "id": "test-char-green-lv2-c1",
+    "name": "テストキャラ 緑 Lv2 C1",
+    "cardType": "character",
+    "level": 2,
+    "cost": 1,
+    "color": "green",
+    "basePower": 8000,
+    "baseSoul": 1,
+    "trigger": ["soul"],
+    "traits": ["テスト"],
+    "text": "F-2Bテスト用 Level 2 / Cost 1"
+  },
+  {
+    "id": "test-char-yellow-lv2-c2",
+    "name": "テストキャラ 黄 Lv2 C2",
+    "cardType": "character",
+    "level": 2,
+    "cost": 2,
+    "color": "yellow",
+    "basePower": 9000,
+    "baseSoul": 2,
+    "trigger": ["soul"],
+    "traits": ["テスト"],
+    "text": "F-2Bテスト用 Level 2 / Cost 2"
+  }
+]

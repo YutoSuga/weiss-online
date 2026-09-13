@@ -15,8 +15,10 @@ import { DevController } from "./ui/devController.js";
 import { GameState } from "./models/gameState.js";
 import { Player } from "./models/player.js";
 import { Card } from "./models/card.js";
-import { Deck } from "./models/deck.js";
-import { ZONE } from "./constants/zone.js";
+import {
+  createTestDeck,
+  loadTestCardDefinitions,
+} from "./data/testCardLoader.js";
 import { PROCESS_STATUS, PROCESS_TYPE } from "./constants/process.js";
 import { DEFEAT_REASON, RULE_CHECK_RESULT } from "./constants/ruleCheck.js";
 
@@ -51,53 +53,32 @@ function createRandomMulliganIndexes(handSize) {
     .sort((left, right) => left - right);
 }
 
-/**
- * @param {'self'|'opponent'} owner
- * @param {number} sequence
- * @returns {Card}
- */
-function createTestCard(owner, sequence) {
-  return new Card({
-    id: `${owner}-test-card-${String(sequence).padStart(3, "0")}`,
-    name: `${owner === "self" ? "自分" : "相手"}テストカード ${sequence}`,
-    cardType: "character",
-    level: 0,
-    cost: 0,
-    color: "yellow",
-    basePower: 1000,
-    baseSoul: 1,
-    trigger: [],
-    traits: ["テスト"],
-    text: "",
-    owner,
-    zone: ZONE.DECK,
-    row: null,
-    index: null,
-    position: "stand",
-  });
-}
-
-/**
- * 開発確認用の独立したCardインスタンスで山札を作成する。
- *
- * @param {'self'|'opponent'} owner
- * @param {number} [count=TEST_DECK_SIZE]
- * @returns {Deck}
- */
-function createTestDeck(owner, count = TEST_DECK_SIZE) {
-  if (!Number.isInteger(count) || count < 0) {
-    throw new TypeError("count must be a non-negative integer.");
+let testCardDefinitions;
+try {
+  testCardDefinitions = await loadTestCardDefinitions();
+} catch (error) {
+  const overlay = document.querySelector("[data-message-overlay]");
+  const title = document.querySelector("[data-message-overlay-title]");
+  const message = document.querySelector("[data-message-overlay-message]");
+  if (overlay) {
+    overlay.hidden = false;
   }
-
-  const cards = Array.from({ length: count }, (_unused, index) =>
-    createTestCard(owner, index + 1),
-  );
-
-  return new Deck(cards);
+  if (title) {
+    title.hidden = false;
+    title.textContent = "テストカード読込エラー";
+  }
+  if (message) {
+    message.hidden = false;
+    message.textContent = error.message;
+  }
+  throw error;
 }
-
-const selfDeck = createTestDeck("self");
-const opponentDeck = createTestDeck("opponent");
+const selfDeck = createTestDeck("self", testCardDefinitions, TEST_DECK_SIZE);
+const opponentDeck = createTestDeck(
+  "opponent",
+  testCardDefinitions,
+  TEST_DECK_SIZE,
+);
 
 const self = new Player({
   id: "self",
