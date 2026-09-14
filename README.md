@@ -191,14 +191,14 @@ MAIN_PHASE / WAITING_INPUT中に自分のStage Characterを選択し、現在位
 
 READMEは現在地点と概要を扱い、詳細な仕様は `docs/` を参照してください。
 
-- [設計書ガイド](docs/README.md)
+- [設計書一覧](docs/設計書一覧.md)
 - [プロジェクト全体Architecture](docs/１．設計書/architecture.md)
 - [Application Flow / Deck設計](docs/１．設計書/application-flow.md)
 - [MAIN Phase設計](docs/１．設計書/main-phase.md)
 - [CardMaster / CardAbility設計](docs/１．設計書/card-ability.md)
 - [UI操作仕様](docs/１．設計書/ui-rules.md)
-- [Process基盤設計](docs/１．設計書/Process.md)
-- [Rule Check設計](docs/１．設計書/RuleCheck.md)
+- [Process基盤設計](docs/１．設計書/process.md)
+- [Rule Check設計](docs/１．設計書/rule-check.md)
 - [GameEngine設計](docs/１．設計書/game-engine.md)
 - [JavaScript仕様](docs/１．設計書/js-spec.md)
 - [HTML仕様](docs/１．設計書/html-spec.md)

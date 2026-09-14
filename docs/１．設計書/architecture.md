@@ -41,4 +41,4 @@ flowchart TD
 
 現在のCardには固定情報と対戦中状態が同居している。F-3AではCardMasterを追加し、Cardをinstance状態へ絞る。一方、既存GameEngine・Rendererへの影響を抑えるため、`card.name`、`card.level`、`card.cost`等の公開APIはCardのgetterで維持する。
 
-詳細は[CardMaster / CardAbility設計](card-ability.md)、対戦Processは[Process設計](Process.md)、MAIN Actionは[MAIN Phase設計](main-phase.md)を参照する。
+詳細は[CardMaster / CardAbility設計](card-ability.md)、対戦Processは[Process設計](process.md)、MAIN Actionは[MAIN Phase設計](main-phase.md)を参照する。
