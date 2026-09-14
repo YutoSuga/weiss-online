@@ -37,6 +37,10 @@ export class MainPhaseController {
     this.selectedHandIndex = null;
     /** @type {{row:string,index:number}|null} */
     this.pendingDestination = null;
+    /** @type {'replacement'|'swap'|null} */
+    this.pendingAction = null;
+    /** @type {import("../models/card.js").Card|null} */
+    this.pendingDestinationCard = null;
     /** @type {HTMLButtonElement|null} */
     this.button = null;
     /** @type {HTMLButtonElement|null} */
@@ -131,7 +135,9 @@ export class MainPhaseController {
 
     if (
       this.selectedCard &&
-      !this.gameEngine?.canSelectCardForMain?.(this.selectedCard, "self")
+      !(this.selectedCard.zone === "hand"
+        ? this.gameEngine?.canSelectCardForMain?.(this.selectedCard, "self")
+        : this.gameEngine?.canSelectStageCardForMain?.(this.selectedCard, "self"))
     ) {
       this.clearSelection();
     }
@@ -168,6 +174,8 @@ export class MainPhaseController {
     if (destination && this.rootElement.contains(destination)) {
       if (destination.dataset.mainDestination === "true") {
         this.handleDestinationClick(destination);
+      } else if (destination.dataset.cardId) {
+        this.handleStageCardClick(destination);
       }
       return;
     }
@@ -197,10 +205,17 @@ export class MainPhaseController {
     );
     if (existing) {
       this.pendingDestination = destination;
+      this.pendingDestinationCard = existing;
+      this.pendingAction = this.selectedCard.zone === "stage" ? "swap" : "replacement";
+      this.updateConfirmationView();
       if (this.replacementPanel instanceof HTMLElement) this.replacementPanel.hidden = false;
       return;
     }
-    this.submitCharacterPlay(destination);
+    if (this.selectedCard.zone === "stage") {
+      this.submitStageMove(destination);
+    } else {
+      this.submitCharacterPlay(destination);
+    }
   }
 
   /** @param {MouseEvent} event */
@@ -213,8 +228,16 @@ export class MainPhaseController {
     event.stopPropagation();
     if (button.dataset.replacementAction === "back") {
       this.closeReplacementConfirmation();
+    } else if (button.dataset.replacementAction === "select") {
+      const destinationCard = this.pendingDestinationCard;
+      this.closeReplacementConfirmation();
+      if (destinationCard) this.selectStageCard(destinationCard);
     } else if (button.dataset.replacementAction === "replace" && this.pendingDestination) {
-      this.submitCharacterPlay(this.pendingDestination);
+      if (this.pendingAction === "swap" && this.pendingDestinationCard) {
+        this.submitStageSwap(this.pendingDestinationCard);
+      } else {
+        this.submitCharacterPlay(this.pendingDestination);
+      }
     }
   }
 
@@ -238,7 +261,17 @@ export class MainPhaseController {
 
   closeReplacementConfirmation() {
     this.pendingDestination = null;
+    this.pendingDestinationCard = null;
+    this.pendingAction = null;
     if (this.replacementPanel instanceof HTMLElement) this.replacementPanel.hidden = true;
+  }
+
+  /** 確認パネルをReplacement/Swapの意味に合わせて更新する。 */
+  updateConfirmationView() {
+    const message = this.replacementPanel?.querySelector("[data-confirmation-message]");
+    const primary = this.replacementPanel?.querySelector('[data-replacement-action="replace"]');
+    if (message) message.textContent = "この場所にはカードがあります。";
+    if (primary) primary.textContent = this.pendingAction === "swap" ? "入れ替える" : "置き換える";
   }
 
   /** @param {HTMLElement} slot @returns {void} */
@@ -262,6 +295,63 @@ export class MainPhaseController {
     }
     this.updateCandidateStates();
     this.updateSelectionView();
+  }
+
+  /** @param {HTMLElement} slot */
+  handleStageCardClick(slot) {
+    const card = this.gameState?.players?.self?.stage?.find(
+      (candidate) => candidate.id === slot.dataset.cardId,
+    );
+    if (!this.gameEngine?.canSelectStageCardForMain?.(card, "self")) return;
+    this.closeReplacementConfirmation();
+    if (this.selectedCard === card) {
+      this.clearSelection();
+    } else {
+      this.selectStageCard(card);
+    }
+    this.updateCandidateStates();
+    this.updateSelectionView();
+  }
+
+  /** @param {import("../models/card.js").Card} card */
+  selectStageCard(card) {
+    this.selectedCard = card;
+    this.selectedHandIndex = null;
+    this.updateCandidateStates();
+    this.updateSelectionView();
+  }
+
+  /** @param {{row:string,index:number}} destination */
+  submitStageMove(destination) {
+    const card = this.selectedCard;
+    if (!card || this.submitting) return;
+    this.submitting = true;
+    try {
+      this.gameEngine.moveStageCard(card, "self", destination);
+      this.clearSelection();
+    } catch (error) {
+      console.error("MainPhaseController: Stage Move failed.", error);
+    } finally {
+      this.submitting = false;
+      this.sync();
+    }
+  }
+
+  /** @param {import("../models/card.js").Card} destinationCard */
+  submitStageSwap(destinationCard) {
+    const card = this.selectedCard;
+    if (!card || this.submitting) return;
+    this.submitting = true;
+    try {
+      this.gameEngine.swapStageCards(card, destinationCard, "self");
+      this.clearSelection();
+    } catch (error) {
+      console.error("MainPhaseController: Stage Swap failed.", error);
+      this.closeReplacementConfirmation();
+    } finally {
+      this.submitting = false;
+      this.sync();
+    }
   }
 
   /** @param {MouseEvent} event @returns {void} */
@@ -307,7 +397,11 @@ export class MainPhaseController {
       typeof this.gameEngine?.canSelectCardForMain === "function" &&
       typeof this.gameEngine?.getMainDestinationCandidates === "function" &&
       typeof this.gameEngine?.getCharacterPlayDisabledReason === "function" &&
-      typeof this.gameEngine?.playCharacterToStage === "function",
+      typeof this.gameEngine?.playCharacterToStage === "function" &&
+      typeof this.gameEngine?.canSelectStageCardForMain === "function" &&
+      typeof this.gameEngine?.getMainStageMoveDestinations === "function" &&
+      typeof this.gameEngine?.moveStageCard === "function" &&
+      typeof this.gameEngine?.swapStageCards === "function",
     );
   }
 
@@ -334,7 +428,7 @@ export class MainPhaseController {
   /** @returns {void} */
   clearCandidateStates() {
     this.rootElement
-      ?.querySelectorAll('.card-slot[data-owner="self"][data-zone="hand"]')
+      ?.querySelectorAll('.card-slot[data-owner="self"][data-zone="hand"], .stage-slot[data-owner="self"]')
       .forEach((slot) => slot.classList.remove(...SELECTION_CLASSES));
     this.clearDestinationStates();
   }
@@ -363,6 +457,18 @@ export class MainPhaseController {
           slot.classList.add(UNSELECTABLE_CLASS);
         }
       });
+    this.rootElement
+      ?.querySelectorAll('.stage-slot[data-owner="self"][data-zone="stage"]')
+      .forEach((slot) => {
+        slot.classList.remove(...SELECTION_CLASSES);
+        const card = this.gameState?.players?.self?.stage?.find(
+          (candidate) => candidate.id === slot.dataset.cardId,
+        );
+        if (!card) return;
+        if (this.gameEngine.canSelectStageCardForMain(card, "self")) {
+          slot.classList.add(card === this.selectedCard ? SELECTED_CLASS : SELECTABLE_CLASS);
+        }
+      });
   }
 
   /** @returns {void} */
@@ -373,18 +479,17 @@ export class MainPhaseController {
       return;
     }
 
-    const playDisabledReason = this.gameEngine.getCharacterPlayDisabledReason(
-      this.selectedCard,
-      "self",
-    );
+    const isStageSelection = this.selectedCard.zone === "stage";
+    const playDisabledReason = isStageSelection
+      ? null
+      : this.gameEngine.getCharacterPlayDisabledReason(this.selectedCard, "self");
     this.renderer?.renderCardDetail?.(this.selectedCard, {
       showClearSelection: true,
       playDisabledReason,
     });
-    const destinations = this.gameEngine.getMainDestinationCandidates(
-      this.selectedCard,
-      "self",
-    );
+    const destinations = isStageSelection
+      ? this.gameEngine.getMainStageMoveDestinations(this.selectedCard, "self")
+      : this.gameEngine.getMainDestinationCandidates(this.selectedCard, "self");
     destinations.forEach(({ owner, zone, row, index }) => {
       const selector = `.stage-slot[data-owner="${owner}"]` +
         `[data-zone="${zone}"][data-row="${row}"]` +

@@ -8,12 +8,14 @@ import {
   CLOCK_STEP,
   DRAW_STEP,
   MAIN_STEP,
+  MOVE_STAGE_STEP,
   PLAY_CHARACTER_STEP,
   PROCESS_STATUS,
   PROCESS_TYPE,
   LEVEL_UP_STEP,
   REFRESH_PENALTY_STEP,
   REFRESH_STEP,
+  SWAP_STAGE_STEP,
 } from "../constants/process.js";
 import {
   DEFEAT_REASON,
@@ -610,6 +612,188 @@ export class GameEngine {
           return process;
         default:
           throw new RangeError(`Unknown PLAY_CHARACTER step: ${process.step}.`);
+      }
+    }
+    return process;
+  }
+
+  /** MAIN入力待ち中に自分のStage Characterを選択できるか返す。 */
+  canSelectStageCardForMain(card, playerId) {
+    if (playerId !== "self" || this.gameState.turn.player !== playerId) {
+      return false;
+    }
+    const process = this.processManager.getCurrentProcess();
+    const stage = this.gameState.players[playerId]?.stage;
+    return Boolean(
+      this.gameState.phase === PHASE.MAIN &&
+      process?.type === PROCESS_TYPE.MAIN_PHASE &&
+      process.playerId === playerId &&
+      process.step === MAIN_STEP.WAITING_INPUT &&
+      process.status === PROCESS_STATUS.WAITING_INPUT &&
+      Array.isArray(stage) &&
+      stage.includes(card) &&
+      card?.owner === playerId &&
+      card?.zone === ZONE.STAGE &&
+      card?.cardType === "character" &&
+      this.#isMainStageDestination(card, playerId)
+    );
+  }
+
+  /** 選択中Stage Characterの現在slotを除く4つのDestinationを返す。 */
+  getMainStageMoveDestinations(card, playerId) {
+    if (!this.canSelectStageCardForMain(card, playerId)) return [];
+    return MAIN_STAGE_DESTINATIONS
+      .filter(({ row, index }) => row !== card.row || index !== card.index)
+      .map((destination) => ({ ...destination }));
+  }
+
+  /** Stage Characterを指定DestinationへMove/Swapできる基本条件。 */
+  canMoveStageCard(card, destination, playerId) {
+    return this.canSelectStageCardForMain(card, playerId) &&
+      this.#isMainStageDestination(destination, playerId) &&
+      (card.row !== destination.row || card.index !== destination.index);
+  }
+
+  /** Stage Characterを空きslotへ移動する子Action Processを開始する。 */
+  moveStageCard(card, playerId, destination) {
+    this.#assertMainPhaseAction(playerId);
+    if (!this.canMoveStageCard(card, destination, playerId)) {
+      throw new Error("Stage Move条件を満たしていません。");
+    }
+    const destinationCard = this.#findStageCard(playerId, destination);
+    if (destinationCard) throw new Error("Stage Move先にカードがあります。");
+    const process = this.processManager.pushProcess({
+      type: PROCESS_TYPE.MOVE_STAGE,
+      playerId,
+      step: MOVE_STAGE_STEP.VALIDATE,
+      status: PROCESS_STATUS.RUNNING,
+      context: {
+        cardId: card.id,
+        source: { row: card.row, index: card.index },
+        destination: { row: destination.row, index: destination.index },
+      },
+    });
+    this.executeMoveStageProcess();
+    return process;
+  }
+
+  /** MOVE_STAGEを保存済みstepから実行する。 */
+  executeMoveStageProcess() {
+    const process = this.processManager.getCurrentProcess();
+    if (!process || process.type !== PROCESS_TYPE.MOVE_STAGE) return process;
+    const player = this.gameState.players[process.playerId];
+    const getCard = () => player.stage.find((card) => card.id === process.context.cardId);
+    while (this.processManager.getCurrentProcess() === process) {
+      switch (process.step) {
+        case MOVE_STAGE_STEP.VALIDATE: {
+          const card = getCard();
+          if (!this.#isValidStageActionParent(process) ||
+            !this.#matchesStageLocation(card, process.context.source) ||
+            !this.#isStageCardOwnedBy(card, process.playerId) ||
+            !this.#isMainStageDestination(process.context.destination, process.playerId) ||
+            (card.row === process.context.destination.row && card.index === process.context.destination.index) ||
+            this.#findStageCard(process.playerId, process.context.destination)) {
+            this.processManager.popProcess();
+            throw new Error("Stage Move context is no longer valid.");
+          }
+          this.processManager.updateStep(MOVE_STAGE_STEP.MOVE);
+          break;
+        }
+        case MOVE_STAGE_STEP.MOVE: {
+          const card = getCard();
+          card.moveTo({ zone: ZONE.STAGE, ...process.context.destination });
+          this.addLog(process.playerId, `${card.name}を舞台内で移動しました。`);
+          this.processManager.updateStep(MOVE_STAGE_STEP.CHECK_POINT);
+          this.render();
+          break;
+        }
+        case MOVE_STAGE_STEP.CHECK_POINT: {
+          this.processManager.updateStep(MOVE_STAGE_STEP.COMPLETE);
+          if (this.resolveRuleCheck() !== RULE_CHECK_RESULT.CONTINUE) return process;
+          break;
+        }
+        case MOVE_STAGE_STEP.COMPLETE:
+          this.completeCurrentProcess();
+          return process;
+        default:
+          throw new RangeError(`Unknown MOVE_STAGE step: ${process.step}.`);
+      }
+    }
+    return process;
+  }
+
+  /** 2枚のStage Characterを交換する子Action Processを開始する。 */
+  swapStageCards(card, destinationCard, playerId) {
+    this.#assertMainPhaseAction(playerId);
+    const destination = destinationCard
+      ? { row: destinationCard.row, index: destinationCard.index }
+      : null;
+    if (!this.canMoveStageCard(card, destination, playerId) ||
+      !this.canSelectStageCardForMain(destinationCard, playerId)) {
+      throw new Error("Stage Swap条件を満たしていません。");
+    }
+    const process = this.processManager.pushProcess({
+      type: PROCESS_TYPE.SWAP_STAGE,
+      playerId,
+      step: SWAP_STAGE_STEP.VALIDATE,
+      status: PROCESS_STATUS.RUNNING,
+      context: {
+        cardId: card.id,
+        destinationCardId: destinationCard.id,
+        source: { row: card.row, index: card.index },
+        destination: { ...destination },
+      },
+    });
+    this.executeSwapStageProcess();
+    return process;
+  }
+
+  /** SWAP_STAGEを保存済みstepから実行する。 */
+  executeSwapStageProcess() {
+    const process = this.processManager.getCurrentProcess();
+    if (!process || process.type !== PROCESS_TYPE.SWAP_STAGE) return process;
+    const player = this.gameState.players[process.playerId];
+    const getSource = () => player.stage.find((card) => card.id === process.context.cardId);
+    const getDestination = () => player.stage.find((card) => card.id === process.context.destinationCardId);
+    while (this.processManager.getCurrentProcess() === process) {
+      switch (process.step) {
+        case SWAP_STAGE_STEP.VALIDATE: {
+          const source = getSource();
+          const destination = getDestination();
+          if (!this.#isValidStageActionParent(process) ||
+            !this.#matchesStageLocation(source, process.context.source) ||
+            !this.#matchesStageLocation(destination, process.context.destination) ||
+            !this.#isStageCardOwnedBy(source, process.playerId) ||
+            !this.#isStageCardOwnedBy(destination, process.playerId) ||
+            !this.#isMainStageDestination(process.context.destination, process.playerId) ||
+            (source.row === process.context.destination.row && source.index === process.context.destination.index)) {
+            this.processManager.popProcess();
+            throw new Error("Stage Swap context is no longer valid.");
+          }
+          this.processManager.updateStep(SWAP_STAGE_STEP.SWAP);
+          break;
+        }
+        case SWAP_STAGE_STEP.SWAP: {
+          const source = getSource();
+          const destination = getDestination();
+          const sourceLocation = { ...process.context.source };
+          source.moveTo({ zone: ZONE.STAGE, ...process.context.destination });
+          destination.moveTo({ zone: ZONE.STAGE, ...sourceLocation });
+          this.addLog(process.playerId, `${source.name}と${destination.name}を入れ替えました。`);
+          this.processManager.updateStep(SWAP_STAGE_STEP.CHECK_POINT);
+          this.render();
+          break;
+        }
+        case SWAP_STAGE_STEP.CHECK_POINT: {
+          this.processManager.updateStep(SWAP_STAGE_STEP.COMPLETE);
+          if (this.resolveRuleCheck() !== RULE_CHECK_RESULT.CONTINUE) return process;
+          break;
+        }
+        case SWAP_STAGE_STEP.COMPLETE:
+          this.completeCurrentProcess();
+          return process;
+        default:
+          throw new RangeError(`Unknown SWAP_STAGE step: ${process.step}.`);
       }
     }
     return process;
@@ -1412,6 +1596,12 @@ export class GameEngine {
     if (process.type === PROCESS_TYPE.PLAY_CHARACTER) {
       return this.executePlayCharacterProcess();
     }
+    if (process.type === PROCESS_TYPE.MOVE_STAGE) {
+      return this.executeMoveStageProcess();
+    }
+    if (process.type === PROCESS_TYPE.SWAP_STAGE) {
+      return this.executeSwapStageProcess();
+    }
     if (process.type === PROCESS_TYPE.LEVEL_UP) {
       return this.executeLevelUpProcess();
     }
@@ -1851,6 +2041,47 @@ export class GameEngine {
       (candidate) =>
         destination?.row === candidate.row &&
         destination?.index === candidate.index,
+    );
+  }
+
+  /** Stage上の指定slotにいるカードを返す。 */
+  #findStageCard(playerId, location) {
+    return this.gameState.players[playerId]?.stage.find(
+      (card) => card.row === location?.row && card.index === location?.index,
+    ) ?? null;
+  }
+
+  /** Cardが保存済みStage位置にいるか返す。 */
+  #matchesStageLocation(card, location) {
+    return Boolean(
+      card &&
+      card.zone === ZONE.STAGE &&
+      card.row === location?.row &&
+      card.index === location?.index,
+    );
+  }
+
+  /** Process状態に依存しないStage Characterの所有・所属条件。 */
+  #isStageCardOwnedBy(card, playerId) {
+    return Boolean(
+      card &&
+      this.gameState.players[playerId]?.stage.includes(card) &&
+      card.owner === playerId &&
+      card.zone === ZONE.STAGE &&
+      card.cardType === "character",
+    );
+  }
+
+  /** Stage Actionの親MAINとターン状態を実行直前に再検証する。 */
+  #isValidStageActionParent(process) {
+    const parent = this.gameState.ruleState.processStack.at(-2);
+    return Boolean(
+      this.gameState.phase === PHASE.MAIN &&
+      this.gameState.turn.player === process.playerId &&
+      parent?.type === PROCESS_TYPE.MAIN_PHASE &&
+      parent.playerId === process.playerId &&
+      parent.step === MAIN_STEP.WAITING_INPUT &&
+      parent.status === PROCESS_STATUS.WAITING_INPUT,
     );
   }
 

@@ -3,7 +3,7 @@
 ## 目的と適用範囲
 
 本書は、MAIN Phaseと、通常のCHARACTERプレイ・舞台内移動の設計基準を定義する。
-現時点では`MAIN_PHASE` Process、F-2Aの選択UI、F-2BのHandからStageへのCHARACTERプレイ、Play Cost、Replacementまで実装済みである。舞台内移動はF-2Cで実装する。
+現時点では`MAIN_PHASE` Process、F-2Aの選択UI、F-2BのHandからStageへのCHARACTERプレイ、Play Cost、Replacement、F-2CのStage内Move / Swapまで実装済みである。
 
 本書でいうプレイヤーは、現在の画面視点での`self`を指す。`self` / `opponent`は`GameState.players`の現在の役割名であり、将来の通信層で視点へ変換する。
 
@@ -24,7 +24,7 @@ Controller（ユーザー入力）
 - `Renderer`はゲームルールやActionの妥当性を判断しない。
 - Controllerが持つ一時的な選択状態はGameStateへ保存しない。これは既存のMulliganController、ClockController、LevelUpControllerと同じ方針である。
 
-既存の`PROCESS_TYPE`には`DRAW_PHASE`、`CLOCK_PHASE`、`MAIN_PHASE`、`PLAY_CHARACTER`、`REFRESH`、`REFRESH_PENALTY`、`LEVEL_UP`がある。現在の`MAIN_STEP`は`START`、`WAITING_INPUT`、`END_MAIN`、`COMPLETE`である。
+既存の`PROCESS_TYPE`には`DRAW_PHASE`、`CLOCK_PHASE`、`MAIN_PHASE`、`PLAY_CHARACTER`、`MOVE_STAGE`、`SWAP_STAGE`、`REFRESH`、`REFRESH_PENALTY`、`LEVEL_UP`がある。現在の`MAIN_STEP`は`START`、`WAITING_INPUT`、`END_MAIN`、`COMPLETE`である。
 
 `PLAY_CHARACTER`は`MAIN_PHASE / WAITING_INPUT`の上へ積む子Action Processで、`VALIDATE → PAY_COST → REMOVE_EXISTING → MOVE_TO_STAGE → CHECK_POINT → COMPLETE`の順に処理する。`VALIDATE`完了前にはゲーム状態を変更しない。`CHECK_POINT`では先にresume先を`COMPLETE`へ保存してから`resolveRuleCheck()`を呼び、割り込み後は保存済みstepから再開する。完了時は`completeCurrentProcess()`でpopし、親の`MAIN_PHASE / WAITING_INPUT`へ戻る。
 
@@ -181,7 +181,16 @@ destination card → selected cardの元slot
 | このカードを選択 | Destination側Stageカードへ選択を切り替える。 |
 | 戻る | 元のStageカードを選択した状態へ戻る。 |
 
-Action名の候補は`PLAY_TO_STAGE`、`MOVE_STAGE`、`SWAP_STAGE`である。現在はAction Type定数がないため、名称は未確定であり実装時に定数設計とあわせて確定する。
+HandからStageへのActionは`PLAY_CHARACTER`、Stage内の空slotへの移動は`MOVE_STAGE`、使用中slotとの交換は`SWAP_STAGE`とする。
+
+F-2Cでは`MOVE_STAGE`と`SWAP_STAGE`を`PLAY_CHARACTER`とは別の子Action Processとして実装する。
+
+```text
+MOVE_STAGE: VALIDATE → MOVE → CHECK_POINT → COMPLETE
+SWAP_STAGE: VALIDATE → SWAP → CHECK_POINT → COMPLETE
+```
+
+`VALIDATE`では親MAIN、ターン、sourceの現在位置、Destination、Swap相手を再検証し、失敗時は盤面を変更しない。Moveは空slotだけを対象とし、Swapは2枚のrow/indexを交換する。どちらもCostを支払わず、Waiting Roomへカードを送らず、各Cardのpositionとfaceを変更しない。`CHECK_POINT`ではresume先を`COMPLETE`へ保存してから`resolveRuleCheck()`を実行する。
 
 ## v1対象外・将来対応
 
@@ -191,7 +200,6 @@ Action名の候補は`PLAY_TO_STAGE`、`MOVE_STAGE`、`SWAP_STAGE`である。�
 - AUTO/CONTINUOUS能力の完全実装
 - Drag & Drop
 - 全Phase共通の公開カード閲覧（Global Card Inspection）
-- Stageカードの選択、Stage内Move / Swap
 - 色・カード種別・Action Typeの定数化
 
 ## 既存資料との注意点

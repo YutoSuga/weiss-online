@@ -8,6 +8,8 @@ export const PROCESS_TYPE = Object.freeze({
   DRAW_PHASE: "draw_phase",
   MAIN_PHASE: "main_phase",
   PLAY_CHARACTER: "play_character",
+  MOVE_STAGE: "move_stage",
+  SWAP_STAGE: "swap_stage",
   REFRESH: "refresh",
   REFRESH_PENALTY: "refresh_penalty",
   LEVEL_UP: "level_up",
@@ -63,6 +65,22 @@ export const PLAY_CHARACTER_STEP = Object.freeze({
   PAY_COST: "pay_cost",
   REMOVE_EXISTING: "remove_existing",
   MOVE_TO_STAGE: "move_to_stage",
+  CHECK_POINT: "check_point",
+  COMPLETE: "complete",
+});
+
+/** Stage Characterを空きStage slotへ移動するAction Process。 */
+export const MOVE_STAGE_STEP = Object.freeze({
+  VALIDATE: "validate",
+  MOVE: "move",
+  CHECK_POINT: "check_point",
+  COMPLETE: "complete",
+});
+
+/** 2枚のStage Characterの位置を交換するAction Process。 */
+export const SWAP_STAGE_STEP = Object.freeze({
+  VALIDATE: "validate",
+  SWAP: "swap",
   CHECK_POINT: "check_point",
   COMPLETE: "complete",
 });

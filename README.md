@@ -105,8 +105,8 @@ CLIMAX
 - [x] Phase F-1 MAIN Phase基盤
 - [x] Phase F-2A MAINカード選択 / Destination UI
 - [x] Phase F-2B Character Hand → Stage
-- [ ] **Phase F-2C Stage → Stage（NEXT）**
-- [ ] Phase F-3 CardMaster / CardAbility v1
+- [x] Phase F-2C Stage → Stage
+- [ ] **Phase F-3 CardMaster / CardAbility v1（NEXT）**
 - [ ] Phase F-4 ACT Ability v1
 - [ ] Phase F-5 AUTO Ability基盤
 - [ ] Phase F-6 CONTINUOUS Ability基盤
@@ -138,16 +138,11 @@ CLIMAX
 
 開発用の初期Deckは `client/data/test-cards.json` の暫定定義から生成し、Level・Color・Cost条件を実画面で確認できます。正式なCardMaster化はPhase F-3で行います。
 
-### NEXT：Phase F-2C Stage → Stage
+### Phase F-2C：Stage → Stage
 
-予定している内容です。
+MAIN_PHASE / WAITING_INPUT中に自分のStage Characterを選択し、現在位置以外の4slotへ移動できます。空slotは`MOVE_STAGE`、使用中slotは確認後に`SWAP_STAGE`として処理し、positionとfaceを保持したままMAINへ復帰します。
 
-- Stageカードの選択
-- 空きslotへのMove
-- 使用中slotとのSwap
-- 確認UI
-
-HANDから使用中Stageへ置く場合は**Replacement**、Stageから使用中Stageへ移す場合は**Swap**です。
+### NEXT：Phase F-3 CardMaster / CardAbility v1
 
 ### Phase F-3：CardMaster / CardAbility v1
 
