@@ -64,8 +64,14 @@ ruleState = {
 `PROCESS_TYPE`:
 
 - `CLOCK_ACTION`
+- `CLOCK_PHASE`
 - `DRAW_PHASE`
+- `MAIN_PHASE`
+- `PLAY_CHARACTER`
+- `MOVE_STAGE`
+- `SWAP_STAGE`
 - `REFRESH`
+- `REFRESH_PENALTY`
 - `LEVEL_UP`
 
 `PROCESS_STATUS`:
@@ -166,5 +172,5 @@ Phase Cに含めないもの：
 - 割り込み検出と優先順位
 - `pendingInterrupts`の解決
 - `pendingChecks`の解決
-- CLOCK_ACTION / DRAW_PHASEのProcess化
+- CLOCK_ACTIONのProcess化
 - effectQueueとの連携

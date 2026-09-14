@@ -45,7 +45,7 @@ import { Player } from "./client/js/models/player.js";
 import { GameState } from "./client/js/models/gameState.js";
 ```
 
-## Card
+## Card（現行F-2実装）
 
 カード1枚の固定情報と現在状態を保持します。
 
@@ -56,6 +56,8 @@ import { GameState } from "./client/js/models/gameState.js";
 
 `trigger` と `traits` は外部配列から独立させるため、コンストラクタと
 `toJSON()` の両方でコピーします。
+
+F-3Aでは固定情報をCardMasterへ分離する。既存のGameEngineとRendererが参照する`card.name`、`card.level`、`card.cost`等はCardのgetterとして維持する。将来形の正本は[CardMaster / CardAbility設計](card-ability.md)を参照する。
 
 ## Deck
 

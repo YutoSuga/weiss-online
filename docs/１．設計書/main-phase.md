@@ -204,4 +204,4 @@ SWAP_STAGE: VALIDATE → SWAP → CHECK_POINT → COMPLETE
 
 ## 既存資料との注意点
 
-`docs/１．設計/ui-rules.md`は、本書と同じクリック/タップによる「カード選択 → Action選択 / Destination選択」の方針へ更新済みである。全Phase共通の詳細なAction UIは、MAIN実装時に必要な範囲で補足する。
+`ui-rules.md`は、本書と同じクリック/タップによる「カード選択 → Action選択 / Destination選択」の方針へ更新済みである。全Phase共通の詳細なAction UIは同書を正本とし、MAIN固有の操作だけを本書で補足する。

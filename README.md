@@ -54,7 +54,7 @@ HTML / CSS
 - `REFRESH`、`REFRESH_PENALTY`、`LEVEL_UP` Process
 - 開発用のProcess Stack確認UI
 
-カードの通常プレイ、舞台移動、カード能力、オンライン対戦は未実装です。
+カードの通常プレイ、Replacement、舞台内Move / Swapまで実装済みです。CardMaster、カード能力、オンライン対戦は未実装です。
 
 ## Process / Rule Interrupt
 
@@ -70,11 +70,11 @@ Interrupt Process
 元Processを保存済みstepから再開
 ```
 
-現在の `PROCESS_TYPE` には、`DRAW_PHASE`、`CLOCK_PHASE`、`MAIN_PHASE`、`REFRESH`、`REFRESH_PENALTY`、`LEVEL_UP` があります。`CLOCK_ACTION` は定数として存在しますが、独立したProcessとしては未実装です。
+現在の `PROCESS_TYPE` には、`DRAW_PHASE`、`CLOCK_PHASE`、`MAIN_PHASE`、`PLAY_CHARACTER`、`MOVE_STAGE`、`SWAP_STAGE`、`REFRESH`、`REFRESH_PENALTY`、`LEVEL_UP` があります。`CLOCK_ACTION` は定数として存在しますが、独立したProcessとしては未実装です。
 
 ## 現在地点
 
-**Phase F-2A：MAINカード選択 / Destination UI 完了**
+**Phase F-2C：Stage → Stage Move / Swap 完了**
 
 現在、CLOCKフェイズの完了後には以下の流れが成立します。
 
@@ -106,7 +106,10 @@ CLIMAX
 - [x] Phase F-2A MAINカード選択 / Destination UI
 - [x] Phase F-2B Character Hand → Stage
 - [x] Phase F-2C Stage → Stage
-- [ ] **Phase F-3 CardMaster / CardAbility v1（NEXT）**
+- [ ] **Phase F-3A CardMaster導入・Cardとの分離（NEXT）**
+- [ ] Phase F-3B CardAbilityデータ構造
+- [ ] Phase F-3C CardMaster JSON化・実カードデータ数枚投入
+- [ ] Phase F-3D Renderer / カード詳細をMaster参照へ統一
 - [ ] Phase F-4 ACT Ability v1
 - [ ] Phase F-5 AUTO Ability基盤
 - [ ] Phase F-6 CONTINUOUS Ability基盤
@@ -142,13 +145,18 @@ CLIMAX
 
 MAIN_PHASE / WAITING_INPUT中に自分のStage Characterを選択し、現在位置以外の4slotへ移動できます。空slotは`MOVE_STAGE`、使用中slotは確認後に`SWAP_STAGE`として処理し、positionとfaceを保持したままMAINへ復帰します。
 
-### NEXT：Phase F-3 CardMaster / CardAbility v1
+### NEXT：Phase F-3A CardMaster導入・Cardとの分離
 
-### Phase F-3：CardMaster / CardAbility v1
+### Phase F-3：CardMaster / CardAbility
 
 カード種類の固定情報を `CardMaster`、対戦中の物理的な1枚をCard instanceとして分離する予定です。Card instanceは将来 `masterId` からCardMasterを参照します。
 
 `CardAbility` は `type`、`keywords`、`text`、`trigger`、`conditions`、`costs`、`effects` を持つ構造を予定しています。Trigger、Condition、CardFilter、Cost、Effect、Valueの詳細は設計書を参照してください。
+
+- **F-3A**：CardMasterを導入し、固定情報とCard instance状態を分離する。Cardのgetterにより既存の`card.name`、`card.level`、`card.cost`等を維持する。
+- **F-3B**：CardAbilityのデータ構造を導入する。Ability Engineはまだ実装しない。
+- **F-3C**：CardMasterをJSONから読み込み、同じschemaでテストカードと実カード数枚を供給する。
+- **F-3D**：Rendererとカード詳細表示をCardのgetter / CardMaster参照へ統一する。
 
 ### Phase F-4：ACT Ability v1
 
@@ -183,14 +191,18 @@ MAIN_PHASE / WAITING_INPUT中に自分のStage Characterを選択し、現在位
 
 READMEは現在地点と概要を扱い、詳細な仕様は `docs/` を参照してください。
 
-- [MAIN Phase設計（F-2以降を含む詳細案）](docs/１．対戦画面設計書/main-phase.md)
-- [CardMaster / CardAbility設計](docs/１．対戦画面設計書/card-ability.md)
-- [UI操作仕様](docs/１．対戦画面設計書/ui-rules.md)
-- [Process基盤設計](docs/１．対戦画面設計書/Process.md)
-- [Rule Check設計](docs/１．対戦画面設計書/RuleCheck.md)
-- [JavaScript仕様](docs/１．対戦画面設計書/js-spec.md)
-- [HTML仕様](docs/１．対戦画面設計書/html-spec.md)
-- [レイアウト仕様](docs/１．対戦画面設計書/layout.md)
+- [設計書ガイド](docs/README.md)
+- [プロジェクト全体Architecture](docs/１．設計書/architecture.md)
+- [Application Flow / Deck設計](docs/１．設計書/application-flow.md)
+- [MAIN Phase設計](docs/１．設計書/main-phase.md)
+- [CardMaster / CardAbility設計](docs/１．設計書/card-ability.md)
+- [UI操作仕様](docs/１．設計書/ui-rules.md)
+- [Process基盤設計](docs/１．設計書/Process.md)
+- [Rule Check設計](docs/１．設計書/RuleCheck.md)
+- [GameEngine設計](docs/１．設計書/game-engine.md)
+- [JavaScript仕様](docs/１．設計書/js-spec.md)
+- [HTML仕様](docs/１．設計書/html-spec.md)
+- [レイアウト仕様](docs/１．設計書/layout.md)
 
 ## 将来候補
 

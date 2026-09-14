@@ -4,11 +4,26 @@
 
 本書は、カード種類の固定データ、対戦中のCard instance、CardAbilityを将来分離・実装するための設計基準を定義する。現時点では`CardMaster` class、`CardAbility` class、Ability Engine、正式なCardMasterデータディレクトリはいずれも未実装である。本書は実装計画であり、ゲーム実装を変更しない。
 
+カードデータモデルの責務は次の3つに分ける。
+
+- `CardMaster`: そのカードが何であるか。
+- `CardAbility`: そのカードに何が書かれているか。
+- `Card`: その対戦中、その物理的な1枚が今どうなっているか。
+
+```mermaid
+classDiagram
+  CardMaster "1" *-- "0..*" CardAbility : abilities
+  CardMaster "1" <-- "0..*" Card : masterId / master reference
+  class CardMaster { id; cardNumber; name; cardType; color; level; cost }
+  class CardAbility { id; type; keywords; text; trigger; conditions; costs; effects }
+  class Card { instanceId; masterId; owner; zone; row; index; face; position }
+```
+
 ## F-2B実地確認用の暫定カード定義
 
 Phase F-2BのLevel・Color・Cost条件を実画面で確認するため、`client/data/test-cards.json` に固定情報だけを持つ暫定カード定義を置く。開発用ローダーは定義を検証し、既存の`Card` constructorへ固定情報とowner・zone等の初期状態を渡して、独立したCard instanceからDeckを生成する。
 
-JSONの`id`は暫定的な定義識別子である。複数枚を生成する際はowner・定義ID・copy番号から一意な`Card.id`を作るが、`masterId`は導入しない。このJSON schemaを最終仕様とはせず、Phase F-3でCardMaster、instance ID、ロード・検証方法へ移行する。
+JSONの`id`は暫定的な定義識別子である。複数枚を生成する際はowner・定義ID・copy番号から一意な`Card.id`を作るが、`masterId`は導入しない。このJSON schemaを最終仕様とはせず、F-3CでCardMaster JSON schemaへ移行する。
 
 ## 現在のCard実装
 
@@ -51,7 +66,7 @@ CardMaster {
 }
 
 Card {
-  id,          // instance ID
+  instanceId,
   masterId,
   owner,
   zone,
@@ -67,16 +82,40 @@ Card {
 
 同じCardMasterから複数のCard instanceを作れる。デッキに同じカードを4枚入れる場合、CardMasterは1定義、Card instanceは4枚とする。固定情報を各Cardへコピーする方向にはしない。
 
+### F-3Aの互換getter方針
+
+F-3AではCardがCardMasterを参照し、既存のGameEngineやRendererが利用する公開APIをgetterで維持する。
+
+```js
+card.instanceId // 対戦中の一意ID
+card.masterId   // CardMaster.id
+card.id         // 互換getter。instanceIdを返す
+
+card.name       // card master.name
+card.cardType   // card master.cardType
+card.level      // card master.level
+card.cost       // card master.cost
+card.color      // card master.color
+card.basePower  // card master.basePower
+card.baseSoul   // card master.baseSoul
+```
+
+Cardは実行時に解決済みCardMaster参照を持つ方針とし、GameEngineがCardMaster registryを都度探索しない構造を優先する。`masterId`は保存・通信・DeckDefinitionとの接続に使う。CardMasterの固定配列やAbilityをCard instanceごとに複製・変更しない。
+
+`currentPower`と`currentSoul`の初期値はCardMasterの基本値から生成するが、その後はCard instanceの可変状態である。RendererはF-3DでCardのgetterを通じて固定情報を表示し、CardMasterの保存形式へ直接依存しない。
+
 ### 移行上の未確定事項
 
-- 現在の`Card.id`と将来の`masterId`の移行方法
+- CardMaster registryの所有者、ロード完了タイミング、重複ID時の扱い
 - `trigger`（現行Cardの配列）とCardMasterの`triggers`の対応
 - `text`と`flavorText`の保存形式
 - 既存`toJSON()` / `fromJSON()`の通信形式の互換性
 - CardMasterのロード・キャッシュ・検証方法
 - 将来CardMasterが持つ画像情報は、右カード詳細を描画するRendererへ供給する。画像プロパティ名と保存先は現時点では確定せず、現在のCardへは追加しない
 
-CardMasterは対戦Card instanceとは分離し、Repository内データとして管理する方向である。ただし、現在`client/js/data/cards/`等のデータディレクトリは存在しないため、保存パスは未確定とする。将来JSON、DB、APIへ移行可能な読み出し境界を設ける。
+CardMasterは対戦Card instanceとは分離し、Repository内データとして管理する方向である。保存場所はF-3Cで決定し、将来JSON、DB、APIへ移行可能な読み出し境界を設ける。
+
+DeckDefinitionはCardMaster全文ではなく`masterId + count`を保持し、対戦開始時にCard instanceへ展開する。画面フローと外部Import境界は[Application Flow / Deck設計](application-flow.md)を正本とする。
 
 ## CardAbility
 
@@ -257,3 +296,10 @@ Effect Type候補はMOVE_CARD、DRAW、LOOK_AT_DECK、REVEAL_FROM_DECK、SELECT_
 - Trigger/Condition/CardFilter/Valueの定数と評価器
 - DB/API/JSONによるCardMaster供給
 - 現在のCard固定情報からmasterId参照へ移行する手順
+
+## F-3実装順
+
+1. **F-3A**: CardMasterを導入し、Cardから固定情報を分離する。互換getterにより既存GameEngine APIを維持する。
+2. **F-3B**: CardAbilityのデータ構造を導入する。Ability Engineは含めない。
+3. **F-3C**: CardMaster JSON schemaとローダーを導入し、暫定`test-cards.json`を移行して実カード数枚を追加する。
+4. **F-3D**: Rendererとカード詳細をCard getter / CardMaster参照へ統一する。
