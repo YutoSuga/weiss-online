@@ -16,6 +16,7 @@ import { GameState } from "./models/gameState.js";
 import { Player } from "./models/player.js";
 import { Card } from "./models/card.js";
 import {
+  createTestCardMasterRegistry,
   createTestDeck,
   loadTestCardDefinitions,
 } from "./data/testCardLoader.js";
@@ -73,10 +74,17 @@ try {
   }
   throw error;
 }
-const selfDeck = createTestDeck("self", testCardDefinitions, TEST_DECK_SIZE);
+const cardMasterRegistry = createTestCardMasterRegistry(testCardDefinitions);
+const selfDeck = createTestDeck(
+  "self",
+  testCardDefinitions,
+  cardMasterRegistry,
+  TEST_DECK_SIZE,
+);
 const opponentDeck = createTestDeck(
   "opponent",
   testCardDefinitions,
+  cardMasterRegistry,
   TEST_DECK_SIZE,
 );
 
