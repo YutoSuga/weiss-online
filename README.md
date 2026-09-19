@@ -54,7 +54,7 @@ HTML / CSS
 - `REFRESH`、`REFRESH_PENALTY`、`LEVEL_UP` Process
 - 開発用のProcess Stack確認UI
 
-カードの通常プレイ、Replacement、舞台内Move / Swapまで実装済みです。CardMaster、カード能力、オンライン対戦は未実装です。
+カードの通常プレイ、Replacement、舞台内Move / Swapに加え、CardMasterと対戦中Card instanceの分離まで実装済みです。カード能力、オンライン対戦は未実装です。
 
 ## Process / Rule Interrupt
 
@@ -74,7 +74,7 @@ Interrupt Process
 
 ## 現在地点
 
-**Phase F-2C：Stage → Stage Move / Swap 完了**
+**Phase F-3A：CardMaster導入・Cardとの分離 完了**
 
 現在、CLOCKフェイズの完了後には以下の流れが成立します。
 
@@ -106,8 +106,8 @@ CLIMAX
 - [x] Phase F-2A MAINカード選択 / Destination UI
 - [x] Phase F-2B Character Hand → Stage
 - [x] Phase F-2C Stage → Stage
-- [ ] **Phase F-3A CardMaster導入・Cardとの分離（NEXT）**
-- [ ] Phase F-3B CardAbilityデータ構造
+- [x] Phase F-3A CardMaster導入・Cardとの分離
+- [ ] **Phase F-3B CardAbilityデータ構造（NEXT）**
 - [ ] Phase F-3C CardMaster JSON化・実カードデータ数枚投入
 - [ ] Phase F-3D Renderer / カード詳細をMaster参照へ統一
 - [ ] Phase F-4 ACT Ability v1
@@ -139,17 +139,19 @@ CLIMAX
 
 基本Play Costは、将来の `CardMaster.cost` に相当するカード固有のコストです。Ability Costとは別概念です。
 
-開発用の初期Deckは `client/data/test-cards.json` の暫定定義から生成し、Level・Color・Cost条件を実画面で確認できます。正式なCardMaster化はPhase F-3で行います。
+開発用の初期Deckは `client/data/test-cards.json` の暫定定義をローダーでCardMasterへ変換・登録し、Registryを注入してCard instanceを生成します。正式なCardMaster JSON schemaへの移行はPhase F-3Cで行います。
 
 ### Phase F-2C：Stage → Stage
 
 MAIN_PHASE / WAITING_INPUT中に自分のStage Characterを選択し、現在位置以外の4slotへ移動できます。空slotは`MOVE_STAGE`、使用中slotは確認後に`SWAP_STAGE`として処理し、positionとfaceを保持したままMAINへ復帰します。
 
-### NEXT：Phase F-3A CardMaster導入・Cardとの分離
+### Phase F-3A：CardMaster導入・Cardとの分離（完了）
 
 ### Phase F-3：CardMaster / CardAbility
 
-カード種類の固定情報を `CardMaster`、対戦中の物理的な1枚をCard instanceとして分離する予定です。Card instanceは将来 `masterId` からCardMasterを参照します。
+カード種類の固定情報をimmutableな `CardMaster`、対戦中の物理的な1枚をCard instanceとして分離しました。Cardは注入されたRegistryで`masterId`を解決し、従来の固定情報APIを互換getterとして公開します。
+
+### NEXT：Phase F-3B CardAbilityデータ構造
 
 `CardAbility` は `type`、`keywords`、`text`、`trigger`、`conditions`、`costs`、`effects` を持つ構造を予定しています。Trigger、Condition、CardFilter、Cost、Effect、Valueの詳細は設計書を参照してください。
 

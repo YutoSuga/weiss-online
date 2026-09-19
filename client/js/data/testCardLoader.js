@@ -1,5 +1,7 @@
 import { ZONE } from "../constants/zone.js";
 import { Card, POSITION } from "../models/card.js";
+import { CardMaster } from "../models/cardMaster.js";
+import { CardMasterRegistry } from "../models/cardMasterRegistry.js";
 import { Deck } from "../models/deck.js";
 
 const DEFAULT_TEST_CARD_URL = new URL(
@@ -21,8 +23,8 @@ const REQUIRED_FIELDS = Object.freeze([
 ]);
 
 /**
- * F-2B実地確認用の暫定カード定義を検証する。
- * 詳細なschemaとCardMasterへの分離はPhase F-3で行う。
+ * F-2Bから継続利用する暫定カード定義を検証する。
+ * 正式なCardMaster JSON schemaへの移行はPhase F-3Cで行う。
  *
  * @param {unknown} value
  * @returns {object[]}
@@ -74,15 +76,43 @@ export async function loadTestCardDefinitions(url = DEFAULT_TEST_CARD_URL) {
 
     return validateTestCardDefinitions(await response.json());
   } catch (error) {
-    console.error("F-2B test card definitions could not be loaded.", {
+    console.error("F-3A test card definitions could not be loaded.", {
       url: String(url),
       error,
     });
     throw new Error(
-      `Failed to load F-2B test cards from ${String(url)}: ${error.message}`,
+      `Failed to load F-3A test cards from ${String(url)}: ${error.message}`,
       { cause: error },
     );
   }
+}
+
+/** 暫定JSONのtrigger名をCardMasterのtriggersへ変換する。 */
+export function createTestCardMaster(definition) {
+  return new CardMaster({
+    id: definition.id,
+    cardNumber: definition.cardNumber ?? null,
+    name: definition.name,
+    cardType: definition.cardType,
+    color: definition.color,
+    level: definition.level,
+    cost: definition.cost,
+    basePower: definition.basePower,
+    baseSoul: definition.baseSoul,
+    triggers: definition.trigger,
+    traits: definition.traits,
+    text: definition.text,
+  });
+}
+
+/** 検証済みの暫定定義をCardMasterとして登録したRegistryを作る。 */
+export function createTestCardMasterRegistry(definitions) {
+  validateTestCardDefinitions(definitions);
+  const registry = new CardMasterRegistry();
+  definitions.forEach((definition) => {
+    registry.register(createTestCardMaster(definition));
+  });
+  return registry;
 }
 
 /**
@@ -93,6 +123,7 @@ export async function loadTestCardDefinitions(url = DEFAULT_TEST_CARD_URL) {
  * @param {'self'|'opponent'} owner
  * @param {number} copyIndex 1始まり
  * @param {number} deckIndex 0始まり
+ * @param {CardMasterRegistry} masterRegistry
  * @returns {Card}
  */
 export function createTestCardInstance(
@@ -100,10 +131,12 @@ export function createTestCardInstance(
   owner,
   copyIndex,
   deckIndex,
+  masterRegistry,
 ) {
   return new Card({
-    ...definition,
-    id: `${owner}-${definition.id}-${String(copyIndex).padStart(3, "0")}`,
+    instanceId: `${owner}-${definition.id}-${String(copyIndex).padStart(3, "0")}`,
+    masterId: definition.id,
+    masterRegistry,
     owner,
     zone: ZONE.DECK,
     row: null,
@@ -118,21 +151,31 @@ export function createTestCardInstance(
  *
  * @param {'self'|'opponent'} owner
  * @param {object[]} definitions
+ * @param {CardMasterRegistry} masterRegistry
  * @param {number} count
  * @returns {Deck}
  */
-export function createTestDeck(owner, definitions, count = 50) {
+export function createTestDeck(owner, definitions, masterRegistry, count = 50) {
   if (!Number.isInteger(count) || count < 0) {
     throw new TypeError("count must be a non-negative integer.");
   }
   validateTestCardDefinitions(definitions);
+  if (!(masterRegistry instanceof CardMasterRegistry)) {
+    throw new TypeError("masterRegistry must be a CardMasterRegistry instance.");
+  }
 
   const copyCounts = new Map();
   const cards = Array.from({ length: count }, (_unused, deckIndex) => {
     const definition = definitions[deckIndex % definitions.length];
     const copyIndex = (copyCounts.get(definition.id) ?? 0) + 1;
     copyCounts.set(definition.id, copyIndex);
-    return createTestCardInstance(definition, owner, copyIndex, deckIndex);
+    return createTestCardInstance(
+      definition,
+      owner,
+      copyIndex,
+      deckIndex,
+      masterRegistry,
+    );
   });
 
   return new Deck(cards);
