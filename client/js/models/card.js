@@ -100,10 +100,12 @@ export class Card {
   get cost() { return this.master.cost; }
   get basePower() { return this.master.basePower; }
   get baseSoul() { return this.master.baseSoul; }
-  get triggers() { return this.master.triggers; }
-  get trigger() { return this.master.triggers; }
+  get triggerIcons() { return this.master.triggerIcons; }
+  get triggers() { return this.master.triggerIcons; }
+  get trigger() { return this.master.triggerIcons; }
   get traits() { return this.master.traits; }
   get text() { return this.master.text; }
+  get abilities() { return this.master.abilities; }
 
   moveTo({ zone, row = null, index = null }) {
     assertEnumValue("zone", zone, ZONE_VALUES);

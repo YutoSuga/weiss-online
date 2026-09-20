@@ -87,7 +87,7 @@ export async function loadTestCardDefinitions(url = DEFAULT_TEST_CARD_URL) {
   }
 }
 
-/** 暫定JSONのtrigger名をCardMasterのtriggersへ変換する。 */
+/** 暫定JSONのtrigger名をCardMasterのtriggerIconsへ変換する。 */
 export function createTestCardMaster(definition) {
   return new CardMaster({
     id: definition.id,
@@ -99,7 +99,7 @@ export function createTestCardMaster(definition) {
     cost: definition.cost,
     basePower: definition.basePower,
     baseSoul: definition.baseSoul,
-    triggers: definition.trigger,
+    triggerIcons: definition.trigger,
     traits: definition.traits,
     text: definition.text,
   });

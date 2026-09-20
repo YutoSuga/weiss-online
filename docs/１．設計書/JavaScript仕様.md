@@ -91,11 +91,10 @@ F-3Aで固定情報をCardMasterへ分離済みです。現在の実装仕様は
 `self` と `opponent` は画面上の役割です。通信時に各ユーザーから見た役割へ
 変換する処理は、将来の通信・ゲーム進行層で担当します。
 
-## CardMaster / CardMasterRegistry / Card（F-3A実装）
+## CardMaster / CardAbility / CardMasterRegistry / Card（F-3B実装）
 
 `CardMaster`は`id`, `cardNumber`, `name`, `cardType`, `color`, `level`, `cost`,
-`basePower`, `baseSoul`, `triggers`, `traits`, `text`を保持する。生成時に配列をコピーして
-freezeし、本体もfreezeする。`abilities`とCardAbility構造はF-3Bまで導入しない。
+`basePower`, `baseSoul`, `triggerIcons`, `traits`, legacy / transitionalな`text`, `abilities`を保持する。配列をコピーしてfreezeし、本体もfreezeする。`abilities`省略時は空配列で、plain objectは`CardAbility`へfail-fastに変換する。同一master内のability ID重複は拒否する。
 
 `CardMasterRegistry`はメモリ上だけのlookupであり、`register(master)`, `get(masterId)`,
 `has(masterId)`, `getAll()`を提供する。重複登録と未登録IDの取得はErrorとし、`getAll()`は
@@ -104,9 +103,16 @@ freezeした新しい配列を返す。fetchや永続化は担当しない。
 `Card` constructorは`instanceId`, `masterId`, `masterRegistry`を明示的に受け、生成時に
 Masterをfail-fastで解決する。`id`は`instanceId`の互換getterである。固定情報は
 `cardNumber`, `name`, `cardType`, `color`, `level`, `cost`, `basePower`, `baseSoul`,
-`triggers`, `trigger`, `traits`, `text`のgetterで提供する。`currentPower` / `currentSoul`は
+`triggerIcons`, 互換用`triggers` / `trigger`, `traits`, `text`, `abilities`のgetterで提供する。`currentPower` / `currentSoul`は
 未指定時だけMasterの基本値で初期化し、明示値`0`や`null`を保持する。
 
 `toJSON()`はMaster固定情報を含めず、instance ID、master ID、owner、zone、row、index、
 face、position、currentPower、currentSoul、visibilityOverrideのみを返す。`fromJSON(data,
 masterRegistry)`は注入されたRegistryからMasterを解決する。
+
+
+### CardAbility
+
+`ABILITY_TYPE`は`client/js/constants/ability.js`に`CONTINUOUS` / `AUTO` / `ACT`を定義し、未知値を拒否する。`CardAbility`は`id`, `type`, `keywords`, `text`, `activationTrigger`, `conditions`, `costs`, `effects`を保持する。`text`は人間向けの表示原文で、残る4フィールドは後続Phaseの処理用構造化データである。F-3Bはschema列挙や実行処理を実装しない。
+
+入力したplain object / arrayは再帰的にcopyしてfreezeし、元データ変更の影響とnested変更を防ぐ。本体もfreezeする。能力には`used`等のruntime状態を置かない。`activationTrigger`は能力発動契機で、カード印刷上の`CardMaster.triggerIcons`とは別概念である。同種処理の共通化はCardAbility object共有ではなく、F-4以降に処理タイプと実行処理で行う。`Card.toJSON()`には能力固定情報を含めず、復元後にRegistryのmasterから参照する。

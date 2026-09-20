@@ -54,7 +54,7 @@ HTML / CSS
 - `REFRESH`、`REFRESH_PENALTY`、`LEVEL_UP` Process
 - 開発用のProcess Stack確認UI
 
-カードの通常プレイ、Replacement、舞台内Move / Swapに加え、CardMasterと対戦中Card instanceの分離まで実装済みです。カード能力、オンライン対戦は未実装です。
+カードの通常プレイ、Replacement、舞台内Move / Swapに加え、CardMasterと対戦中Card instanceの分離、immutableなCardAbilityデータ構造まで実装済みです。能力の実行とオンライン対戦は未実装です。
 
 ## Process / Rule Interrupt
 
@@ -74,7 +74,7 @@ Interrupt Process
 
 ## 現在地点
 
-**Phase F-3A：CardMaster導入・Cardとの分離 完了**
+**Phase F-3B：CardAbilityデータ構造 完了**
 
 現在、CLOCKフェイズの完了後には以下の流れが成立します。
 
@@ -107,8 +107,8 @@ CLIMAX
 - [x] Phase F-2B Character Hand → Stage
 - [x] Phase F-2C Stage → Stage
 - [x] Phase F-3A CardMaster導入・Cardとの分離
-- [ ] **Phase F-3B CardAbilityデータ構造（NEXT）**
-- [ ] Phase F-3C CardMaster JSON化・実カードデータ数枚投入
+- [x] Phase F-3B CardAbilityデータ構造
+- [ ] **Phase F-3C CardMaster JSON化・実カードデータ数枚投入（NEXT）**
 - [ ] Phase F-3D Renderer / カード詳細をMaster参照へ統一
 - [ ] Phase F-4 ACT Ability v1
 - [ ] Phase F-5 AUTO Ability基盤
@@ -151,9 +151,11 @@ MAIN_PHASE / WAITING_INPUT中に自分のStage Characterを選択し、現在位
 
 カード種類の固定情報をimmutableな `CardMaster`、対戦中の物理的な1枚をCard instanceとして分離しました。Cardは注入されたRegistryで`masterId`を解決し、従来の固定情報APIを互換getterとして公開します。
 
-### NEXT：Phase F-3B CardAbilityデータ構造
+### Phase F-3B：CardAbilityデータ構造（完了）
 
-`CardAbility` は `type`、`keywords`、`text`、`trigger`、`conditions`、`costs`、`effects` を持つ構造を予定しています。Trigger、Condition、CardFilter、Cost、Effect、Valueの詳細は設計書を参照してください。
+`CardMaster` がimmutableな `CardAbility[]` を直接包含し、Cardから `card.abilities` で参照できます。能力は `id`、`type`、`keywords`、表示原文の`text`、構造化データの`activationTrigger` / `conditions` / `costs` / `effects`を保持します。能力実行エンジンはまだ実装しません。
+
+### NEXT：Phase F-3C CardMaster JSON化・実カードデータ数枚投入
 
 - **F-3A**：CardMasterを導入し、固定情報とCard instance状態を分離する。Cardのgetterにより既存の`card.name`、`card.level`、`card.cost`等を維持する。
 - **F-3B**：CardAbilityのデータ構造を導入する。Ability Engineはまだ実装しない。

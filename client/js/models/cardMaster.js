@@ -1,6 +1,8 @@
 /**
  * カード種類ごとの、対戦中に変化しない固定情報を表す。
  */
+import { CardAbility } from "./cardAbility.js";
+
 export class CardMaster {
   /**
    * @param {object} params
@@ -13,7 +15,8 @@ export class CardMaster {
    * @param {number} params.cost
    * @param {number|null} [params.basePower=null]
    * @param {number|null} [params.baseSoul=null]
-   * @param {string[]} [params.triggers=[]]
+   * @param {string[]} [params.triggerIcons=[]]
+   * @param {CardAbility[]|object[]} [params.abilities=[]]
    * @param {string[]} [params.traits=[]]
    * @param {string} [params.text=""] legacy / transitionalなカードテキスト
    */
@@ -27,9 +30,11 @@ export class CardMaster {
     cost,
     basePower = null,
     baseSoul = null,
-    triggers = [],
+    triggerIcons = undefined,
+    triggers = undefined,
     traits = [],
     text = "",
+    abilities = [],
   }) {
     assertNonEmptyString("id", id);
     assertNullableNonEmptyString("cardNumber", cardNumber);
@@ -40,8 +45,15 @@ export class CardMaster {
     assertNonNegativeNumber("cost", cost);
     assertNullableNonNegativeNumber("basePower", basePower);
     assertNullableNonNegativeNumber("baseSoul", baseSoul);
-    assertStringArray("triggers", triggers);
+    if (triggerIcons !== undefined && triggers !== undefined) {
+      throw new TypeError("Specify triggerIcons, not both triggerIcons and legacy triggers.");
+    }
+    const resolvedTriggerIcons = triggerIcons ?? triggers ?? [];
+    assertStringArray("triggerIcons", resolvedTriggerIcons);
     assertStringArray("traits", traits);
+    if (!Array.isArray(abilities)) {
+      throw new TypeError("abilities must be an array.");
+    }
     if (typeof text !== "string") {
       throw new TypeError("text must be a string.");
     }
@@ -55,12 +67,29 @@ export class CardMaster {
     this.cost = cost;
     this.basePower = basePower;
     this.baseSoul = baseSoul;
-    this.triggers = Object.freeze([...triggers]);
+    this.triggerIcons = Object.freeze([...resolvedTriggerIcons]);
     this.traits = Object.freeze([...traits]);
     this.text = text;
+    this.abilities = Object.freeze(abilities.map((ability, index) => {
+      try {
+        return ability instanceof CardAbility ? ability : new CardAbility(ability);
+      } catch (error) {
+        throw new TypeError(`abilities[${index}] is invalid: ${error.message}`, { cause: error });
+      }
+    }));
+    const abilityIds = new Set();
+    for (const ability of this.abilities) {
+      if (abilityIds.has(ability.id)) {
+        throw new Error(`Duplicate CardAbility id "${ability.id}" in CardMaster "${id}".`);
+      }
+      abilityIds.add(ability.id);
+    }
 
     Object.freeze(this);
   }
+
+  /** @deprecated Card側の互換APIのための別名。正式名称はtriggerIcons。 */
+  get triggers() { return this.triggerIcons; }
 }
 
 function assertNonEmptyString(propertyName, value) {
