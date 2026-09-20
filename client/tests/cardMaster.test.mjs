@@ -21,7 +21,7 @@ function createMaster(overrides = {}) {
     cost: 1,
     basePower: 5000,
     baseSoul: 1,
-    triggers: ["soul"],
+    triggerIcons: ["soul"],
     traits: ["テスト"],
     text: "legacy text",
     ...overrides,
@@ -37,18 +37,19 @@ function createRegistry(master = createMaster()) {
 test("CardMasterは固定情報と配列をimmutableに保持する", () => {
   const triggers = ["soul"];
   const traits = ["テスト"];
-  const master = createMaster({ triggers, traits });
+  const master = createMaster({ triggerIcons: triggers, traits });
   triggers.push("external");
   traits.push("external");
 
   assert.equal(master.name, "テストカード");
+  assert.deepEqual(master.triggerIcons, ["soul"]);
   assert.deepEqual(master.triggers, ["soul"]);
   assert.deepEqual(master.traits, ["テスト"]);
   assert.ok(Object.isFrozen(master));
-  assert.ok(Object.isFrozen(master.triggers));
+  assert.ok(Object.isFrozen(master.triggerIcons));
   assert.ok(Object.isFrozen(master.traits));
   assert.throws(() => { master.level = 2; }, TypeError);
-  assert.throws(() => { master.triggers.push("x"); }, TypeError);
+  assert.throws(() => { master.triggerIcons.push("x"); }, TypeError);
 });
 
 test("CardMasterRegistryは登録・検索・一覧を提供し内部配列を公開しない", () => {
