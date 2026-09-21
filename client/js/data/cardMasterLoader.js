@@ -1,5 +1,8 @@
 import { CardMaster } from "../models/cardMaster.js";
 import { CardMasterRegistry } from "../models/cardMasterRegistry.js";
+import { ABILITY_TYPE } from "../constants/ability.js";
+import { getCostHandler } from "../abilities/costResolver.js";
+import { validateEffects } from "../abilities/effectResolver.js";
 
 export const DEFAULT_CARD_MASTER_URL = new URL("../../data/card-masters.json", import.meta.url);
 
@@ -27,6 +30,27 @@ export function validateCardMasterDefinitions(value) {
       throw new Error(`CardMaster data contains duplicate id "${definition.id}".`);
     }
     ids.add(definition.id);
+    if (!Array.isArray(definition.abilities)) {
+      throw new TypeError(`CardMaster data[${index}].abilities must be an array.`);
+    }
+    definition.abilities.forEach((ability, abilityIndex) => {
+      if (ability?.type !== ABILITY_TYPE.ACT) return;
+      try {
+        if (!Array.isArray(ability.conditions) || ability.conditions.length > 0) {
+          throw new RangeError("ACT conditions must be an empty array in F-4A.");
+        }
+        if (!Array.isArray(ability.costs) || !Array.isArray(ability.effects)) {
+          throw new TypeError("ACT costs and effects must be arrays.");
+        }
+        ability.costs.forEach(getCostHandler);
+        validateEffects(ability.effects);
+      } catch (error) {
+        throw new TypeError(
+          `CardMaster data[${index}].abilities[${abilityIndex}] is not executable: ${error.message}`,
+          { cause: error },
+        );
+      }
+    });
   });
   return value;
 }

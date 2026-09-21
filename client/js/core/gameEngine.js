@@ -5,6 +5,7 @@ import {
 } from "../constants/phase.js";
 import { ZONE } from "../constants/zone.js";
 import {
+  ACT_ABILITY_STEP,
   CLOCK_STEP,
   DRAW_STEP,
   MAIN_STEP,
@@ -17,6 +18,9 @@ import {
   REFRESH_STEP,
   SWAP_STAGE_STEP,
 } from "../constants/process.js";
+import { ABILITY_TYPE } from "../constants/ability.js";
+import { getCostsDisabledReason, payCosts } from "../abilities/costResolver.js";
+import { resolveEffect, validateEffects } from "../abilities/effectResolver.js";
 import {
   DEFEAT_REASON,
   RULE_CHECK_RESULT,
@@ -639,6 +643,152 @@ export class GameEngine {
       isCharacter(card) &&
       this.#isMainStageDestination(card, playerId)
     );
+  }
+
+  /** Cardが持つACTだけを定義順に返す。使用可能性は判定しない。 */
+  getActAbilities(card, _playerId = undefined) {
+    if (!card || !Array.isArray(card.abilities)) return [];
+    return card.abilities.filter((ability) => ability.type === ABILITY_TYPE.ACT);
+  }
+
+  /** F-4AでサポートするACTプレイタイミングと固有条件・全Costの不可理由。 */
+  getActAbilityDisabledReason(card, ability, playerId) {
+    if (!PLAYER_IDS.includes(playerId)) return "プレイヤーが不正です。";
+    if (this.gameState.turn.player !== playerId) return "自分のターンではありません。";
+    if (this.gameState.phase !== PHASE.MAIN) return "メインフェイズではありません。";
+    const process = this.processManager.getCurrentProcess();
+    if (process?.type !== PROCESS_TYPE.MAIN_PHASE ||
+      process.playerId !== playerId ||
+      process.step !== MAIN_STEP.WAITING_INPUT ||
+      process.status !== PROCESS_STATUS.WAITING_INPUT) {
+      return "メインフェイズの操作待ちではありません。";
+    }
+    const player = this.gameState.players[playerId];
+    if (!player?.stage.includes(card) || card?.owner !== playerId || card?.zone !== ZONE.STAGE) {
+      return "このカードは自分の舞台にありません。";
+    }
+    const registeredAbility = this.getActAbilities(card).find(({ id }) => id === ability?.id);
+    if (!registeredAbility || registeredAbility !== ability) return "起動能力が見つかりません。";
+    if (ability.conditions.length > 0) return "未対応の使用条件があります。";
+    try {
+      validateEffects(ability.effects);
+      return getCostsDisabledReason(ability.costs, { player, sourceCard: card });
+    } catch (error) {
+      return error instanceof Error ? error.message : "未対応の能力です。";
+    }
+  }
+
+  canUseActAbility(card, ability, playerId) {
+    return this.getActAbilityDisabledReason(card, ability, playerId) === null;
+  }
+
+  /** Card.instanceId + CardAbility.idをcontextへ保存してACT Actionを開始する。 */
+  useActAbility(card, ability, playerId) {
+    this.#assertMainPhaseAction(playerId);
+    const reason = this.getActAbilityDisabledReason(card, ability, playerId);
+    if (reason) throw new Error(reason);
+    const process = this.processManager.pushProcess({
+      type: PROCESS_TYPE.ACT_ABILITY,
+      playerId,
+      step: ACT_ABILITY_STEP.VALIDATE,
+      status: PROCESS_STATUS.RUNNING,
+      context: {
+        sourceCardInstanceId: card.instanceId,
+        abilityId: ability.id,
+        costIndex: 0,
+        effectIndex: 0,
+      },
+    });
+    this.executeActAbilityProcess();
+    return process;
+  }
+
+  /** ACT_ABILITYを保存済みstep/indexから実行する。 */
+  executeActAbilityProcess() {
+    const process = this.processManager.getCurrentProcess();
+    if (!process || process.type !== PROCESS_TYPE.ACT_ABILITY) return process;
+    const player = this.gameState.players[process.playerId];
+    const getSource = () => player.stage.find(
+      (card) => card.instanceId === process.context.sourceCardInstanceId,
+    );
+    const getAbility = () => getSource()?.abilities.find(
+      (ability) => ability.id === process.context.abilityId,
+    );
+    while (this.processManager.getCurrentProcess() === process) {
+      switch (process.step) {
+        case ACT_ABILITY_STEP.VALIDATE: {
+          const sourceCard = getSource();
+          const ability = getAbility();
+          const parent = this.gameState.ruleState.processStack.at(-2);
+          const parentValid = parent?.type === PROCESS_TYPE.MAIN_PHASE &&
+            parent.playerId === process.playerId &&
+            parent.step === MAIN_STEP.WAITING_INPUT &&
+            parent.status === PROCESS_STATUS.WAITING_INPUT;
+          // Query APIはcurrent ProcessがMAINであることを要求するため、子Process用に同じ条件を再検証する。
+          let reason = null;
+          if (this.gameState.turn.player !== process.playerId) reason = "自分のターンではありません。";
+          else if (this.gameState.phase !== PHASE.MAIN || !parentValid) reason = "メインフェイズの操作待ちではありません。";
+          else if (!sourceCard || sourceCard.owner !== process.playerId || sourceCard.zone !== ZONE.STAGE) reason = "このカードは自分の舞台にありません。";
+          else if (!ability || ability.type !== ABILITY_TYPE.ACT) reason = "起動能力が見つかりません。";
+          else if (ability.conditions.length > 0) reason = "未対応の使用条件があります。";
+          else {
+            validateEffects(ability.effects);
+            reason = getCostsDisabledReason(ability.costs, { player, sourceCard });
+          }
+          if (reason) {
+            this.processManager.popProcess();
+            throw new Error(reason);
+          }
+          this.processManager.updateStep(ACT_ABILITY_STEP.PREPARE);
+          break;
+        }
+        case ACT_ABILITY_STEP.PREPARE:
+          process.context.costIndex = 0;
+          process.context.effectIndex = 0;
+          this.processManager.updateStep(ACT_ABILITY_STEP.PAY_COST);
+          break;
+        case ACT_ABILITY_STEP.PAY_COST: {
+          const sourceCard = getSource();
+          const ability = getAbility();
+          // 1件も変更する前に全Costを再検証し、その後だけ記載順に一括支払いする。
+          payCosts(ability.costs, { player, sourceCard }, (_cost, index) => {
+            process.context.costIndex = index + 1;
+          });
+          this.processManager.updateStep(ACT_ABILITY_STEP.CHECK_POINT_AFTER_COST);
+          break;
+        }
+        case ACT_ABILITY_STEP.CHECK_POINT_AFTER_COST:
+          this.processManager.updateStep(ACT_ABILITY_STEP.RESOLVE_EFFECT);
+          if (this.resolveRuleCheck() !== RULE_CHECK_RESULT.CONTINUE) return process;
+          break;
+        case ACT_ABILITY_STEP.RESOLVE_EFFECT: {
+          const ability = getAbility();
+          if (process.context.effectIndex >= ability.effects.length) {
+            this.processManager.updateStep(ACT_ABILITY_STEP.COMPLETE);
+            break;
+          }
+          resolveEffect(ability.effects[process.context.effectIndex], {
+            gameEngine: this,
+            player,
+            playerId: process.playerId,
+            sourceCard: getSource(),
+          });
+          process.context.effectIndex += 1;
+          this.processManager.updateStep(ACT_ABILITY_STEP.CHECK_POINT_AFTER_EFFECT);
+          break;
+        }
+        case ACT_ABILITY_STEP.CHECK_POINT_AFTER_EFFECT:
+          this.processManager.updateStep(ACT_ABILITY_STEP.RESOLVE_EFFECT);
+          if (this.resolveRuleCheck() !== RULE_CHECK_RESULT.CONTINUE) return process;
+          break;
+        case ACT_ABILITY_STEP.COMPLETE:
+          this.completeCurrentProcess();
+          return process;
+        default:
+          throw new RangeError(`Unknown ACT_ABILITY step: ${process.step}.`);
+      }
+    }
+    return process;
   }
 
   /** 選択中Stage Characterの現在slotを除く4つのDestinationを返す。 */
@@ -1603,6 +1753,9 @@ export class GameEngine {
     }
     if (process.type === PROCESS_TYPE.SWAP_STAGE) {
       return this.executeSwapStageProcess();
+    }
+    if (process.type === PROCESS_TYPE.ACT_ABILITY) {
+      return this.executeActAbilityProcess();
     }
     if (process.type === PROCESS_TYPE.LEVEL_UP) {
       return this.executeLevelUpProcess();

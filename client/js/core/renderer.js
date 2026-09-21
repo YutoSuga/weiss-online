@@ -180,10 +180,14 @@ export class Renderer {
    * 選択状態自体は保持せず、渡されたCardの現在値だけを描画する。
    *
    * @param {object|null} card
-   * @param {{showClearSelection?: boolean, playDisabledReason?: string|null}} [options]
+   * @param {{showClearSelection?: boolean, playDisabledReason?: string|null, actAbilityStates?: Array<{ability: object, disabledReason: string|null}>}} [options]
    * @returns {void}
    */
-  renderCardDetail(card, { showClearSelection = false, playDisabledReason = null } = {}) {
+  renderCardDetail(card, {
+    showClearSelection = false,
+    playDisabledReason = null,
+    actAbilityStates = [],
+  } = {}) {
     const panel = this.rootElement?.querySelector(".card-detail-panel");
     if (!(panel instanceof HTMLElement)) {
       return;
@@ -256,7 +260,26 @@ export class Renderer {
       } else {
         abilities.forEach((ability) => {
           const item = abilityList.ownerDocument.createElement("li");
-          item.textContent = formatAbility(ability);
+          const text = abilityList.ownerDocument.createElement("div");
+          text.textContent = formatAbility(ability);
+          item.append(text);
+          const actState = actAbilityStates.find(({ ability: candidate }) => candidate === ability);
+          if (actState) {
+            const button = abilityList.ownerDocument.createElement("button");
+            button.type = "button";
+            button.className = "card-detail-act-button";
+            button.dataset.action = "use-act-ability";
+            button.dataset.abilityId = ability.id;
+            button.disabled = actState.disabledReason !== null;
+            button.textContent = button.disabled ? "使用不可" : "使用する";
+            item.append(button);
+            if (actState.disabledReason) {
+              const reason = abilityList.ownerDocument.createElement("p");
+              reason.className = "card-detail-act-reason";
+              reason.textContent = `理由：${actState.disabledReason}`;
+              item.append(reason);
+            }
+          }
           abilityList.append(item);
         });
       }

@@ -10,6 +10,7 @@ export const PROCESS_TYPE = Object.freeze({
   PLAY_CHARACTER: "play_character",
   MOVE_STAGE: "move_stage",
   SWAP_STAGE: "swap_stage",
+  ACT_ABILITY: "act_ability",
   REFRESH: "refresh",
   REFRESH_PENALTY: "refresh_penalty",
   LEVEL_UP: "level_up",
@@ -82,6 +83,17 @@ export const SWAP_STAGE_STEP = Object.freeze({
   VALIDATE: "validate",
   SWAP: "swap",
   CHECK_POINT: "check_point",
+  COMPLETE: "complete",
+});
+
+/** Stage上の起動能力をプレイ・解決するAction Process。 */
+export const ACT_ABILITY_STEP = Object.freeze({
+  VALIDATE: "validate",
+  PREPARE: "prepare",
+  PAY_COST: "pay_cost",
+  CHECK_POINT_AFTER_COST: "check_point_after_cost",
+  RESOLVE_EFFECT: "resolve_effect",
+  CHECK_POINT_AFTER_EFFECT: "check_point_after_effect",
   COMPLETE: "complete",
 });
 
