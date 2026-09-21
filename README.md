@@ -74,7 +74,7 @@ Interrupt Process
 
 ## 現在地点
 
-**Phase F-3B：CardAbilityデータ構造 完了**
+**Phase F-3C：CardMaster正式データ化 + DeckDefinition基盤 完了**
 
 現在、CLOCKフェイズの完了後には以下の流れが成立します。
 
@@ -108,8 +108,8 @@ CLIMAX
 - [x] Phase F-2C Stage → Stage
 - [x] Phase F-3A CardMaster導入・Cardとの分離
 - [x] Phase F-3B CardAbilityデータ構造
-- [ ] **Phase F-3C CardMaster JSON化・実カードデータ数枚投入（NEXT）**
-- [ ] Phase F-3D Renderer / カード詳細をMaster参照へ統一
+- [x] Phase F-3C CardMaster正式データ化 + DeckDefinition基盤
+- [ ] **Phase F-3D Renderer / カード詳細のMaster参照整理（NEXT）**
 - [ ] Phase F-4 ACT Ability v1
 - [ ] Phase F-5 AUTO Ability基盤
 - [ ] Phase F-6 CONTINUOUS Ability基盤
@@ -139,7 +139,7 @@ CLIMAX
 
 基本Play Costは、将来の `CardMaster.cost` に相当するカード固有のコストです。Ability Costとは別概念です。
 
-開発用の初期Deckは `client/data/test-cards.json` の暫定定義をローダーでCardMasterへ変換・登録し、Registryを注入してCard instanceを生成します。正式なCardMaster JSON schemaへの移行はPhase F-3Cで行います。
+開発用の初期Deckは `card-masters.json` を `CardMasterLoader` でRegistryへ登録し、`test-decks.json` のimmutableな `DeckDefinition`（`masterId + count`）を各プレイヤー固有のCard instanceへ展開して生成します。
 
 ### Phase F-2C：Stage → Stage
 
@@ -155,12 +155,12 @@ MAIN_PHASE / WAITING_INPUT中に自分のStage Characterを選択し、現在位
 
 `CardMaster` がimmutableな `CardAbility[]` を直接包含し、Cardから `card.abilities` で参照できます。能力は `id`、`type`、`keywords`、表示原文の`text`、構造化データの`activationTrigger` / `conditions` / `costs` / `effects`を保持します。能力実行エンジンはまだ実装しません。
 
-### NEXT：Phase F-3C CardMaster JSON化・実カードデータ数枚投入
+### Phase F-3C：CardMaster正式データ化 + DeckDefinition基盤（完了）
 
 - **F-3A**：CardMasterを導入し、固定情報とCard instance状態を分離する。Cardのgetterにより既存の`card.name`、`card.level`、`card.cost`等を維持する。
 - **F-3B**：CardAbilityのデータ構造を導入する。Ability Engineはまだ実装しない。
-- **F-3C**：CardMasterをJSONから読み込み、同じschemaでテストカードと実カード数枚を供給する。
-- **F-3D**：Rendererとカード詳細表示をCardのgetter / CardMaster参照へ統一する。
+- **F-3C**：正式schemaのCardMaster JSONをLoader経由でRegistryへ登録し、DeckDefinitionを独立したCard instanceへ展開する。
+- **F-3D（NEXT）**：Renderer / カード詳細のMaster参照を整理する。
 
 ### Phase F-4：ACT Ability v1
 

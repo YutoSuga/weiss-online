@@ -1,0 +1,14 @@
+[
+  { "id": "test-card-001", "cardNumber": null, "name": "黄の見習い", "cardType": "CHARACTER", "color": "YELLOW", "level": 0, "cost": 0, "basePower": 1500, "baseSoul": 1, "triggerIcons": [], "traits": ["テスト", "冒険"], "abilities": [] },
+  { "id": "test-card-002", "cardNumber": null, "name": "黄の応援役", "cardType": "CHARACTER", "color": "YELLOW", "level": 0, "cost": 0, "basePower": 2500, "baseSoul": 1, "triggerIcons": [], "traits": ["テスト"], "abilities": [] },
+  { "id": "test-card-003", "cardNumber": null, "name": "緑の新入生", "cardType": "CHARACTER", "color": "GREEN", "level": 0, "cost": 0, "basePower": 3000, "baseSoul": 1, "triggerIcons": [], "traits": ["テスト", "生徒会"], "abilities": [] },
+  { "id": "test-card-004", "cardNumber": null, "name": "赤の先鋒", "cardType": "CHARACTER", "color": "RED", "level": 1, "cost": 0, "basePower": 4500, "baseSoul": 1, "triggerIcons": [], "traits": ["テスト", "音楽"], "abilities": [] },
+  { "id": "test-card-005", "cardNumber": null, "name": "赤の剣士", "cardType": "CHARACTER", "color": "RED", "level": 1, "cost": 1, "basePower": 6000, "baseSoul": 1, "triggerIcons": ["SOUL"], "traits": ["テスト", "武器"], "abilities": [] },
+  { "id": "test-card-006", "cardNumber": null, "name": "青の研究員", "cardType": "CHARACTER", "color": "BLUE", "level": 1, "cost": 0, "basePower": 5000, "baseSoul": 1, "triggerIcons": [], "traits": ["テスト", "科学"], "abilities": [] },
+  { "id": "test-card-007", "cardNumber": null, "name": "青の守護者", "cardType": "CHARACTER", "color": "BLUE", "level": 1, "cost": 1, "basePower": 6500, "baseSoul": 1, "triggerIcons": ["SOUL"], "traits": ["テスト"], "abilities": [] },
+  { "id": "test-card-008", "cardNumber": null, "name": "緑の指揮官", "cardType": "CHARACTER", "color": "GREEN", "level": 2, "cost": 1, "basePower": 8000, "baseSoul": 1, "triggerIcons": ["SOUL"], "traits": ["テスト", "生徒会"], "abilities": [] },
+  { "id": "test-card-009", "cardNumber": null, "name": "黄の冒険者", "cardType": "CHARACTER", "color": "YELLOW", "level": 2, "cost": 2, "basePower": 9000, "baseSoul": 2, "triggerIcons": ["SOUL", "SOUL"], "traits": ["テスト", "冒険"], "abilities": [] },
+  { "id": "test-card-010", "cardNumber": null, "name": "赤の隊長", "cardType": "CHARACTER", "color": "RED", "level": 2, "cost": 1, "basePower": 8500, "baseSoul": 1, "triggerIcons": ["RETURN"], "traits": ["テスト", "武器"], "abilities": [] },
+  { "id": "test-card-011", "cardNumber": null, "name": "青の切り札", "cardType": "CHARACTER", "color": "BLUE", "level": 3, "cost": 2, "basePower": 10000, "baseSoul": 2, "triggerIcons": ["SOUL"], "traits": ["テスト", "科学"], "abilities": [] },
+  { "id": "test-card-012", "cardNumber": null, "name": "緑の大将", "cardType": "CHARACTER", "color": "GREEN", "level": 3, "cost": 2, "basePower": 10500, "baseSoul": 2, "triggerIcons": ["TREASURE"], "traits": ["テスト"], "abilities": [] }
+]
