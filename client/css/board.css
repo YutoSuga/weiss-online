@@ -852,7 +852,7 @@ ul {
 }
 
 .stage-slot[data-position="rest"] {
-  transform: rotate(90deg);
+  transform: rotate(-90deg);
 }
 
 .stage-slot[data-position="reverse"] {
