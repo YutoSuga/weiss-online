@@ -55,7 +55,7 @@ HTML / CSS
 - 開発用のProcess Stack確認UI
 - DEVパネルから指定した自分の山札のCardを手札へ直接移動する確認操作
 
-カードの通常プレイ、Replacement、舞台内Move / Swapに加え、CardMasterと対戦中Card instanceの分離、immutableなCardAbilityデータ構造まで実装済みです。能力の実行とオンライン対戦は未実装です。
+カードの通常プレイ、Replacement、舞台内Move / Swapに加え、CardMasterと対戦中Card instanceの分離、immutableなCardAbilityデータ構造、ACT Ability v1基盤まで実装済みです。AUTO / CONTINUOUS能力の実行とオンライン対戦は未実装です。
 
 ## Process / Rule Interrupt
 
@@ -71,11 +71,13 @@ Interrupt Process
 元Processを保存済みstepから再開
 ```
 
-現在の `PROCESS_TYPE` には、`DRAW_PHASE`、`CLOCK_PHASE`、`MAIN_PHASE`、`PLAY_CHARACTER`、`MOVE_STAGE`、`SWAP_STAGE`、`REFRESH`、`REFRESH_PENALTY`、`LEVEL_UP` があります。`CLOCK_ACTION` は定数として存在しますが、独立したProcessとしては未実装です。
+現在の `PROCESS_TYPE` には、`DRAW_PHASE`、`CLOCK_PHASE`、`MAIN_PHASE`、`PLAY_CHARACTER`、`MOVE_STAGE`、`SWAP_STAGE`、`ACT_ABILITY`、`REFRESH`、`REFRESH_PENALTY`、`LEVEL_UP` があります。`CLOCK_ACTION` は定数として存在しますが、独立したProcessとしては未実装です。
 
 ## 現在地点
 
-**Phase F-3D：Card表示・詳細表示の正式データモデル対応 完了**
+**Phase F-4A：ACT Ability v1 基盤 COMPLETE**
+
+次は **Phase F-4B：「人気アイドル 西森 柚咲」【起】集中 NEXT** です。
 
 現在、CLOCKフェイズの完了後には以下の流れが成立します。
 
@@ -111,7 +113,8 @@ CLIMAX
 - [x] Phase F-3B CardAbilityデータ構造
 - [x] Phase F-3C CardMaster正式データ化 + DeckDefinition基盤
 - [x] **Phase F-3D Card表示・詳細表示の正式データモデル対応（COMPLETE）**
-- [ ] **Phase F-4 ACT Ability v1 + 代表的な実カード（NEXT）**
+- [x] **Phase F-4A ACT Ability v1 基盤（COMPLETE）**
+- [ ] **Phase F-4B 「人気アイドル 西森 柚咲」【起】集中（NEXT）**
 - [ ] Phase F-5 AUTO Ability基盤
 - [ ] Phase F-6 CONTINUOUS Ability基盤
 
@@ -173,6 +176,8 @@ MAIN_PHASE / WAITING_INPUT中に自分のStage Characterを選択し、現在位
 - 使用可能なACTは有効ボタン、使用不可ならdisabled / gray表示を想定
 - 集中Effect自体の詳細な解決仕様は、この段階では未確定
 
+F-4AではStage上のACT検出、使用可能判定、`ACT_ABILITY` Process、`PAY_STOCK` / `REST_SELF` Cost Handler、開発用`TEST_LOG` Effect Handler、右上詳細のAbility単位操作を実装した。実カードの集中はF-4Bでこの基盤へ追加する。
+
 ### Phase F-5 / F-6
 
 - **F-5 AUTO Ability基盤**：Game EventからTriggerを検出し、AUTO Abilityを解決する基盤
@@ -203,6 +208,7 @@ READMEは現在地点と概要を扱い、詳細な仕様は `docs/` を参照�
 - [Application Flow / Deck設計](docs/１．設計書/アプリケーションフロー.md)
 - [MAIN Phase設計](docs/１．設計書/メインフェイズ.md)
 - [CardMaster / CardAbility設計](docs/１．設計書/カードデータモデル.md)
+- [カード能力 / ACT Ability設計](docs/１．設計書/カード能力.md)
 - [エンティティ・オブジェクト一覧](docs/１．設計書/エンティティ・オブジェクト一覧.md)
 - [UI操作仕様](docs/１．設計書/UI操作.md)
 - [Process基盤設計](docs/１．設計書/プロセス.md)

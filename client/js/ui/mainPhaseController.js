@@ -164,6 +164,11 @@ export class MainPhaseController {
     if (!this.canInteract() || !(event.target instanceof Element)) {
       return;
     }
+    const actButton = event.target.closest('[data-action="use-act-ability"]');
+    if (actButton instanceof HTMLButtonElement) {
+      this.handleActAbilityClick(event, actButton);
+      return;
+    }
     if (event.target.closest("button, .dev-panel, .card-detail-panel")) {
       return;
     }
@@ -193,6 +198,27 @@ export class MainPhaseController {
     if (event.target.closest(".game-board")) {
       this.clearSelection();
       this.updateCandidateStates();
+    }
+  }
+
+  /** 右上詳細のAbility単位ボタンからGameEngineへ実行要求を渡す。 */
+  handleActAbilityClick(event, button) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!this.selectedCard || this.selectedCard.zone !== "stage" || button.disabled || this.submitting) return;
+    const ability = this.gameEngine.getActAbilities(this.selectedCard, "self")
+      .find(({ id }) => id === button.dataset.abilityId);
+    if (!ability) return;
+    this.submitting = true;
+    try {
+      this.gameEngine.useActAbility(this.selectedCard, ability, "self");
+      this.updateSelectionView();
+    } catch (error) {
+      console.error("MainPhaseController: ACT Ability failed.", error);
+      this.updateSelectionView();
+    } finally {
+      this.submitting = false;
+      this.sync();
     }
   }
 
@@ -401,7 +427,10 @@ export class MainPhaseController {
       typeof this.gameEngine?.canSelectStageCardForMain === "function" &&
       typeof this.gameEngine?.getMainStageMoveDestinations === "function" &&
       typeof this.gameEngine?.moveStageCard === "function" &&
-      typeof this.gameEngine?.swapStageCards === "function",
+      typeof this.gameEngine?.swapStageCards === "function" &&
+      typeof this.gameEngine?.getActAbilities === "function" &&
+      typeof this.gameEngine?.getActAbilityDisabledReason === "function" &&
+      typeof this.gameEngine?.useActAbility === "function",
     );
   }
 
@@ -489,6 +518,16 @@ export class MainPhaseController {
     this.renderer?.renderCardDetail?.(this.selectedCard, {
       showClearSelection: true,
       playDisabledReason,
+      actAbilityStates: isStageSelection
+        ? this.gameEngine.getActAbilities(this.selectedCard, "self").map((ability) => ({
+          ability,
+          disabledReason: this.gameEngine.getActAbilityDisabledReason(
+            this.selectedCard,
+            ability,
+            "self",
+          ),
+        }))
+        : [],
     });
     const destinations = isStageSelection
       ? this.gameEngine.getMainStageMoveDestinations(this.selectedCard, "self")

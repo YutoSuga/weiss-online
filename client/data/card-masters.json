@@ -62,7 +62,38 @@
     "traits": [
       "テスト"
     ],
-    "abilities": [],
+    "abilities": [
+      {
+        "id": "ACT_TEST_STOCK",
+        "type": "ACT",
+        "keywords": [],
+        "text": "［①］テスト効果",
+        "activationTrigger": null,
+        "conditions": [],
+        "costs": [{ "type": "PAY_STOCK", "amount": 1 }],
+        "effects": [{ "type": "TEST_LOG", "message": "ACTテスト効果Aを解決" }]
+      },
+      {
+        "id": "ACT_TEST_REST",
+        "type": "ACT",
+        "keywords": [],
+        "text": "［このカードをレストする］テスト効果",
+        "activationTrigger": null,
+        "conditions": [],
+        "costs": [{ "type": "REST_SELF" }],
+        "effects": [{ "type": "TEST_LOG", "message": "ACTテスト効果Bを解決" }]
+      },
+      {
+        "id": "ACT_TEST_MULTIPLE",
+        "type": "ACT",
+        "keywords": [],
+        "text": "［① このカードをレストする］テスト効果",
+        "activationTrigger": null,
+        "conditions": [],
+        "costs": [{ "type": "PAY_STOCK", "amount": 1 }, { "type": "REST_SELF" }],
+        "effects": [{ "type": "TEST_LOG", "message": "ACT複数コストテスト効果を解決" }]
+      }
+    ],
     "imageUrl": null
   },
   {

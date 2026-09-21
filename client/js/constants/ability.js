@@ -5,3 +5,13 @@ export const ABILITY_TYPE = Object.freeze({
   ACT: "ACT",
 });
 
+/** F-4AでGameEngineが解釈できるAbility Cost。 */
+export const COST_TYPE = Object.freeze({
+  PAY_STOCK: "PAY_STOCK",
+  REST_SELF: "REST_SELF",
+});
+
+/** F-4AでGameEngineが解釈できるAbility Effect。 */
+export const EFFECT_TYPE = Object.freeze({
+  TEST_LOG: "TEST_LOG",
+});
