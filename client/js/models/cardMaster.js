@@ -12,6 +12,7 @@ export class CardMaster {
    * @param {string} params.name
    * @param {string} params.cardType
    * @param {string} params.color
+   * @param {string|null} [params.imageUrl=null] カード画像URL
    * @param {number} params.level
    * @param {number} params.cost
    * @param {number|null} [params.basePower=null]
@@ -27,6 +28,7 @@ export class CardMaster {
     name,
     cardType,
     color,
+    imageUrl = null,
     level,
     cost,
     basePower = null,
@@ -42,6 +44,7 @@ export class CardMaster {
     assertNonEmptyString("name", name);
     assertNonEmptyString("cardType", cardType);
     assertNonEmptyString("color", color);
+    assertNullableUrl("imageUrl", imageUrl);
     assertNonNegativeNumber("level", level);
     assertNonNegativeNumber("cost", cost);
     assertNullableNonNegativeNumber("basePower", basePower);
@@ -71,6 +74,7 @@ export class CardMaster {
     this.name = name;
     this.cardType = cardType;
     this.color = color;
+    this.imageUrl = imageUrl;
     this.level = level;
     this.cost = cost;
     this.basePower = basePower;
@@ -108,6 +112,16 @@ function assertNonEmptyString(propertyName, value) {
 
 function assertNullableNonEmptyString(propertyName, value) {
   if (value !== null) assertNonEmptyString(propertyName, value);
+}
+
+function assertNullableUrl(propertyName, value) {
+  if (value === null) return;
+  assertNonEmptyString(propertyName, value);
+  try {
+    new URL(value);
+  } catch {
+    throw new TypeError(`${propertyName} must be an absolute URL or null.`);
+  }
 }
 
 function assertNonNegativeNumber(propertyName, value) {

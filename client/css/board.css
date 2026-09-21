@@ -244,6 +244,38 @@ ul {
   border-top: 1px solid var(--border-zone);
 }
 
+.card-detail-image-frame dd {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 190px;
+  border: 1px solid var(--border-zone);
+  border-radius: 4px;
+  background: rgba(15, 23, 42, 0.55);
+  overflow: hidden;
+}
+
+.card-detail-image-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.card-detail-image-frame img[hidden],
+.card-detail-image-frame [hidden] {
+  display: none;
+}
+
+.card-detail-abilities {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  white-space: pre-wrap;
+}
+
 .card-detail-action {
   width: 100%;
   min-height: 34px;

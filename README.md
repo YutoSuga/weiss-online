@@ -74,7 +74,7 @@ Interrupt Process
 
 ## 現在地点
 
-**Phase F-3C：CardMaster正式データ化 + DeckDefinition基盤 完了**
+**Phase F-3D：Card表示・詳細表示の正式データモデル対応 完了**
 
 現在、CLOCKフェイズの完了後には以下の流れが成立します。
 
@@ -109,8 +109,8 @@ CLIMAX
 - [x] Phase F-3A CardMaster導入・Cardとの分離
 - [x] Phase F-3B CardAbilityデータ構造
 - [x] Phase F-3C CardMaster正式データ化 + DeckDefinition基盤
-- [ ] **Phase F-3D Renderer / カード詳細のMaster参照整理（NEXT）**
-- [ ] Phase F-4 ACT Ability v1
+- [x] **Phase F-3D Card表示・詳細表示の正式データモデル対応（COMPLETE）**
+- [ ] **Phase F-4 ACT Ability v1 + 代表的な実カード（NEXT）**
 - [ ] Phase F-5 AUTO Ability基盤
 - [ ] Phase F-6 CONTINUOUS Ability基盤
 
@@ -160,7 +160,7 @@ MAIN_PHASE / WAITING_INPUT中に自分のStage Characterを選択し、現在位
 - **F-3A**：CardMasterを導入し、固定情報とCard instance状態を分離する。Cardのgetterにより既存の`card.name`、`card.level`、`card.cost`等を維持する。
 - **F-3B**：CardAbilityのデータ構造を導入する。Ability Engineはまだ実装しない。
 - **F-3C**：正式schemaのCardMaster JSONをLoader経由でRegistryへ登録し、DeckDefinitionを独立したCard instanceへ展開する。
-- **F-3D（NEXT）**：Renderer / カード詳細のMaster参照を整理する。
+- **F-3D（COMPLETE）**：Cardを入口に、画像・現在Power/Soul・CardAbility textを右上詳細へ表示する。
 
 ### Phase F-4：ACT Ability v1
 

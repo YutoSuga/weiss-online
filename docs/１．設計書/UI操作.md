@@ -21,6 +21,12 @@
 
 # カード操作
 
+## 右上カード詳細
+
+閲覧者に公開された選択Cardについて、画像、名前、種類、色、Level、Cost、現在Power、現在Soul、Trigger Icons、Traits、Abilitiesを表示する。cardNumber、masterId、instanceIdおよびlegacyなCardMaster.textは表示しない。能力はCardAbilityのtypeを`CONTINUOUS → 【永】`、`AUTO → 【自】`、`ACT → 【起】`へ変換し、その`text`を続ける。0件は共通の空表示、複数件は順に表示する。
+
+画像URLが`null`またはロードに失敗した場合はURLやファイル名を含まない「画像なし」placeholderを表示する。画像領域は一定の高さを保ち、`object-fit: contain`で縦長・横長それぞれのアスペクト比を維持する。非公開Cardは画像も詳細情報も表示しない。
+
 ## 選択
 
 ### 左クリック

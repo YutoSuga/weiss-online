@@ -93,7 +93,7 @@ F-3Aで固定情報をCardMasterへ分離済みです。現在の実装仕様は
 
 ## CardMaster / CardAbility / CardMasterRegistry / Card（F-3B実装）
 
-`CardMaster`は`id`, `cardNumber`, `name`, `cardType`, `color`, `level`, `cost`,
+`CardMaster`は`id`, `cardNumber`, `name`, `cardType`, `color`, `imageUrl`, `level`, `cost`,
 `basePower`, `baseSoul`, `triggerIcons`, `traits`, legacy / transitionalな`text`, `abilities`を保持する。配列をコピーしてfreezeし、本体もfreezeする。`abilities`省略時は空配列で、plain objectは`CardAbility`へfail-fastに変換する。同一master内のability ID重複は拒否する。
 
 `CardMasterRegistry`はメモリ上だけのlookupであり、`register(master)`, `get(masterId)`,
@@ -102,13 +102,15 @@ freezeした新しい配列を返す。fetchや永続化は担当しない。
 
 `Card` constructorは`instanceId`, `masterId`, `masterRegistry`を明示的に受け、生成時に
 Masterをfail-fastで解決する。`id`は`instanceId`の互換getterである。固定情報は
-`cardNumber`, `name`, `cardType`, `color`, `level`, `cost`, `basePower`, `baseSoul`,
+`cardNumber`, `name`, `cardType`, `color`, `imageUrl`, `level`, `cost`, `basePower`, `baseSoul`,
 `triggerIcons`, 互換用`triggers` / `trigger`, `traits`, `text`, `abilities`のgetterで提供する。`currentPower` / `currentSoul`は
 未指定時だけMasterの基本値で初期化し、明示値`0`や`null`を保持する。
 
 `toJSON()`はMaster固定情報を含めず、instance ID、master ID、owner、zone、row、index、
 face、position、currentPower、currentSoul、visibilityOverrideのみを返す。`fromJSON(data,
 masterRegistry)`は注入されたRegistryからMasterを解決する。
+
+`imageUrl`は空でないstringまたは`null`であり、Card JSONには保存しない。Rendererの詳細表示はCardだけを入口にし、Power/Soulのcurrent値、triggerIcons、traits、`CardAbility.type/text`を表示する。Registryの直接参照、CardMaster.textによる能力表示、構造化Abilityデータの解釈は行わない。
 
 
 ### CardAbility

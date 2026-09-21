@@ -1,6 +1,22 @@
 import { VISIBILITY, ZONE, ZONE_VISIBILITY } from "../constants/zone.js";
 import { PHASE } from "../constants/phase.js";
 import { FACE } from "../models/card.js";
+import { ABILITY_TYPE } from "../constants/ability.js";
+
+const ABILITY_LABELS = Object.freeze({
+  [ABILITY_TYPE.CONTINUOUS]: "【永】",
+  [ABILITY_TYPE.AUTO]: "【自】",
+  [ABILITY_TYPE.ACT]: "【起】",
+});
+
+export function formatCurrentValue(currentValue, baseValue) {
+  if (currentValue === baseValue || baseValue == null) return String(currentValue ?? "-");
+  return `${currentValue ?? "-"}（元${baseValue}）`;
+}
+
+export function formatAbility(ability) {
+  return `${ABILITY_LABELS[ability?.type] ?? ""}${ability?.text ?? ""}`;
+}
 
 const OWNERS = Object.freeze(["self", "opponent"]);
 const TURN_PLAYER_LABELS = Object.freeze({
@@ -177,7 +193,12 @@ export class Renderer {
     const details = panel.querySelector("[data-card-detail-fields]");
     const clearButton = panel.querySelector('[data-action="clear-main-selection"]');
     const disabledReason = panel.querySelector("[data-card-play-disabled-reason]");
-    const hasCard = Boolean(card && typeof card === "object");
+    const hasCard = Boolean(card && typeof card === "object") &&
+      this.canViewerSeeCard(
+        card,
+        OWNERS.includes(card.owner) ? card.owner : this.viewerId,
+        this.resolveEffectiveVisibility(card, card.zone),
+      );
 
     if (emptyMessage instanceof HTMLElement) {
       emptyMessage.hidden = hasCard;
@@ -199,18 +220,22 @@ export class Renderer {
       panel.querySelectorAll("[data-card-detail]").forEach((element) => {
         element.textContent = "-";
       });
+      this.renderCardDetailImage(panel, null);
+      const abilityList = panel.querySelector("[data-card-detail-abilities]");
+      if (abilityList) abilityList.replaceChildren();
       return;
     }
 
     const values = {
       name: card.name,
       type: card.cardType,
+      color: card.color,
       level: card.level,
       cost: card.cost,
-      power: card.currentPower ?? card.basePower,
-      soul: card.currentSoul ?? card.baseSoul,
+      power: formatCurrentValue(card.currentPower, card.basePower),
+      soul: formatCurrentValue(card.currentSoul, card.baseSoul),
+      triggers: Array.isArray(card.triggerIcons) ? card.triggerIcons.join(" / ") : "",
       traits: Array.isArray(card.traits) ? card.traits.join(" / ") : "",
-      text: card.text,
     };
 
     Object.entries(values).forEach(([name, value]) => {
@@ -219,6 +244,43 @@ export class Renderer {
         element.textContent = value == null || value === "" ? "-" : String(value);
       }
     });
+    this.renderCardDetailImage(panel, card.imageUrl);
+    const abilityList = panel.querySelector("[data-card-detail-abilities]");
+    if (abilityList) {
+      abilityList.replaceChildren();
+      const abilities = Array.isArray(card.abilities) ? card.abilities : [];
+      if (abilities.length === 0) {
+        const item = abilityList.ownerDocument.createElement("li");
+        item.textContent = "-";
+        abilityList.append(item);
+      } else {
+        abilities.forEach((ability) => {
+          const item = abilityList.ownerDocument.createElement("li");
+          item.textContent = formatAbility(ability);
+          abilityList.append(item);
+        });
+      }
+    }
+  }
+
+  /** CardMaster由来のURLだけを使用し、未設定・ロード失敗は共通表示へ戻す。 */
+  renderCardDetailImage(panel, imageUrl) {
+    const image = panel.querySelector("[data-card-detail-image]");
+    const placeholder = panel.querySelector("[data-card-detail-image-placeholder]");
+    if (!(image instanceof HTMLImageElement) || !(placeholder instanceof HTMLElement)) return;
+    const showPlaceholder = () => {
+      image.hidden = true;
+      image.removeAttribute("src");
+      placeholder.hidden = false;
+    };
+    image.onerror = showPlaceholder;
+    if (typeof imageUrl !== "string" || imageUrl.length === 0) {
+      showPlaceholder();
+      return;
+    }
+    image.hidden = false;
+    placeholder.hidden = true;
+    image.src = imageUrl;
   }
 
   /**
@@ -882,13 +944,18 @@ export class Renderer {
       slot.dataset.row = String(row);
     }
 
-    const label =
-      typeof card.name === "string" && card.name.trim()
+    const visibility = this.resolveEffectiveVisibility(card, zone);
+    const canView = this.canViewerSeeCard(card, owner, visibility);
+    const label = canView
+      ? typeof card.name === "string" && card.name.trim()
         ? card.name
-        : slot.dataset.cardId;
+        : slot.dataset.cardId
+      : "";
     slot.textContent = label;
-    if (label) {
+    if (canView && label) {
       slot.title = label;
+    } else {
+      slot.removeAttribute("title");
     }
   }
 

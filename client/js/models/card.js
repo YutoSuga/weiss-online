@@ -96,6 +96,7 @@ export class Card {
   get name() { return this.master.name; }
   get cardType() { return this.master.cardType; }
   get color() { return this.master.color; }
+  get imageUrl() { return this.master.imageUrl; }
   get level() { return this.master.level; }
   get cost() { return this.master.cost; }
   get basePower() { return this.master.basePower; }
