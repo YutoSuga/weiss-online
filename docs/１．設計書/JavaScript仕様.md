@@ -112,6 +112,8 @@ masterRegistry)`は注入されたRegistryからMasterを解決する。
 
 `imageUrl`は空でないstringまたは`null`であり、Card JSONには保存しない。Rendererの詳細表示はCardだけを入口にし、Power/Soulのcurrent値、triggerIcons、traits、`CardAbility.type/text`を表示する。Registryの直接参照、CardMaster.textによる能力表示、構造化Abilityデータの解釈は行わない。
 
+MAINのQueryは、選択可否とゲームActionの実行可否を分離する。`canSelectCardForMain(card, playerId)`は自分のターン、MAIN、`MAIN_PHASE / WAITING_INPUT`、自分のHand所属だけを判定し、cardTypeやLevel・Color・Costを見ない。`getCharacterPlayDisabledReason`と`canPlayCharacterToStage`がCHARACTERのHand所属・種類・Level・Color・CostによるStage play可否を別途判定する。`getMainDestinationCandidates`は選択Cardに実行可能なMAIN Actionがある場合だけDestinationを返し、CLIMAXには空配列を返す。
+
 
 ### CardAbility
 

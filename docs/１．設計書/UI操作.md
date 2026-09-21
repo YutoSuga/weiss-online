@@ -25,7 +25,9 @@
 
 閲覧者に公開された選択Cardについて、画像、名前、種類、色、Level、Cost、現在Power、現在Soul、Trigger Icons、Traits、Abilitiesを表示する。cardNumber、masterId、instanceIdおよびlegacyなCardMaster.textは表示しない。能力はCardAbilityのtypeを`CONTINUOUS → 【永】`、`AUTO → 【自】`、`ACT → 【起】`へ変換し、その`text`を続ける。0件は共通の空表示、複数件は順に表示する。
 
-画像URLが`null`またはロードに失敗した場合はURLやファイル名を含まない「画像なし」placeholderを表示する。画像領域は一定の高さを保ち、`object-fit: contain`で縦長・横長それぞれのアスペクト比を維持する。非公開Cardは画像も詳細情報も表示しない。
+画像は「画像」という見出し列を持たない詳細先頭の独立ブロックとする。読み込み成功時は固定高さを予約せず、`width: 100%`、`max-width: 100%`、`height: auto`と`object-fit: contain`により縦長・横長の向きとアスペクト比を保ったまま全体を表示する。画像URLが`null`またはロードに失敗した場合は、画像用の高さを残さず、URLやファイル名を含まない一行程度の「画像なし」placeholderを表示する。非公開Cardは画像も詳細情報も表示しない。
+
+MAINでの手札Card選択は「詳細を見るための選択」であり、「プレイできる」こととは区別する。自分のターンの`MAIN_PHASE / WAITING_INPUT`中に自分の手札にあるCardは、cardTypeに関係なく選択できる。Level・Color・Cost条件を満たさないCHARACTERも詳細を表示し、従来どおりプレイ不可理由を表示する。CLIMAXも詳細を表示できるが、Stage Destinationは表示せず、MAINからのプレイ処理は持たない。この選択可否はMAIN以外や相手ターンに一般化しない。
 
 ## 選択
 
