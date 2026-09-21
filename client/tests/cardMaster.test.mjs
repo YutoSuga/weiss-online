@@ -1,14 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 
 import { Card, FACE, POSITION } from "../js/models/card.js";
 import { CardMaster } from "../js/models/cardMaster.js";
 import { CardMasterRegistry } from "../js/models/cardMasterRegistry.js";
-import {
-  createTestCardMasterRegistry,
-  createTestDeck,
-} from "../js/data/testCardLoader.js";
 
 function createMaster(overrides = {}) {
   return new CardMaster({
@@ -21,7 +16,7 @@ function createMaster(overrides = {}) {
     cost: 1,
     basePower: 5000,
     baseSoul: 1,
-    triggerIcons: ["soul"],
+    triggerIcons: ["SOUL"],
     traits: ["テスト"],
     text: "legacy text",
     ...overrides,
@@ -35,15 +30,15 @@ function createRegistry(master = createMaster()) {
 }
 
 test("CardMasterは固定情報と配列をimmutableに保持する", () => {
-  const triggers = ["soul"];
+  const triggers = ["SOUL"];
   const traits = ["テスト"];
   const master = createMaster({ triggerIcons: triggers, traits });
   triggers.push("external");
   traits.push("external");
 
   assert.equal(master.name, "テストカード");
-  assert.deepEqual(master.triggerIcons, ["soul"]);
-  assert.deepEqual(master.triggers, ["soul"]);
+  assert.deepEqual(master.triggerIcons, ["SOUL"]);
+  assert.deepEqual(master.triggers, ["SOUL"]);
   assert.deepEqual(master.traits, ["テスト"]);
   assert.ok(Object.isFrozen(master));
   assert.ok(Object.isFrozen(master.triggerIcons));
@@ -148,21 +143,4 @@ test("Card serializationはruntime stateだけを往復する", () => {
     () => Card.fromJSON({ ...json, masterId: "unknown" }, registry),
     /not registered/,
   );
-});
-
-test("暫定test-cards.jsonからMaster Registryと両者の独立Deckを生成する", async () => {
-  const definitions = JSON.parse(await readFile(
-    new URL("../data/test-cards.json", import.meta.url),
-    "utf8",
-  ));
-  const registry = createTestCardMasterRegistry(definitions);
-  const selfDeck = createTestDeck("self", definitions, registry, 50);
-  const opponentDeck = createTestDeck("opponent", definitions, registry, 50);
-  assert.equal(registry.getAll().length, definitions.length);
-  assert.equal(selfDeck.cards.length, 50);
-  assert.equal(opponentDeck.cards.length, 50);
-  assert.notEqual(selfDeck.cards[0], opponentDeck.cards[0]);
-  const ids = [...selfDeck.cards, ...opponentDeck.cards].map((card) => card.instanceId);
-  assert.equal(new Set(ids).size, 100);
-  assert.equal(selfDeck.cards[0].master, opponentDeck.cards[0].master);
 });

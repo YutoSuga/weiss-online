@@ -480,7 +480,7 @@ export class GameEngine {
       hand.includes(card) &&
       card?.owner === playerId &&
       card?.zone === ZONE.HAND &&
-      card?.cardType === "character",
+      isCharacter(card),
     );
   }
 
@@ -634,7 +634,7 @@ export class GameEngine {
       stage.includes(card) &&
       card?.owner === playerId &&
       card?.zone === ZONE.STAGE &&
-      card?.cardType === "character" &&
+      isCharacter(card) &&
       this.#isMainStageDestination(card, playerId)
     );
   }
@@ -2068,7 +2068,7 @@ export class GameEngine {
       this.gameState.players[playerId]?.stage.includes(card) &&
       card.owner === playerId &&
       card.zone === ZONE.STAGE &&
-      card.cardType === "character",
+      isCharacter(card),
     );
   }
 
@@ -2088,7 +2088,7 @@ export class GameEngine {
   /** UI状態に依存しないCharacter基本プレイ条件。 */
   #getCharacterPlayRuleDisabledReason(card, playerId) {
     const player = this.gameState.players[playerId];
-    if (!card || !player?.hand.includes(card) || card.owner !== playerId || card.zone !== ZONE.HAND || card.cardType !== "character") {
+    if (!card || !player?.hand.includes(card) || card.owner !== playerId || card.zone !== ZONE.HAND || !isCharacter(card)) {
       return "CHARACTERが手札にありません。";
     }
     if (card.level > player.level.length) return "レベル条件を満たしていません。";
@@ -2108,4 +2108,9 @@ export class GameEngine {
       card.index = arrayIndex + 1;
     });
   }
+}
+
+/** 旧データのlowercaseと正式CardMaster値のuppercaseを移行中も同義に扱う。 */
+function isCharacter(card) {
+  return typeof card?.cardType === "string" && card.cardType.toUpperCase() === "CHARACTER";
 }

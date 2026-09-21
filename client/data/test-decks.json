@@ -1,0 +1,20 @@
+[
+  {
+    "id": "test-deck-001",
+    "name": "開発用テストデッキ",
+    "cards": [
+      { "masterId": "test-card-001", "count": 6 },
+      { "masterId": "test-card-002", "count": 4 },
+      { "masterId": "test-card-003", "count": 4 },
+      { "masterId": "test-card-004", "count": 4 },
+      { "masterId": "test-card-005", "count": 4 },
+      { "masterId": "test-card-006", "count": 4 },
+      { "masterId": "test-card-007", "count": 4 },
+      { "masterId": "test-card-008", "count": 4 },
+      { "masterId": "test-card-009", "count": 4 },
+      { "masterId": "test-card-010", "count": 4 },
+      { "masterId": "test-card-011", "count": 4 },
+      { "masterId": "test-card-012", "count": 4 }
+    ]
+  }
+]

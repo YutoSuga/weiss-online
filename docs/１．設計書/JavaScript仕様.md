@@ -116,3 +116,9 @@ masterRegistry)`は注入されたRegistryからMasterを解決する。
 `ABILITY_TYPE`は`client/js/constants/ability.js`に`CONTINUOUS` / `AUTO` / `ACT`を定義し、未知値を拒否する。`CardAbility`は`id`, `type`, `keywords`, `text`, `activationTrigger`, `conditions`, `costs`, `effects`を保持する。`text`は人間向けの表示原文で、残る4フィールドは後続Phaseの処理用構造化データである。F-3Bはschema列挙や実行処理を実装しない。
 
 入力したplain object / arrayは再帰的にcopyしてfreezeし、元データ変更の影響とnested変更を防ぐ。本体もfreezeする。能力には`used`等のruntime状態を置かない。`activationTrigger`は能力発動契機で、カード印刷上の`CardMaster.triggerIcons`とは別概念である。同種処理の共通化はCardAbility object共有ではなく、F-4以降に処理タイプと実行処理で行う。`Card.toJSON()`には能力固定情報を含めず、復元後にRegistryのmasterから参照する。
+
+## CardMasterLoader / DeckDefinition（F-3C実装）
+
+`constants/triggerIcon.js`の`TRIGGER_ICON`が正式なトリガー値を列挙する。`CardMaster`は各`triggerIcons`を検証し、空配列と同値の複数要素を許可する。
+
+`data/cardMasterLoader.js`はCardMaster plain object配列の取得・必須項目と重複IDの検証・`CardMasterRegistry`構築を担当する。`models/deckDefinition.js`は`id`, `name`, `{ masterId, count }[]`を入力から独立させてfreezeする。枚数などの構築ルールは持たない。`data/deckDefinitionLoader.js`はJSON取得と、Definition + Registryから`Card[]`を生成する。未知masterは拒否し、同じmasterのcopyおよびself/opponentには重複しない`instanceId`を割り当てる。

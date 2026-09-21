@@ -25,7 +25,7 @@ function master(overrides = {}) {
   return new CardMaster({
     id: "master-1", name: "テスト", cardType: "character", color: "red",
     level: 0, cost: 0, basePower: 1000, baseSoul: 1,
-    triggerIcons: ["soul"], traits: [], text: "legacy text", ...overrides,
+    triggerIcons: ["SOUL"], traits: [], text: "legacy text", ...overrides,
   });
 }
 
@@ -83,7 +83,7 @@ test("CardMasterはCardAbilityを直接包含し、defaultとID一意性を保�
   assert.ok(fromPlainObject.abilities[0] instanceof CardAbility);
   assert.throws(() => master({ abilities: [instance, ability()] }), /Duplicate CardAbility id/);
   assert.doesNotThrow(() => master({ id: "other", abilities: [ability()] }));
-  assert.deepEqual(withInstances.triggerIcons, ["soul"]);
+  assert.deepEqual(withInstances.triggerIcons, ["SOUL"]);
 });
 
 test("Cardはtrigger互換とabilities参照を保ちserializationには固定情報を含めない", () => {
@@ -101,4 +101,3 @@ test("Cardはtrigger互換とabilities参照を保ちserializationには固定�
   const restored = Card.fromJSON(card.toJSON(), registry);
   assert.equal(restored.abilities, cardMaster.abilities);
 });
-

@@ -2,6 +2,7 @@
  * カード種類ごとの、対戦中に変化しない固定情報を表す。
  */
 import { CardAbility } from "./cardAbility.js";
+import { TRIGGER_ICON_VALUES } from "../constants/triggerIcon.js";
 
 export class CardMaster {
   /**
@@ -50,6 +51,13 @@ export class CardMaster {
     }
     const resolvedTriggerIcons = triggerIcons ?? triggers ?? [];
     assertStringArray("triggerIcons", resolvedTriggerIcons);
+    resolvedTriggerIcons.forEach((icon, index) => {
+      if (!TRIGGER_ICON_VALUES.includes(icon)) {
+        throw new RangeError(
+          `triggerIcons[${index}] must be one of: ${TRIGGER_ICON_VALUES.join(", ")}. Received: ${String(icon)}.`,
+        );
+      }
+    });
     assertStringArray("traits", traits);
     if (!Array.isArray(abilities)) {
       throw new TypeError("abilities must be an array.");

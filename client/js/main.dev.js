@@ -16,14 +16,16 @@ import { GameState } from "./models/gameState.js";
 import { Player } from "./models/player.js";
 import { Card } from "./models/card.js";
 import {
-  createTestCardMasterRegistry,
-  createTestDeck,
-  loadTestCardDefinitions,
-} from "./data/testCardLoader.js";
+  createCardMasterRegistry,
+  loadCardMasterDefinitions,
+} from "./data/cardMasterLoader.js";
+import {
+  createDeckFromDefinition,
+  loadDeckDefinitions,
+} from "./data/deckDefinitionLoader.js";
 import { PROCESS_STATUS, PROCESS_TYPE } from "./constants/process.js";
 import { DEFEAT_REASON, RULE_CHECK_RESULT } from "./constants/ruleCheck.js";
 
-const TEST_DECK_SIZE = 50;
 const AUTOMATIC_OPPONENT_MULLIGAN_DELAY_MS = 3000;
 
 /**
@@ -54,9 +56,13 @@ function createRandomMulliganIndexes(handSize) {
     .sort((left, right) => left - right);
 }
 
-let testCardDefinitions;
+let cardMasterDefinitions;
+let deckDefinitions;
 try {
-  testCardDefinitions = await loadTestCardDefinitions();
+  [cardMasterDefinitions, deckDefinitions] = await Promise.all([
+    loadCardMasterDefinitions(),
+    loadDeckDefinitions(),
+  ]);
 } catch (error) {
   const overlay = document.querySelector("[data-message-overlay]");
   const title = document.querySelector("[data-message-overlay-title]");
@@ -66,7 +72,7 @@ try {
   }
   if (title) {
     title.hidden = false;
-    title.textContent = "テストカード読込エラー";
+    title.textContent = "対戦データ読込エラー";
   }
   if (message) {
     message.hidden = false;
@@ -74,19 +80,10 @@ try {
   }
   throw error;
 }
-const cardMasterRegistry = createTestCardMasterRegistry(testCardDefinitions);
-const selfDeck = createTestDeck(
-  "self",
-  testCardDefinitions,
-  cardMasterRegistry,
-  TEST_DECK_SIZE,
-);
-const opponentDeck = createTestDeck(
-  "opponent",
-  testCardDefinitions,
-  cardMasterRegistry,
-  TEST_DECK_SIZE,
-);
+const cardMasterRegistry = createCardMasterRegistry(cardMasterDefinitions);
+const testDeckDefinition = deckDefinitions[0];
+const selfDeck = createDeckFromDefinition("self", testDeckDefinition, cardMasterRegistry);
+const opponentDeck = createDeckFromDefinition("opponent", testDeckDefinition, cardMasterRegistry);
 
 const self = new Player({
   id: "self",
