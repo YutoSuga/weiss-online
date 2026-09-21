@@ -108,3 +108,15 @@ test("開発データに縦長・横長・null画像の3パターンがある", 
   assert.ok(data.some((master) => master.cardType === "CLIMAX" && master.imageUrl === "https://ws-tcg.com/wordpress/wp-content/images/cardlist/k/kch_w78/kch_w78_119r.png"));
   assert.ok(data.some((master) => master.imageUrl === null));
 });
+
+test("右上詳細画像は見出し列を持たず、固定高さでcropしない", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../css/board.css", import.meta.url), "utf8");
+  const imageBlock = html.match(/<div class="card-detail-image-frame">[\s\S]*?<\/div>/)?.[0];
+  assert.ok(imageBlock);
+  assert.doesNotMatch(imageBlock, /<dt>画像<\/dt>/);
+  assert.match(imageBlock, /data-card-detail-image/);
+  assert.match(imageBlock, /data-card-detail-image-placeholder>画像なし/);
+  assert.match(css, /\.card-detail-image-frame img\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*100%;[^}]*height:\s*auto;/s);
+  assert.doesNotMatch(css, /\.card-detail-image-frame img\s*\{[^}]*height:\s*100%/s);
+});

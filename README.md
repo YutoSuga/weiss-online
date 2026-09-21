@@ -91,7 +91,7 @@ MAIN_PHASE COMPLETE
 CLIMAX
 ```
 
-`MAIN_PHASE` は `WAITING_INPUT` 中も `processStack` 上に保持されます。自分の手札のCHARACTERを選択し、Level・Color・Stock条件を満たす場合は、`PLAY_CHARACTER` ProcessでStageへプレイできます。
+`MAIN_PHASE` は `WAITING_INPUT` 中も `processStack` 上に保持されます。自分のターンのこの状態では、自分の手札CardをcardTypeに関係なく詳細確認のため選択できます。選択とプレイ可否は別判定であり、CHARACTERだけがLevel・Color・Stock条件の判定後に`PLAY_CHARACTER` ProcessでStageへプレイできます。CLIMAXは詳細確認のため選択できますが、MAINからのプレイは未実装です。
 
 ## 開発ロードマップ
 
@@ -119,12 +119,14 @@ CLIMAX
 
 実装済みの内容です。
 
-- 自分のHANDのCHARACTERをクリック / タップして選択する
+- 自分のターンのMAIN / WAITING_INPUT中に、自分のHAND CardをcardTypeに関係なくクリック / タップして詳細確認のため選択する
 - 選択状態をController / UIローカルで保持する
 - 選択カードの情報を右側のカード説明パネルへ表示する
 - 配置可能なDestinationを青枠などで示す
 - 別カードのクリックによる選択切替、空白クリックと「選択を解除」による解除
 - この段階では実際のカード移動を行わない
+
+選択可否とActionの実行可否は別のQueryで扱います。プレイ条件を満たさないCHARACTERも選択と詳細表示は可能で、プレイ不可理由を表示します。
 
 確定前の選択状態はGameStateに保存せず、Controller / UIローカルで扱います。
 

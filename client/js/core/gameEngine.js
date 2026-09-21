@@ -455,8 +455,8 @@ export class GameEngine {
   }
 
   /**
-   * F-2Aで手札カードをMAIN選択UIの対象にできるか返す。
-   * Level、Color、Cost条件はF-2Bで判定する。
+   * MAIN入力待ち中に、詳細確認のため手札Cardを選択できるか返す。
+   * cardTypeやCharacterのプレイ条件はここでは判定しない。
    *
    * @param {unknown} card
    * @param {'self'|'opponent'} playerId
@@ -479,8 +479,7 @@ export class GameEngine {
       Array.isArray(hand) &&
       hand.includes(card) &&
       card?.owner === playerId &&
-      card?.zone === ZONE.HAND &&
-      isCharacter(card),
+      card?.zone === ZONE.HAND,
     );
   }
 
@@ -493,6 +492,9 @@ export class GameEngine {
    * @returns {{owner: 'self', zone: string, row: string, index: number}[]}
    */
   getMainDestinationCandidates(card, playerId) {
+    if (!isCharacter(card)) {
+      return [];
+    }
     if (this.getCharacterPlayDisabledReason(card, playerId) !== null) {
       return [];
     }

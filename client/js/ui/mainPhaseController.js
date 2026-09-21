@@ -480,7 +480,10 @@ export class MainPhaseController {
     }
 
     const isStageSelection = this.selectedCard.zone === "stage";
-    const playDisabledReason = isStageSelection
+    const isHandCharacter = !isStageSelection &&
+      typeof this.selectedCard.cardType === "string" &&
+      this.selectedCard.cardType.toUpperCase() === "CHARACTER";
+    const playDisabledReason = !isHandCharacter
       ? null
       : this.gameEngine.getCharacterPlayDisabledReason(this.selectedCard, "self");
     this.renderer?.renderCardDetail?.(this.selectedCard, {
