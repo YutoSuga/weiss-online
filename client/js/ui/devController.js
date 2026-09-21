@@ -1,3 +1,5 @@
+import { ZONE } from "../constants/zone.js";
+
 /**
  * 開発専用パネルの表示とデバッグ操作だけを管理する。
  * ゲームルールはGameEngineへ、通常描画はRendererへ委譲する。
@@ -97,6 +99,36 @@ export class DevController {
     this.#setStatus("phase", this.#formatValue(this.gameState?.phase));
     this.updateProcessStackView();
     this.updateRuleCheckView();
+    this.updateDeckCardSelector();
+  }
+
+  /** 現在selfの山札にあるCardをmasterId単位で選択肢へ反映する。 */
+  updateDeckCardSelector() {
+    const select = this.panel?.querySelector("[data-dev-deck-card-select]");
+    const button = this.panel?.querySelector(
+      '[data-dev-action="deck-card-to-hand"]',
+    );
+    if (!(select instanceof HTMLSelectElement)) return;
+
+    const selectedMasterId = select.value;
+    const summaries = summarizeDeckCards(
+      this.gameState?.players?.self?.deck?.cards,
+    );
+    select.replaceChildren();
+
+    if (summaries.length === 0) {
+      select.append(new Option("山札にカードがありません", ""));
+    } else {
+      for (const { masterId, name, count } of summaries) {
+        select.append(new Option(`${name}（山札: ${count}枚）`, masterId));
+      }
+      if (summaries.some(({ masterId }) => masterId === selectedMasterId)) {
+        select.value = selectedMasterId;
+      }
+    }
+
+    select.disabled = summaries.length === 0;
+    if (button instanceof HTMLButtonElement) button.disabled = summaries.length === 0;
   }
 
   /** Rule Checkの直近結果とpendingInterruptsを読み取り専用で表示する。 */
@@ -234,6 +266,9 @@ export class DevController {
         case "deck-to-stock":
           this.#moveDeckCardToStock();
           break;
+        case "deck-card-to-hand":
+          this.#moveSelectedDeckCardToHand();
+          break;
         case "test-level-up":
           this.#requireMethod(this.gameEngine, "startLevelUp").call(
             this.gameEngine,
@@ -360,6 +395,22 @@ export class DevController {
     ).call(this.gameEngine, "self");
     if (!card) {
       console.warn("DevController: self deck is empty.");
+      return;
+    }
+    this.#requireMethod(this.gameEngine, "render").call(this.gameEngine);
+  }
+
+  /** DRAWやRule Checkを介さず、選択した既存Card instanceを直接移動する。 */
+  #moveSelectedDeckCardToHand() {
+    const select = this.panel?.querySelector("[data-dev-deck-card-select]");
+    if (!(select instanceof HTMLSelectElement) || !select.value) return;
+
+    const card = moveDeckCardToHandByMasterId(
+      this.gameState?.players?.self,
+      select.value,
+    );
+    if (!card) {
+      console.warn("DevController: selected card is no longer in self deck.");
       return;
     }
     this.#requireMethod(this.gameEngine, "render").call(this.gameEngine);
@@ -541,4 +592,47 @@ export class DevController {
     }
     return method;
   }
+}
+
+/**
+ * DEV操作用に、TOP側から最初に一致する既存Card instanceを手札へ移す。
+ * @param {import("../models/player.js").Player|undefined} player
+ * @param {string} masterId
+ * @returns {import("../models/card.js").Card|null}
+ */
+export function moveDeckCardToHandByMasterId(player, masterId) {
+  if (
+    !player?.deck ||
+    typeof masterId !== "string" ||
+    masterId.length === 0
+  ) {
+    return null;
+  }
+  const card = player.deck.cards.find(
+    (candidate) => candidate.masterId === masterId,
+  );
+  if (!card) return null;
+  const removed = player.deck.remove(card);
+  if (!removed) return null;
+  removed.moveTo({ zone: ZONE.HAND });
+  player.hand.push(removed);
+  return removed;
+}
+
+/** @param {unknown} cards */
+export function summarizeDeckCards(cards) {
+  if (!Array.isArray(cards)) return [];
+  const summaries = new Map();
+  for (const card of cards) {
+    const current = summaries.get(card.masterId);
+    if (current) current.count += 1;
+    else {
+      summaries.set(card.masterId, {
+        masterId: card.masterId,
+        name: card.name,
+        count: 1,
+      });
+    }
+  }
+  return [...summaries.values()];
 }

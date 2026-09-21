@@ -1257,6 +1257,35 @@ ul {
   gap: 6px;
 }
 
+.dev-card-move {
+  display: grid;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.dev-card-move select,
+.dev-card-move button {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 6px;
+  border: 1px solid #d97706;
+  border-radius: 5px;
+  background: #78350f;
+  color: #fef3c7;
+}
+
+.dev-card-move button:disabled,
+.dev-card-move select:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.dev-card-move button:not(:disabled):hover {
+  background: #92400e;
+  cursor: pointer;
+}
+
 .dev-actions button {
   min-height: 34px;
   padding: 5px 6px;

@@ -53,6 +53,7 @@ HTML / CSS
 - Rule Check、Processの中断・再開、GAME OVER
 - `REFRESH`、`REFRESH_PENALTY`、`LEVEL_UP` Process
 - 開発用のProcess Stack確認UI
+- DEVパネルから指定した自分の山札のCardを手札へ直接移動する確認操作
 
 カードの通常プレイ、Replacement、舞台内Move / Swapに加え、CardMasterと対戦中Card instanceの分離、immutableなCardAbilityデータ構造まで実装済みです。能力の実行とオンライン対戦は未実装です。
 
