@@ -12,6 +12,7 @@ function createMaster(overrides = {}) {
     name: "テストカード",
     cardType: "character",
     color: "red",
+    imageUrl: null,
     level: 1,
     cost: 1,
     basePower: 5000,
@@ -79,6 +80,7 @@ test("Cardはmasterの固定情報をgetterで公開しruntime値を初期化す
   assert.equal(card.name, master.name);
   assert.equal(card.cardType, master.cardType);
   assert.equal(card.color, master.color);
+  assert.equal(card.imageUrl, master.imageUrl);
   assert.equal(card.level, master.level);
   assert.equal(card.cost, master.cost);
   assert.equal(card.basePower, master.basePower);

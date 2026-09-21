@@ -4,7 +4,7 @@ import { CardMasterRegistry } from "../models/cardMasterRegistry.js";
 export const DEFAULT_CARD_MASTER_URL = new URL("../../data/card-masters.json", import.meta.url);
 
 const REQUIRED_FIELDS = Object.freeze([
-  "id", "cardNumber", "name", "cardType", "color", "level", "cost",
+  "id", "cardNumber", "name", "cardType", "color", "imageUrl", "level", "cost",
   "basePower", "baseSoul", "triggerIcons", "traits", "abilities",
 ]);
 

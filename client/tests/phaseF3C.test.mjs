@@ -19,7 +19,7 @@ const readJson = async (relativeUrl) => JSON.parse(await readFile(
 function masterData(overrides = {}) {
   return {
     id: "test-card", cardNumber: null, name: "テスト", cardType: "CHARACTER",
-    color: "YELLOW", level: 0, cost: 0, basePower: 1500, baseSoul: 1,
+    color: "YELLOW", imageUrl: null, level: 0, cost: 0, basePower: 1500, baseSoul: 1,
     triggerIcons: [], traits: [], abilities: [], ...overrides,
   };
 }
