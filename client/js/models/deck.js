@@ -26,6 +26,22 @@ export class Deck {
   }
 
   /**
+   * 指定したCard instanceを山札から1枚取り除く。
+   * 残るカードの相対順序は維持する。
+   *
+   * @param {Card} card
+   * @returns {Card|null} 取り除いたCard。山札にない場合はnull
+   */
+  remove(card) {
+    this.#assertCard(card);
+    const index = this.cards.indexOf(card);
+    if (index < 0) {
+      return null;
+    }
+    return this.cards.splice(index, 1)[0];
+  }
+
+  /**
    * Fisher-Yates法で山札をシャッフルする。
    *
    * @param {() => number} [random=Math.random] テスト時に差し替え可能な乱数関数
