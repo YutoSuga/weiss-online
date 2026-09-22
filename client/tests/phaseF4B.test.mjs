@@ -48,17 +48,20 @@ test('LoaderはEffect id重複・未知type・未対応condition/filterを拒否
  assert.throws(()=>validate([{id:'s',type:'SEARCH_DECK',minSelect:0,maxSelect:1,filter:{cardType:'CHARACTER',traits:{allOf:['x']}}}]),/unsupported field/);
 });
 
-test('CX=0は4枚をResolution経由で控え室へ置きGroupをskipする',()=>{
+test('CX=0は4枚をResolutionで確認後に対象だけ控え室へ置きGroupをskipする',()=>{
  const {engine,self,source,ability}=fixture(); const revealed=self.deck.cards.slice(0,4);
  const process=engine.useActAbility(source,ability,'self');
  assert.equal(process.context.effectResults.brainstormReveal.climaxCount,0);
+ assert.deepEqual(self.resolution,revealed); assert.equal(engine.getBrainstormConfirmationState().climaxCount,0);
+ assert.equal(engine.processManager.getCurrentProcess(),process);
+ engine.confirmBrainstormReveal();
  assert.equal(self.resolution.length,0); assert.ok(revealed.every(card=>self.waitingRoom.includes(card)));
  assert.equal(engine.processManager.getCurrentProcess().type,PROCESS_TYPE.MAIN_PHASE);
 });
 
 test('CX=1でSEARCH_DECKを子Processにしeligibleだけ選択して同一instanceを手札へ移す',()=>{
  const {engine,self,source,ability,state}=fixture(['cx','dummy','dummy','dummy','eligible','student']);
- const process=engine.useActAbility(source,ability,'self'); const search=engine.getSearchDeckState();
+ const process=engine.useActAbility(source,ability,'self'); engine.confirmBrainstormReveal(); const search=engine.getSearchDeckState();
  assert.equal(state.ruleState.processStack.at(-2),process); assert.equal(state.ruleState.processStack.at(-1).type,PROCESS_TYPE.SEARCH_DECK);
  assert.equal(search.maxSelect,1); assert.deepEqual(search.cards,self.deck.cards);
  const eligible=search.cards.find(c=>c.masterId==='eligible'), ineligible=search.cards.find(c=>c.masterId==='student');
@@ -72,14 +75,14 @@ test('CX=1でSEARCH_DECKを子Processにしeligibleだけ選択して同一insta
 
 test('CX=2は0～2枚を一括選択でき、超過を拒否してshuffle Effectを1回解決する',()=>{
  const {engine,self,source,ability}=fixture(['cx','cx','dummy','dummy','eligible','ability','eligible']);
- const process=engine.useActAbility(source,ability,'self'); const state=engine.getSearchDeckState(); assert.equal(state.maxSelect,2);
+ const process=engine.useActAbility(source,ability,'self'); engine.confirmBrainstormReveal(); const state=engine.getSearchDeckState(); assert.equal(state.maxSelect,2);
  const choices=state.cards.filter(c=>state.eligibleCardInstanceIds.includes(c.instanceId));
  engine.toggleSearchDeckSelection(choices[0].instanceId); engine.toggleSearchDeckSelection(choices[1].instanceId);
  assert.throws(()=>engine.toggleSearchDeckSelection(choices[2].instanceId),/maxSelect/);
  engine.confirmSearchDeckSelection(); assert.equal(self.hand.length,2); assert.deepEqual(process.context.effectResults.shuffleDeck,{shuffled:true});
 });
 
-test('検索は0枚でも確定できる',()=>{ const x=fixture(['cx','dummy','dummy','dummy','eligible']); x.engine.useActAbility(x.source,x.ability,'self'); x.engine.confirmSearchDeckSelection(); assert.equal(x.self.hand.length,0); });
+test('検索は0枚でも確定できる',()=>{ const x=fixture(['cx','dummy','dummy','dummy','eligible']); x.engine.useActAbility(x.source,x.ability,'self'); x.engine.confirmBrainstormReveal(); x.engine.confirmSearchDeckSelection(); assert.equal(x.self.hand.length,0); });
 
 test('Deck残り2枚では既存REFRESHとPenalty後に集中をresumeし、無関係なResolutionを残す',()=>{
  const x=fixture(['cx','dummy']);
@@ -91,14 +94,41 @@ test('Deck残り2枚では既存REFRESHとPenalty後に集中をresumeし、無�
  const unrelated=supply.self.stock[0]; unrelated.moveTo({zone:ZONE.RESOLUTION,index:1}); x.self.resolution.push(unrelated);
  const originalTop=[...x.self.deck.cards];
  const process=x.engine.useActAbility(x.source,x.ability,'self');
- assert.ok(originalTop.every(card=>x.self.waitingRoom.includes(card)));
- assert.deepEqual(x.self.resolution,[unrelated]);
+ assert.ok(originalTop.every(card=>x.self.resolution.includes(card)));
+ assert.equal(x.self.resolution[0],unrelated);
  assert.equal(process.context.effectResults.brainstormReveal.climaxCount,1);
+ x.engine.confirmBrainstormReveal();
+ assert.deepEqual(x.self.resolution,[unrelated]);
  assert.equal(x.engine.getSearchDeckState().maxSelect,1);
 });
 
+test('集中ログは能力使用・Reveal枚数・CX枚数をゲーム履歴へ残す',()=>{
+ const x=fixture(['cx','cx','dummy','dummy']); x.engine.useActAbility(x.source,x.ability,'self');
+ const messages=x.state.log.map(({message})=>message);
+ assert.ok(messages.includes('「source」の【起】集中を使用しました。'));
+ assert.ok(messages.includes('山札の上から4枚をめくりました。'));
+ assert.ok(messages.includes('クライマックスは2枚でした。'));
+});
+
+test('確認では今回Revealした4枚だけを順番どおり控え室へ移す',()=>{
+ const x=fixture(['cx','dummy','dummy','dummy','eligible','eligible']);
+ const unrelated=x.self.deck.cards.pop(); unrelated.moveTo({zone:ZONE.RESOLUTION,index:1}); x.self.resolution.push(unrelated);
+ const revealed=[...x.self.deck.cards.slice(0,4)]; x.engine.useActAbility(x.source,x.ability,'self');
+ assert.deepEqual(x.engine.getBrainstormConfirmationState().cards,revealed);
+ x.engine.confirmBrainstormReveal();
+ assert.deepEqual(x.self.resolution,[unrelated]); assert.ok(revealed.every(card=>x.self.waitingRoom.includes(card)));
+});
+
 test('Resolution UIとDeck Search UIは全山札・順序・共通View・詳細連携を持つ',async()=>{
- const [html,renderer,controller,mulligan]=await Promise.all(['../index.html','../js/core/renderer.js','../js/ui/deckSearchController.js','../js/ui/mulliganController.js'].map(p=>readFile(new URL(p,import.meta.url),'utf8')));
+ const [html,renderer,controller,resolution,mulligan]=await Promise.all(['../index.html','../js/core/renderer.js','../js/ui/deckSearchController.js','../js/ui/resolutionConfirmationController.js','../js/ui/mulliganController.js'].map(p=>readFile(new URL(p,import.meta.url),'utf8')));
  assert.match(html,/data-resolution-owner="self" hidden/); assert.match(renderer,/cards\.length === 0/);
  assert.match(controller,/state\.cards\.map\(\(card, index\)/); assert.match(controller,/renderCardDetail/); assert.match(controller,/CardSelectionView/); assert.match(mulligan,/CardSelectionView/);
+ assert.match(html,/手札に加えるカードを0〜0枚選択してください/); assert.match(controller,/選択枚数 \$\{selected\.size\} \/ \$\{state\.maxSelect\}/);
+ assert.match(html,/控え室に置く/); assert.match(resolution,/selectable: false/); assert.match(resolution,/renderCardDetail/); assert.match(resolution,/CardSelectionView/);
+});
+
+test('西森柚咲の能力本文はtype labelを重複保持せず表示は【起】集中となる',async()=>{
+ const defs=JSON.parse(await readFile(new URL('../data/card-masters.json',import.meta.url)));
+ const ability=defs.find(({id})=>id==='kch-w78-001s').abilities[0];
+ assert.equal(ability.text.startsWith('集中'),true); assert.equal(ability.text.includes('【起】'),false);
 });

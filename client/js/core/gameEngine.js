@@ -757,6 +757,12 @@ export class GameEngine {
           process.context.effectResults = {};
           process.context.groupEffectIndex = null;
           process.context.brainstorm = null;
+          {
+            const sourceCard = getSource();
+            const ability = getAbility();
+            const keyword = ability.keywords.includes("BRAINSTORM") ? "集中" : "能力";
+            this.addLog(process.playerId, `「${sourceCard.name}」の【起】${keyword}を使用しました。`);
+          }
           this.processManager.updateStep(ACT_ABILITY_STEP.PAY_COST);
           break;
         case ACT_ABILITY_STEP.PAY_COST: {
@@ -798,6 +804,11 @@ export class GameEngine {
           this.processManager.updateStep(ACT_ABILITY_STEP.CHECK_POINT_AFTER_EFFECT);
           break;
         }
+        case ACT_ABILITY_STEP.WAIT_FOR_BRAINSTORM_CONFIRMATION:
+          if (process.status !== PROCESS_STATUS.WAITING_INPUT) {
+            throw new Error("BRAINSTORM_REVEAL confirmation must be waiting for input.");
+          }
+          return process;
         case ACT_ABILITY_STEP.CHECK_POINT_AFTER_EFFECT:
           this.processManager.updateStep(ACT_ABILITY_STEP.RESOLVE_EFFECT);
           if (this.resolveRuleCheck() !== RULE_CHECK_RESULT.CONTINUE) return process;
@@ -856,14 +867,12 @@ export class GameEngine {
         return card;
       });
       results[effect.id] = { climaxCount: moved.filter((card) => card.cardType === "CLIMAX").length };
-      moved.forEach((card) => {
-        player.resolution.splice(player.resolution.indexOf(card), 1);
-        card.moveTo({ zone: ZONE.WAITING_ROOM, index: player.waitingRoom.length + 1 });
-        player.waitingRoom.push(card);
-      });
-      this.#reindexCards(player.resolution);
-      process.context.brainstorm = null;
-      return true;
+      this.addLog(process.playerId, `山札の上から${state.targetCount}枚をめくりました。`);
+      this.addLog(process.playerId, `クライマックスは${results[effect.id].climaxCount}枚でした。`);
+      this.processManager.updateStep(ACT_ABILITY_STEP.WAIT_FOR_BRAINSTORM_CONFIRMATION);
+      this.processManager.updateStatus(PROCESS_STATUS.WAITING_INPUT);
+      this.render();
+      return false;
     }
     if (effect.type === EFFECT_TYPE.SEARCH_DECK) {
       const maxSelect = typeof effect.maxSelect === "number"
@@ -907,6 +916,48 @@ export class GameEngine {
       return true;
     }
     throw new RangeError(`Unsupported ACT effect: ${effect.type}.`);
+  }
+
+  getBrainstormConfirmationState(playerId = "self") {
+    const process = this.processManager.getCurrentProcess();
+    if (process?.type !== PROCESS_TYPE.ACT_ABILITY || process.playerId !== playerId ||
+        process.step !== ACT_ABILITY_STEP.WAIT_FOR_BRAINSTORM_CONFIRMATION ||
+        process.status !== PROCESS_STATUS.WAITING_INPUT || !process.context.brainstorm) return null;
+    const state = process.context.brainstorm;
+    const player = this.gameState.players[playerId];
+    const cards = state.movedCardInstanceIds.map((id) =>
+      player.resolution.find((card) => card.instanceId === id),
+    );
+    if (cards.some((card) => !card)) throw new Error("A revealed card is missing from Resolution.");
+    return {
+      count: state.targetCount,
+      cards,
+      climaxCount: process.context.effectResults[state.effectId].climaxCount,
+    };
+  }
+
+  confirmBrainstormReveal(playerId = "self") {
+    const process = this.processManager.getCurrentProcess();
+    const state = this.getBrainstormConfirmationState(playerId);
+    if (!state) throw new Error("BRAINSTORM_REVEAL is not waiting for confirmation.");
+    const player = this.gameState.players[playerId];
+    state.cards.forEach((card) => {
+      const index = player.resolution.indexOf(card);
+      if (index < 0) throw new Error(`Brainstorm card "${card.instanceId}" is missing from Resolution.`);
+      player.resolution.splice(index, 1);
+      card.moveTo({ zone: ZONE.WAITING_ROOM, index: player.waitingRoom.length + 1 });
+      player.waitingRoom.push(card);
+    });
+    this.#reindexCards(player.resolution);
+    process.context.brainstorm = null;
+    const ability = player.stage.find((card) => card.instanceId === process.context.sourceCardInstanceId)
+      ?.abilities.find((item) => item.id === process.context.abilityId);
+    const topEffect = ability?.effects[process.context.effectIndex];
+    this.#advanceActEffect(process, topEffect);
+    process.step = ACT_ABILITY_STEP.CHECK_POINT_AFTER_EFFECT;
+    process.status = PROCESS_STATUS.RUNNING;
+    this.executeActAbilityProcess();
+    return state.cards;
   }
 
   executeSearchDeckProcess() {

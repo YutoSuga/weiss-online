@@ -305,3 +305,6 @@ document.querySelector(
 ## F-4B追加要素
 
 `[data-resolution-owner]`は各playerのResolution表示で、空の間は`hidden`とする。`[data-deck-search]`は検索中だけ表示し、全Deckカード一覧、選択数、確定ボタンを含む。カードは現在のTOP→BOTTOM順で生成する。
+# F-4B確認ダイアログ（UI/UX Follow-up）
+
+`[data-resolution-confirmation]`は集中のResolution確認待ちだけ表示し、説明、`[data-resolution-list]`、CX枚数、`[data-action="confirm-brainstorm-reveal"]`を持つ。`[data-deck-search]`は見出し「山札」、動的な0〜N枚説明、カード一覧、動的な「選択枚数 X / N」、決定ボタンを持つ。両者のカード一覧は右側Card Detailと連携する。

@@ -130,3 +130,5 @@ MAINのQueryは、選択可否とゲームActionの実行可否を分離する�
 ## F-4B Zone / Effect
 
 `ZONE.RESOLUTION`は`VISIBILITY.PUBLIC`で、各`Player`の`resolution`配列に保持する。ACT contextは`effectIndex`、Group内index、`effectResults`、Brainstorm resume情報を持つ。`SEARCH_DECK`は独立Processで、UIローカルではなくProcess contextへ選択instanceIdを保存する。
+
+`CardAbility.text`はAbility Typeラベルを含まない能力本文とし、Rendererが`type`から【永】/【自】/【起】を一度だけ付加する。BRAINSTORM_REVEAL完了時はACT自身が`WAIT_FOR_BRAINSTORM_CONFIRMATION / WAITING_INPUT`となり、`getBrainstormConfirmationState()`が追跡対象CardとCX数を公開する。`confirmBrainstormReveal()`だけが追跡対象をWaiting Roomへ移してACTを再開する。`ResolutionConfirmationController`と`DeckSearchController`はCard clickを既存`Renderer.renderCardDetail()`へ渡す。

@@ -94,6 +94,7 @@ export const ACT_ABILITY_STEP = Object.freeze({
   PAY_COST: "pay_cost",
   CHECK_POINT_AFTER_COST: "check_point_after_cost",
   RESOLVE_EFFECT: "resolve_effect",
+  WAIT_FOR_BRAINSTORM_CONFIRMATION: "wait_for_brainstorm_confirmation",
   CHECK_POINT_AFTER_EFFECT: "check_point_after_effect",
   COMPLETE: "complete",
 });

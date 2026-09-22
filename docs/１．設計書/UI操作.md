@@ -225,3 +225,10 @@ Controllerが候補判定とクラスの付け外しを担当し、CSSは判定�
 ```
 
 共通化するのはselectable / unselectable / selectedのDOM表現であり、候補・上下限・確定後のルールは各Controller / Engineが持つ。Deck Searchは山札全体を現在順のままTOP→BOTTOMを左→右に表示する。eligibleだけ選択可能、ineligibleもクリックしてCard Detailを閲覧可能とし、0/N～N/Nのtoggleとconfirmを提供する。
+# カード一覧確認UIの共通方針（Phase F-4B UI/UX Follow-up）
+
+カードを一覧で確認するUIは、見出し（どの領域か）、説明（現在の操作）、カード一覧（Card Detail確認と必要な画面だけselection）、状態表示（選択枚数または結果枚数）、ボタン（次処理または確定）の順に構成する。
+
+`CardSelectionView`はDOM上のselectable / selected表現を共有し、Mulligan、Deck Search、Resolution Viewが利用する。Mulliganは既存の手札交換選択、Deck Searchはeligible CardでDetail表示とtoggle・ineligible CardでDetail表示だけ、Resolution Viewは全CardでDetail表示だけを行う。ゲーム上の選択可否と確定処理は各ControllerからGameEngineへ委譲し、Viewはルール状態を保持しない。
+
+Deck Searchは「山札」「手札に加えるカードを0〜N枚選択してください」「選択枚数 X / N」「決定」を表示する。全山札をTOPからBOTTOMへ並べ、0枚でも`minSelect=0`なら決定できる。Resolution確認は「解決領域」「山札の上から4枚をめくりました」「クライマックス：N枚」「控え室に置く」を表示する。
