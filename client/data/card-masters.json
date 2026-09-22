@@ -70,8 +70,18 @@
         "text": "［①］テスト効果",
         "activationTrigger": null,
         "conditions": [],
-        "costs": [{ "type": "PAY_STOCK", "amount": 1 }],
-        "effects": [{ "type": "TEST_LOG", "message": "ACTテスト効果Aを解決" }]
+        "costs": [
+          {
+            "type": "PAY_STOCK",
+            "amount": 1
+          }
+        ],
+        "effects": [
+          {
+            "type": "TEST_LOG",
+            "message": "ACTテスト効果Aを解決"
+          }
+        ]
       },
       {
         "id": "ACT_TEST_REST",
@@ -80,8 +90,17 @@
         "text": "［このカードをレストする］テスト効果",
         "activationTrigger": null,
         "conditions": [],
-        "costs": [{ "type": "REST_SELF" }],
-        "effects": [{ "type": "TEST_LOG", "message": "ACTテスト効果Bを解決" }]
+        "costs": [
+          {
+            "type": "REST_SELF"
+          }
+        ],
+        "effects": [
+          {
+            "type": "TEST_LOG",
+            "message": "ACTテスト効果Bを解決"
+          }
+        ]
       },
       {
         "id": "ACT_TEST_MULTIPLE",
@@ -90,8 +109,21 @@
         "text": "［① このカードをレストする］テスト効果",
         "activationTrigger": null,
         "conditions": [],
-        "costs": [{ "type": "PAY_STOCK", "amount": 1 }, { "type": "REST_SELF" }],
-        "effects": [{ "type": "TEST_LOG", "message": "ACT複数コストテスト効果を解決" }]
+        "costs": [
+          {
+            "type": "PAY_STOCK",
+            "amount": 1
+          },
+          {
+            "type": "REST_SELF"
+          }
+        ],
+        "effects": [
+          {
+            "type": "TEST_LOG",
+            "message": "ACT複数コストテスト効果を解決"
+          }
+        ]
       }
     ],
     "imageUrl": null
@@ -286,5 +318,95 @@
     "traits": [],
     "abilities": [],
     "imageUrl": "https://ws-tcg.com/wordpress/wp-content/images/cardlist/k/kch_w78/kch_w78_119r.png"
+  },
+  {
+    "id": "kch-w78-001s",
+    "cardNumber": "Kch/W78-001S",
+    "name": "人気アイドル 西森 柚咲",
+    "cardType": "CHARACTER",
+    "color": "YELLOW",
+    "level": 0,
+    "cost": 0,
+    "basePower": 1500,
+    "baseSoul": 1,
+    "triggerIcons": [],
+    "traits": [
+      "Anniversary",
+      "能力者",
+      "生徒会"
+    ],
+    "abilities": [
+      {
+        "id": "ACT_BRAINSTORM",
+        "type": "ACT",
+        "keywords": [
+          "BRAINSTORM"
+        ],
+        "text": "【起】集中 ［(1) このカードを【レスト】する］ あなたは自分の山札の上から4枚をめくり、控え室に置く。それらのカードのクライマックス1枚につき、あなたは自分の山札を見て《Anniversary》か《能力者》のキャラを1枚まで選んで相手に見せ、手札に加え、その山札をシャッフルする。",
+        "activationTrigger": null,
+        "conditions": [],
+        "costs": [
+          {
+            "type": "PAY_STOCK",
+            "amount": 1
+          },
+          {
+            "type": "REST_SELF"
+          }
+        ],
+        "effects": [
+          {
+            "id": "brainstormReveal",
+            "type": "BRAINSTORM_REVEAL",
+            "count": 4
+          },
+          {
+            "id": "searchByBrainstorm",
+            "type": "EFFECT_GROUP",
+            "condition": {
+              "source": "EFFECT_RESULT",
+              "effectId": "brainstormReveal",
+              "field": "climaxCount",
+              "min": 1
+            },
+            "effects": [
+              {
+                "id": "searchDeck",
+                "type": "SEARCH_DECK",
+                "minSelect": 0,
+                "maxSelect": {
+                  "source": "EFFECT_RESULT",
+                  "effectId": "brainstormReveal",
+                  "field": "climaxCount"
+                },
+                "filter": {
+                  "cardType": "CHARACTER",
+                  "traits": {
+                    "anyOf": [
+                      "Anniversary",
+                      "能力者"
+                    ]
+                  }
+                }
+              },
+              {
+                "id": "addToHand",
+                "type": "ADD_TO_HAND",
+                "cards": {
+                  "source": "EFFECT_RESULT",
+                  "effectId": "searchDeck",
+                  "field": "selectedCardInstanceIds"
+                }
+              },
+              {
+                "id": "shuffleDeck",
+                "type": "SHUFFLE_DECK"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "imageUrl": "https://ws-tcg.com/wordpress/wp-content/images/cardlist/k/kch_w78/kch_w78_001s.png"
   }
 ]

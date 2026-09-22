@@ -12,6 +12,7 @@ export const ZONE = Object.freeze({
   CLIMAX: "climax",
   WAITING_ROOM: "waiting-room",
   MEMORY: "memory",
+  RESOLUTION: "resolution",
 });
 
 /**
@@ -37,6 +38,7 @@ export const ZONE_VISIBILITY = Object.freeze({
   [ZONE.CLIMAX]: VISIBILITY.PUBLIC,
   [ZONE.WAITING_ROOM]: VISIBILITY.PUBLIC,
   [ZONE.MEMORY]: VISIBILITY.PUBLIC,
+  [ZONE.RESOLUTION]: VISIBILITY.PUBLIC,
 });
 
 /** @type {readonly string[]} */

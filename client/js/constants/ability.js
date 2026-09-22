@@ -11,7 +11,19 @@ export const COST_TYPE = Object.freeze({
   REST_SELF: "REST_SELF",
 });
 
+/** F-4Bで対応するAbility Keyword。 */
+export const ABILITY_KEYWORD = Object.freeze({
+  BRAINSTORM: "BRAINSTORM",
+});
+
 /** F-4AでGameEngineが解釈できるAbility Effect。 */
 export const EFFECT_TYPE = Object.freeze({
   TEST_LOG: "TEST_LOG",
+  BRAINSTORM_REVEAL: "BRAINSTORM_REVEAL",
+  EFFECT_GROUP: "EFFECT_GROUP",
+  SEARCH_DECK: "SEARCH_DECK",
+  ADD_TO_HAND: "ADD_TO_HAND",
+  SHUFFLE_DECK: "SHUFFLE_DECK",
 });
+
+export const EFFECT_VALUE_SOURCE = Object.freeze({ EFFECT_RESULT: "EFFECT_RESULT" });

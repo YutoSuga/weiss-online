@@ -12,6 +12,7 @@ import { ClockController } from "./ui/clockController.js";
 import { MainPhaseController } from "./ui/mainPhaseController.js";
 import { LevelUpController } from "./ui/levelUpController.js";
 import { DevController } from "./ui/devController.js";
+import { DeckSearchController } from "./ui/deckSearchController.js";
 import { GameState } from "./models/gameState.js";
 import { Player } from "./models/player.js";
 import { Card } from "./models/card.js";
@@ -144,6 +145,8 @@ const mainPhaseController = new MainPhaseController({
   rootElement: document,
 });
 mainPhaseController.init();
+
+new DeckSearchController({ gameEngine, renderer, rootElement: document }).init();
 
 const levelUpController = new LevelUpController({
   gameEngine,

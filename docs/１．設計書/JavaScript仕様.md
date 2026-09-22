@@ -126,3 +126,7 @@ MAINのQueryは、選択可否とゲームActionの実行可否を分離する�
 `constants/triggerIcon.js`の`TRIGGER_ICON`が正式なトリガー値を列挙する。`CardMaster`は各`triggerIcons`を検証し、空配列と同値の複数要素を許可する。
 
 `data/cardMasterLoader.js`はCardMaster plain object配列の取得・必須項目と重複IDの検証・`CardMasterRegistry`構築を担当する。`models/deckDefinition.js`は`id`, `name`, `{ masterId, count }[]`を入力から独立させてfreezeする。枚数などの構築ルールは持たない。`data/deckDefinitionLoader.js`はJSON取得と、Definition + Registryから`Card[]`を生成する。未知masterは拒否し、同じmasterのcopyおよびself/opponentには重複しない`instanceId`を割り当てる。
+
+## F-4B Zone / Effect
+
+`ZONE.RESOLUTION`は`VISIBILITY.PUBLIC`で、各`Player`の`resolution`配列に保持する。ACT contextは`effectIndex`、Group内index、`effectResults`、Brainstorm resume情報を持つ。`SEARCH_DECK`は独立Processで、UIローカルではなくProcess contextへ選択instanceIdを保存する。

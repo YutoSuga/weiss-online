@@ -30,6 +30,7 @@ export class MulliganController {
     this.unsubscribeRender = null;
     this.initialized = false;
     this.submitting = false;
+    this.selectionView = new CardSelectionView({ container: this.rootElement });
     this.boundHandleRootClick = this.handleRootClick.bind(this);
     this.boundHandleButtonClick = this.handleButtonClick.bind(this);
     this.boundSync = this.sync.bind(this);
@@ -190,11 +191,11 @@ export class MulliganController {
 
         const index = Number(slot.dataset.index);
         if (!Number.isInteger(index) || index < 1) {
-          slot.classList.add(UNSELECTABLE_CLASS);
+          this.selectionView.setState(slot, { selectable: false, selected: false });
         } else if (this.selectedIndexes.has(index)) {
-          slot.classList.add(SELECTED_CLASS);
+          this.selectionView.setState(slot, { selectable: true, selected: true });
         } else {
-          slot.classList.add(SELECTABLE_CLASS);
+          this.selectionView.setState(slot, { selectable: true, selected: false });
         }
       });
   }
@@ -222,3 +223,4 @@ export class MulliganController {
       : "交換せず次へ";
   }
 }
+import { CardSelectionView } from "./cardSelectionView.js";

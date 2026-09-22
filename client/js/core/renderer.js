@@ -461,6 +461,7 @@ export class Renderer {
     this.renderDeck(player, owner);
     this.renderWaitingRoom(player, owner);
     this.renderMemory(player, owner);
+    this.renderResolution(player, owner);
     this.renderClimax(player, owner);
     this.renderPlayerInfo(player, owner);
   }
@@ -869,6 +870,27 @@ export class Renderer {
       ZONE.MEMORY,
       "last",
     );
+  }
+
+  renderResolution(player, owner) {
+    const cards = this.asArray(player.resolution);
+    const container = this.rootElement?.querySelector(`[data-resolution-owner="${owner}"]`);
+    if (!(container instanceof HTMLElement)) return;
+    container.hidden = cards.length === 0;
+    const slots = container.querySelector(".resolution-slots");
+    if (!(slots instanceof HTMLElement)) return;
+    slots.replaceChildren(...cards.map((_card, index) => {
+      const slot = slots.ownerDocument.createElement("article");
+      slot.className = "card-slot";
+      slot.dataset.owner = owner;
+      slot.dataset.zone = ZONE.RESOLUTION;
+      slot.dataset.index = String(index + 1);
+      slot.dataset.face = "up";
+      slot.dataset.position = "stand";
+      slot.dataset.cardId = "";
+      return slot;
+    }));
+    this.renderFixedSlots(cards, owner, ZONE.RESOLUTION);
   }
 
   /**
