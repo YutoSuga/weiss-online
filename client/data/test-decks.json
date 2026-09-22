@@ -1,20 +1,76 @@
 [
   {
     "id": "test-deck-001",
-    "name": "開発用テストデッキ",
+    "name": "Charlotte 実在カード確認デッキ",
     "cards": [
-      { "masterId": "test-card-001", "count": 6 },
-      { "masterId": "test-card-002", "count": 4 },
-      { "masterId": "test-card-003", "count": 4 },
-      { "masterId": "test-card-004", "count": 4 },
-      { "masterId": "test-card-005", "count": 4 },
-      { "masterId": "test-card-006", "count": 4 },
-      { "masterId": "test-card-007", "count": 4 },
-      { "masterId": "test-card-008", "count": 4 },
-      { "masterId": "test-card-009", "count": 4 },
-      { "masterId": "test-card-010", "count": 4 },
-      { "masterId": "test-card-011", "count": 4 },
-      { "masterId": "test-card-012", "count": 4 }
+      {
+        "masterId": "cha-w40-001sp",
+        "count": 3
+      },
+      {
+        "masterId": "kch-w78-048",
+        "count": 1
+      },
+      {
+        "masterId": "cha-w40-052sp",
+        "count": 4
+      },
+      {
+        "masterId": "cha-w40-077sp",
+        "count": 3
+      },
+      {
+        "masterId": "kch-w78-115",
+        "count": 4
+      },
+      {
+        "masterId": "kch-w78-095sp",
+        "count": 4
+      },
+      {
+        "masterId": "kch-we50-52sp",
+        "count": 3
+      },
+      {
+        "masterId": "kch-we50-06prr",
+        "count": 2
+      },
+      {
+        "masterId": "kch-w78-001s",
+        "count": 1
+      },
+      {
+        "masterId": "kch-w78-006",
+        "count": 2
+      },
+      {
+        "masterId": "cha-w40-026sp",
+        "count": 4
+      },
+      {
+        "masterId": "cha-w40-054s",
+        "count": 1
+      },
+      {
+        "masterId": "kch-w78-069s",
+        "count": 4
+      },
+      {
+        "masterId": "cha-w40-078",
+        "count": 4
+      },
+      {
+        "masterId": "cha-w40-047",
+        "count": 2
+      },
+      {
+        "masterId": "cha-w40-098r",
+        "count": 4
+      },
+      {
+        "masterId": "kch-w78-119r",
+        "count": 4
+      }
     ]
   }
 ]

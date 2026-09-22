@@ -408,5 +408,311 @@
       }
     ],
     "imageUrl": "https://ws-tcg.com/wordpress/wp-content/images/cardlist/k/kch_w78/kch_w78_001s.png"
+  },
+  {
+    "id": "cha-w40-001sp",
+    "cardNumber": "CHA/W40-001SP",
+    "name": "“大切な何か”西森 柚咲",
+    "cardType": "CHARACTER",
+    "color": "YELLOW",
+    "level": 3,
+    "cost": 2,
+    "basePower": null,
+    "baseSoul": null,
+    "triggerIcons": [
+      "SOUL",
+      "SOUL"
+    ],
+    "traits": [
+      "能力者",
+      "生徒会"
+    ],
+    "abilities": [],
+    "imageUrl": null
+  },
+  {
+    "id": "kch-w78-048",
+    "cardNumber": "Kch/W78-048",
+    "name": "約束 乙坂 有宇&友利 奈緒",
+    "cardType": "CHARACTER",
+    "color": "GREEN",
+    "level": 3,
+    "cost": 2,
+    "basePower": null,
+    "baseSoul": null,
+    "triggerIcons": [
+      "SOUL",
+      "SOUL"
+    ],
+    "traits": [
+      "Anniversary",
+      "能力者",
+      "生徒会"
+    ],
+    "abilities": [],
+    "imageUrl": null
+  },
+  {
+    "id": "cha-w40-052sp",
+    "cardNumber": "CHA/W40-052SP",
+    "name": "“大切な何か”美砂",
+    "cardType": "CHARACTER",
+    "color": "RED",
+    "level": 3,
+    "cost": 2,
+    "basePower": null,
+    "baseSoul": null,
+    "triggerIcons": [
+      "SOUL",
+      "SOUL"
+    ],
+    "traits": [
+      "能力者",
+      "死"
+    ],
+    "abilities": [],
+    "imageUrl": null
+  },
+  {
+    "id": "cha-w40-077sp",
+    "cardNumber": "CHA/W40-077SP",
+    "name": "“大切な何か”友利 奈緒",
+    "cardType": "CHARACTER",
+    "color": "BLUE",
+    "level": 3,
+    "cost": 2,
+    "basePower": null,
+    "baseSoul": null,
+    "triggerIcons": [
+      "SOUL",
+      "SOUL"
+    ],
+    "traits": [
+      "能力者",
+      "生徒会"
+    ],
+    "abilities": [],
+    "imageUrl": null
+  },
+  {
+    "id": "kch-w78-115",
+    "cardNumber": "Kch/W78-115",
+    "name": "幸せな日常 乙坂 有宇",
+    "cardType": "CHARACTER",
+    "color": "BLUE",
+    "level": 2,
+    "cost": 1,
+    "basePower": null,
+    "baseSoul": null,
+    "triggerIcons": [
+      "SOUL"
+    ],
+    "traits": [
+      "Anniversary",
+      "能力者",
+      "生徒会"
+    ],
+    "abilities": [],
+    "imageUrl": null
+  },
+  {
+    "id": "kch-w78-095sp",
+    "cardNumber": "Kch/W78-095SP",
+    "name": "撮りたかった景色 友利 奈緒",
+    "cardType": "CHARACTER",
+    "color": "BLUE",
+    "level": 1,
+    "cost": 0,
+    "basePower": null,
+    "baseSoul": null,
+    "triggerIcons": [],
+    "traits": [
+      "Anniversary",
+      "能力者",
+      "生徒会"
+    ],
+    "abilities": [],
+    "imageUrl": null
+  },
+  {
+    "id": "kch-we50-52sp",
+    "cardNumber": "Kch/WE50-52SP",
+    "name": "これからの記録 友利 奈緒",
+    "cardType": "CHARACTER",
+    "color": "BLUE",
+    "level": 1,
+    "cost": 0,
+    "basePower": null,
+    "baseSoul": null,
+    "triggerIcons": [],
+    "traits": [
+      "Anniversary",
+      "能力者",
+      "生徒会"
+    ],
+    "abilities": [],
+    "imageUrl": null
+  },
+  {
+    "id": "kch-we50-06prr",
+    "cardNumber": "Kch/WE50-06PRR",
+    "name": "最高のクリスマス 西森 柚咲",
+    "cardType": "CHARACTER",
+    "color": "YELLOW",
+    "level": 0,
+    "cost": 0,
+    "basePower": null,
+    "baseSoul": null,
+    "triggerIcons": [],
+    "traits": [
+      "Anniversary",
+      "能力者",
+      "生徒会"
+    ],
+    "abilities": [],
+    "imageUrl": null
+  },
+  {
+    "id": "kch-w78-006",
+    "cardNumber": "Kch/W78-006",
+    "name": "浜辺の姉妹 西森 柚咲&美砂",
+    "cardType": "CHARACTER",
+    "color": "YELLOW",
+    "level": 0,
+    "cost": 0,
+    "basePower": null,
+    "baseSoul": null,
+    "triggerIcons": [],
+    "traits": [
+      "Anniversary",
+      "能力者",
+      "生徒会"
+    ],
+    "abilities": [],
+    "imageUrl": null
+  },
+  {
+    "id": "cha-w40-026sp",
+    "cardNumber": "CHA/W40-026SP",
+    "name": "“大切な何か”乙坂 歩未",
+    "cardType": "CHARACTER",
+    "color": "GREEN",
+    "level": 0,
+    "cost": 0,
+    "basePower": null,
+    "baseSoul": null,
+    "triggerIcons": [],
+    "traits": [
+      "能力者",
+      "ピザソース"
+    ],
+    "abilities": [],
+    "imageUrl": null
+  },
+  {
+    "id": "cha-w40-054s",
+    "cardNumber": "CHA/W40-054S",
+    "name": "“とぼけた表情”西森 柚咲",
+    "cardType": "CHARACTER",
+    "color": "RED",
+    "level": 0,
+    "cost": 0,
+    "basePower": null,
+    "baseSoul": null,
+    "triggerIcons": [],
+    "traits": [
+      "能力者",
+      "生徒会"
+    ],
+    "abilities": [],
+    "imageUrl": null
+  },
+  {
+    "id": "kch-w78-069s",
+    "cardNumber": "Kch/W78-069S",
+    "name": "もう1人の少女 美砂",
+    "cardType": "CHARACTER",
+    "color": "RED",
+    "level": 0,
+    "cost": 0,
+    "basePower": null,
+    "baseSoul": null,
+    "triggerIcons": [],
+    "traits": [
+      "Anniversary",
+      "能力者",
+      "死"
+    ],
+    "abilities": [],
+    "imageUrl": null
+  },
+  {
+    "id": "cha-w40-078",
+    "cardNumber": "CHA/W40-078",
+    "name": "“いまに挑む”乙坂 有宇",
+    "cardType": "CHARACTER",
+    "color": "BLUE",
+    "level": 0,
+    "cost": 0,
+    "basePower": null,
+    "baseSoul": null,
+    "triggerIcons": [],
+    "traits": [
+      "能力者",
+      "生徒会"
+    ],
+    "abilities": [],
+    "imageUrl": null
+  },
+  {
+    "id": "cha-w40-047",
+    "cardNumber": "CHA/W40-047",
+    "name": "金さんラーメン",
+    "cardType": "EVENT",
+    "color": "GREEN",
+    "level": 2,
+    "cost": 1,
+    "basePower": null,
+    "baseSoul": null,
+    "triggerIcons": [],
+    "traits": [],
+    "abilities": [],
+    "imageUrl": null
+  },
+  {
+    "id": "cha-w40-098r",
+    "cardNumber": "CHA/W40-098R",
+    "name": "逃避行の果てに",
+    "cardType": "CLIMAX",
+    "color": "BLUE",
+    "level": 0,
+    "cost": 0,
+    "basePower": null,
+    "baseSoul": null,
+    "triggerIcons": [
+      "SOUL",
+      "GATE"
+    ],
+    "traits": [],
+    "abilities": [],
+    "imageUrl": null
+  },
+  {
+    "id": "kch-w78-119r",
+    "cardNumber": "Kch/W78-119R",
+    "name": "奇跡の歌",
+    "cardType": "CLIMAX",
+    "color": "BLUE",
+    "level": 0,
+    "cost": 0,
+    "basePower": null,
+    "baseSoul": null,
+    "triggerIcons": [
+      "SOUL",
+      "GATE"
+    ],
+    "traits": [],
+    "abilities": [],
+    "imageUrl": null
   }
 ]
