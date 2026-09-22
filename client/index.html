@@ -273,10 +273,21 @@
 
   <section class="card-selection-dialog" data-deck-search hidden aria-label="山札検索">
     <div class="card-selection-dialog__panel">
-      <h2>山札を見る</h2>
-      <p data-deck-search-count>0 / 0</p>
+      <h2>山札</h2>
+      <p data-deck-search-description>手札に加えるカードを0〜0枚選択してください</p>
       <div class="card-selection-list" data-deck-search-list></div>
+      <p data-deck-search-count>選択枚数 0 / 0</p>
       <button type="button" data-action="confirm-deck-search">決定</button>
+    </div>
+  </section>
+
+  <section class="card-selection-dialog" data-resolution-confirmation hidden aria-label="解決領域の確認">
+    <div class="card-selection-dialog__panel">
+      <h2>解決領域</h2>
+      <p data-resolution-description>山札の上から4枚をめくりました</p>
+      <div class="card-selection-list" data-resolution-list></div>
+      <p data-resolution-count>クライマックス：0枚</p>
+      <button type="button" data-action="confirm-brainstorm-reveal">控え室に置く</button>
     </div>
   </section>
 

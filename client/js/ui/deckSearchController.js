@@ -9,6 +9,7 @@ export class DeckSearchController {
     this.dialog = rootElement?.querySelector?.("[data-deck-search]") ?? null;
     this.list = rootElement?.querySelector?.("[data-deck-search-list]") ?? null;
     this.count = rootElement?.querySelector?.("[data-deck-search-count]") ?? null;
+    this.description = rootElement?.querySelector?.("[data-deck-search-description]") ?? null;
     this.button = rootElement?.querySelector?.('[data-action="confirm-deck-search"]') ?? null;
     this.view = new CardSelectionView({ container: this.list, confirmButton: this.button });
     this.boundClick = this.handleClick.bind(this);
@@ -27,8 +28,9 @@ export class DeckSearchController {
     if (slot) {
       const state = this.gameEngine.getSearchDeckState("self");
       const card = state?.cards.find(({ instanceId }) => instanceId === slot.dataset.cardId);
-      if (card) this.renderer?.renderCardDetail?.(card);
       if (slot.dataset.selectable === "true") this.gameEngine.toggleSearchDeckSelection(slot.dataset.cardId, "self");
+      // toggle時の全体再描画後にDetailを描き、MAIN Controllerによるclearに上書きされないようにする。
+      if (card) this.renderer?.renderCardDetail?.(card);
       return;
     }
     if (event.target === this.button) this.gameEngine.confirmSearchDeckSelection("self");
@@ -53,7 +55,8 @@ export class DeckSearchController {
       this.view.setState(slot, { selectable: eligible.has(card.instanceId), selected: selected.has(card.instanceId) });
       return slot;
     }));
-    if (this.count) this.count.textContent = `${selected.size} / ${state.maxSelect}`;
+    if (this.description) this.description.textContent = `手札に加えるカードを0〜${state.maxSelect}枚選択してください`;
+    if (this.count) this.count.textContent = `選択枚数 ${selected.size} / ${state.maxSelect}`;
     if (this.button) this.button.disabled = selected.size < state.minSelect || selected.size > state.maxSelect;
   }
 }
