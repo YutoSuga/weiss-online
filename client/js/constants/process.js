@@ -11,6 +11,7 @@ export const PROCESS_TYPE = Object.freeze({
   MOVE_STAGE: "move_stage",
   SWAP_STAGE: "swap_stage",
   ACT_ABILITY: "act_ability",
+  SEARCH_DECK: "search_deck",
   REFRESH: "refresh",
   REFRESH_PENALTY: "refresh_penalty",
   LEVEL_UP: "level_up",
@@ -94,6 +95,12 @@ export const ACT_ABILITY_STEP = Object.freeze({
   CHECK_POINT_AFTER_COST: "check_point_after_cost",
   RESOLVE_EFFECT: "resolve_effect",
   CHECK_POINT_AFTER_EFFECT: "check_point_after_effect",
+  COMPLETE: "complete",
+});
+
+export const SEARCH_DECK_STEP = Object.freeze({
+  PREPARE: "prepare",
+  WAIT_FOR_SELECTION: "wait_for_selection",
   COMPLETE: "complete",
 });
 

@@ -45,6 +45,8 @@ export class Player {
     this.waitingRoom = [];
     /** @type {import("./card.js").Card[]} */
     this.memory = [];
+    /** 一時的な公開解決領域。プレイヤーごとに分離する。 */
+    this.resolution = [];
     /** @type {import("./card.js").Card[]} */
     this.climax = [];
   }

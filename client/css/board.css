@@ -83,6 +83,17 @@
   --stock-normal-offset: 18px;
 }
 
+.resolution-area { background: transparent; border: 0; padding: .2rem; }
+.resolution-area h3 { margin: 0 0 .2rem; font-size: .72rem; color: #f4d35e; }
+.resolution-slots { display: flex; gap: .2rem; }
+.resolution-slots .card-slot { width: 42px; height: 59px; }
+.card-selection-dialog { position: fixed; inset: 0; z-index: 100; background: rgb(0 0 0 / 72%); padding: 5vh 5vw; }
+.card-selection-dialog__panel { background: #18212b; border: 1px solid #8ba4b8; padding: 1rem; max-height: 90vh; overflow: auto; }
+.card-selection-list { display: flex; flex-wrap: wrap; gap: .5rem; }
+.card-selection-list .card-slot { flex: 0 0 84px; height: 118px; }
+.card-slot.is-unselectable { opacity: .62; }
+.card-slot.is-selected { outline: 3px solid #f4d35e; }
+
 * {
   box-sizing: border-box;
 }

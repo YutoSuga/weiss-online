@@ -15,7 +15,7 @@
 - カード効果を追加しやすい構造にすること
 - UIとゲームルールを分離し、保守しやすくすること
 
-オンライン通信、デッキ管理、実カード能力の解決は、現時点では未実装です。
+オンライン通信とデッキ管理は未実装です。実カード能力は最初のACT集中まで対応しています。
 
 ## 現在のアーキテクチャ
 
@@ -75,9 +75,9 @@ Interrupt Process
 
 ## 現在地点
 
-**Phase F-4A：ACT Ability v1 基盤 COMPLETE**
+**Phase F-4B：「人気アイドル 西森 柚咲」【起】集中 COMPLETE**
 
-次は **Phase F-4B：「人気アイドル 西森 柚咲」【起】集中 NEXT** です。
+次は **Phase F-4C：ACT基盤レビュー NEXT** です。
 
 現在、CLOCKフェイズの完了後には以下の流れが成立します。
 
@@ -114,7 +114,8 @@ CLIMAX
 - [x] Phase F-3C CardMaster正式データ化 + DeckDefinition基盤
 - [x] **Phase F-3D Card表示・詳細表示の正式データモデル対応（COMPLETE）**
 - [x] **Phase F-4A ACT Ability v1 基盤（COMPLETE）**
-- [ ] **Phase F-4B 「人気アイドル 西森 柚咲」【起】集中（NEXT）**
+- [x] **Phase F-4B 「人気アイドル 西森 柚咲」【起】集中（COMPLETE）**
+- [ ] **Phase F-4C ACT基盤レビュー（NEXT）**
 - [ ] Phase F-5 AUTO Ability基盤
 - [ ] Phase F-6 CONTINUOUS Ability基盤
 
@@ -209,6 +210,7 @@ READMEは現在地点と概要を扱い、詳細な仕様は `docs/` を参照�
 - [MAIN Phase設計](docs/１．設計書/メインフェイズ.md)
 - [CardMaster / CardAbility設計](docs/１．設計書/カードデータモデル.md)
 - [カード能力 / ACT Ability設計](docs/１．設計書/カード能力.md)
+- [集中（BRAINSTORM）詳細設計](docs/１．設計書/集中.md)
 - [エンティティ・オブジェクト一覧](docs/１．設計書/エンティティ・オブジェクト一覧.md)
 - [UI操作仕様](docs/１．設計書/UI操作.md)
 - [Process基盤設計](docs/１．設計書/プロセス.md)

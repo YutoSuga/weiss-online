@@ -214,3 +214,14 @@ Controllerが候補判定とクラスの付け外しを担当し、CSSは判定�
 * 基本操作を定義
 * ドラッグ&ドロップ仕様を追加
 * 拡大表示仕様を追加
+
+## 共通カード選択表示とDeck Search（F-4B）
+
+```text
+                   CardSelectionView
+                    /             \
+                   /               \
+          Mulligan UI          Deck Search UI
+```
+
+共通化するのはselectable / unselectable / selectedのDOM表現であり、候補・上下限・確定後のルールは各Controller / Engineが持つ。Deck Searchは山札全体を現在順のままTOP→BOTTOMを左→右に表示する。eligibleだけ選択可能、ineligibleもクリックしてCard Detailを閲覧可能とし、0/N～N/Nのtoggleとconfirmを提供する。

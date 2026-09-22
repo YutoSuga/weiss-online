@@ -1,6 +1,6 @@
 import { CardMaster } from "../models/cardMaster.js";
 import { CardMasterRegistry } from "../models/cardMasterRegistry.js";
-import { ABILITY_TYPE } from "../constants/ability.js";
+import { ABILITY_KEYWORD, ABILITY_TYPE } from "../constants/ability.js";
 import { getCostHandler } from "../abilities/costResolver.js";
 import { validateEffects } from "../abilities/effectResolver.js";
 
@@ -36,6 +36,10 @@ export function validateCardMasterDefinitions(value) {
     definition.abilities.forEach((ability, abilityIndex) => {
       if (ability?.type !== ABILITY_TYPE.ACT) return;
       try {
+        const keywords = ability.keywords ?? [];
+        if (!Array.isArray(keywords) || keywords.some((keyword) => !Object.values(ABILITY_KEYWORD).includes(keyword))) {
+          throw new RangeError("ACT keywords contain an unsupported value.");
+        }
         if (!Array.isArray(ability.conditions) || ability.conditions.length > 0) {
           throw new RangeError("ACT conditions must be an empty array in F-4A.");
         }

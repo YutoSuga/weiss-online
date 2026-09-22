@@ -86,4 +86,3 @@ function assertStringArray(propertyName, value) {
     throw new TypeError(`${propertyName} must be an array of strings.`);
   }
 }
-

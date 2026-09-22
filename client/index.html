@@ -104,6 +104,9 @@
                 <article class="card-slot" data-owner="opponent" data-zone="memory" data-index="1" data-face="up" data-position="stand" data-card-id=""></article>
               </div>
             </section>
+            <section class="resolution-area" data-resolution-owner="opponent" hidden>
+              <h3>解決領域</h3><div class="resolution-slots"></div>
+            </section>
           </div>
 
           <div class="playmat-center">
@@ -241,6 +244,9 @@
                 <article class="card-slot" data-owner="self" data-zone="memory" data-index="1" data-face="up" data-position="stand" data-card-id=""></article>
               </div>
             </section>
+            <section class="resolution-area" data-resolution-owner="self" hidden>
+              <h3>解決領域</h3><div class="resolution-slots"></div>
+            </section>
 
             <section class="zone deck-zone">
               <h3 class="zone-title">山札</h3>
@@ -263,7 +269,16 @@
           <div class="zone-body hand-slots"></div>
         </section>
       </section>
-    </main>
+  </main>
+
+  <section class="card-selection-dialog" data-deck-search hidden aria-label="山札検索">
+    <div class="card-selection-dialog__panel">
+      <h2>山札を見る</h2>
+      <p data-deck-search-count>0 / 0</p>
+      <div class="card-selection-list" data-deck-search-list></div>
+      <button type="button" data-action="confirm-deck-search">決定</button>
+    </div>
+  </section>
 
     <aside class="right-sidebar">
       <section class="info-panel card-detail-panel">

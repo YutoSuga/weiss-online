@@ -16,11 +16,17 @@ import {
   LEVEL_UP_STEP,
   REFRESH_PENALTY_STEP,
   REFRESH_STEP,
+  SEARCH_DECK_STEP,
   SWAP_STAGE_STEP,
 } from "../constants/process.js";
-import { ABILITY_TYPE } from "../constants/ability.js";
+import { ABILITY_TYPE, EFFECT_TYPE } from "../constants/ability.js";
 import { getCostsDisabledReason, payCosts } from "../abilities/costResolver.js";
-import { resolveEffect, validateEffects } from "../abilities/effectResolver.js";
+import {
+  cardMatchesSearchFilter,
+  resolveEffect,
+  resolveEffectResult,
+  validateEffects,
+} from "../abilities/effectResolver.js";
 import {
   DEFEAT_REASON,
   RULE_CHECK_RESULT,
@@ -697,6 +703,9 @@ export class GameEngine {
         abilityId: ability.id,
         costIndex: 0,
         effectIndex: 0,
+        effectResults: {},
+        groupEffectIndex: null,
+        brainstorm: null,
       },
     });
     this.executeActAbilityProcess();
@@ -745,6 +754,9 @@ export class GameEngine {
         case ACT_ABILITY_STEP.PREPARE:
           process.context.costIndex = 0;
           process.context.effectIndex = 0;
+          process.context.effectResults = {};
+          process.context.groupEffectIndex = null;
+          process.context.brainstorm = null;
           this.processManager.updateStep(ACT_ABILITY_STEP.PAY_COST);
           break;
         case ACT_ABILITY_STEP.PAY_COST: {
@@ -767,13 +779,22 @@ export class GameEngine {
             this.processManager.updateStep(ACT_ABILITY_STEP.COMPLETE);
             break;
           }
-          resolveEffect(ability.effects[process.context.effectIndex], {
-            gameEngine: this,
-            player,
-            playerId: process.playerId,
-            sourceCard: getSource(),
-          });
-          process.context.effectIndex += 1;
+          const topEffect = ability.effects[process.context.effectIndex];
+          if (topEffect.type === EFFECT_TYPE.EFFECT_GROUP && process.context.groupEffectIndex === null) {
+            const { source, effectId, field } = topEffect.condition;
+            const value = resolveEffectResult({ source, effectId, field }, process.context.effectResults, "integer");
+            if (value < topEffect.condition.min) {
+              process.context.effectIndex += 1;
+              break;
+            }
+            process.context.groupEffectIndex = 0;
+          }
+          const effect = topEffect.type === EFFECT_TYPE.EFFECT_GROUP
+            ? topEffect.effects[process.context.groupEffectIndex]
+            : topEffect;
+          const completed = this.#resolveActEffect(effect, process, player, getSource());
+          if (!completed) return process;
+          this.#advanceActEffect(process, topEffect);
           this.processManager.updateStep(ACT_ABILITY_STEP.CHECK_POINT_AFTER_EFFECT);
           break;
         }
@@ -789,6 +810,168 @@ export class GameEngine {
       }
     }
     return process;
+  }
+
+  #advanceActEffect(process, topEffect) {
+    if (topEffect.type !== EFFECT_TYPE.EFFECT_GROUP) {
+      process.context.effectIndex += 1;
+      return;
+    }
+    process.context.groupEffectIndex += 1;
+    if (process.context.groupEffectIndex >= topEffect.effects.length) {
+      process.context.groupEffectIndex = null;
+      process.context.effectIndex += 1;
+    }
+  }
+
+  #resolveActEffect(effect, process, player, sourceCard) {
+    const results = process.context.effectResults;
+    if (effect.type === EFFECT_TYPE.TEST_LOG) {
+      resolveEffect(effect, { gameEngine: this, player, playerId: process.playerId, sourceCard });
+      return true;
+    }
+    if (effect.type === EFFECT_TYPE.BRAINSTORM_REVEAL) {
+      const state = process.context.brainstorm ?? {
+        effectId: effect.id,
+        targetCount: effect.count,
+        movedCardInstanceIds: [],
+      };
+      process.context.brainstorm = state;
+      while (state.movedCardInstanceIds.length < state.targetCount) {
+        const card = player.deck.draw();
+        if (!card) {
+          if (this.resolveRuleCheck() !== RULE_CHECK_RESULT.CONTINUE) return false;
+          throw new Error("BRAINSTORM_REVEAL cannot continue from an empty Deck.");
+        }
+        card.moveTo({ zone: ZONE.RESOLUTION, index: player.resolution.length + 1 });
+        card.setFace(null);
+        player.resolution.push(card);
+        state.movedCardInstanceIds.push(card.instanceId);
+        this.#reindexCards(player.deck.cards);
+        this.render();
+      }
+      const moved = state.movedCardInstanceIds.map((id) => {
+        const card = player.resolution.find((candidate) => candidate.instanceId === id);
+        if (!card) throw new Error(`Brainstorm card "${id}" is missing from Resolution.`);
+        return card;
+      });
+      results[effect.id] = { climaxCount: moved.filter((card) => card.cardType === "CLIMAX").length };
+      moved.forEach((card) => {
+        player.resolution.splice(player.resolution.indexOf(card), 1);
+        card.moveTo({ zone: ZONE.WAITING_ROOM, index: player.waitingRoom.length + 1 });
+        player.waitingRoom.push(card);
+      });
+      this.#reindexCards(player.resolution);
+      process.context.brainstorm = null;
+      return true;
+    }
+    if (effect.type === EFFECT_TYPE.SEARCH_DECK) {
+      const maxSelect = typeof effect.maxSelect === "number"
+        ? effect.maxSelect
+        : resolveEffectResult(effect.maxSelect, results, "integer");
+      this.processManager.pushProcess({
+        type: PROCESS_TYPE.SEARCH_DECK,
+        playerId: process.playerId,
+        step: SEARCH_DECK_STEP.PREPARE,
+        status: PROCESS_STATUS.RUNNING,
+        context: {
+          playerId: process.playerId,
+          sourceCardInstanceId: sourceCard.instanceId,
+          abilityId: process.context.abilityId,
+          effectId: effect.id,
+          minSelect: effect.minSelect,
+          maxSelect,
+          filter: effect.filter,
+          selectedCardInstanceIds: [],
+        },
+      });
+      this.executeSearchDeckProcess();
+      return false;
+    }
+    if (effect.type === EFFECT_TYPE.ADD_TO_HAND) {
+      const ids = resolveEffectResult(effect.cards, results, "instanceIds");
+      ids.forEach((id) => {
+        const card = player.deck.cards.find((candidate) => candidate.instanceId === id);
+        if (!card) throw new Error(`Selected Deck card "${id}" does not exist.`);
+        player.deck.remove(card);
+        card.moveTo({ zone: ZONE.HAND, index: player.hand.length + 1 });
+        player.hand.push(card);
+      });
+      this.#reindexCards(player.deck.cards);
+      return true;
+    }
+    if (effect.type === EFFECT_TYPE.SHUFFLE_DECK) {
+      player.deck.shuffle();
+      this.#reindexCards(player.deck.cards);
+      results[effect.id] = { shuffled: true };
+      return true;
+    }
+    throw new RangeError(`Unsupported ACT effect: ${effect.type}.`);
+  }
+
+  executeSearchDeckProcess() {
+    const process = this.processManager.getCurrentProcess();
+    if (!process || process.type !== PROCESS_TYPE.SEARCH_DECK) return process;
+    if (process.step === SEARCH_DECK_STEP.PREPARE) {
+      this.processManager.updateStep(SEARCH_DECK_STEP.WAIT_FOR_SELECTION);
+      this.processManager.updateStatus(PROCESS_STATUS.WAITING_INPUT);
+      this.render();
+    } else if (process.step === SEARCH_DECK_STEP.COMPLETE) {
+      this.completeCurrentProcess();
+    }
+    return process;
+  }
+
+  getSearchDeckState(playerId = "self") {
+    const process = this.processManager.getCurrentProcess();
+    if (process?.type !== PROCESS_TYPE.SEARCH_DECK || process.playerId !== playerId ||
+        process.step !== SEARCH_DECK_STEP.WAIT_FOR_SELECTION) return null;
+    const player = this.gameState.players[playerId];
+    return {
+      ...process.context,
+      cards: [...player.deck.cards],
+      eligibleCardInstanceIds: player.deck.cards
+        .filter((card) => cardMatchesSearchFilter(card, process.context.filter))
+        .map((card) => card.instanceId),
+    };
+  }
+
+  toggleSearchDeckSelection(cardInstanceId, playerId = "self") {
+    const process = this.processManager.getCurrentProcess();
+    const state = this.getSearchDeckState(playerId);
+    if (!state) throw new Error("SEARCH_DECK is not waiting for selection.");
+    if (!state.eligibleCardInstanceIds.includes(cardInstanceId)) throw new Error("This card is not eligible for this search.");
+    const selected = process.context.selectedCardInstanceIds;
+    const index = selected.indexOf(cardInstanceId);
+    if (index >= 0) selected.splice(index, 1);
+    else {
+      if (selected.length >= process.context.maxSelect) throw new Error("SEARCH_DECK maxSelect exceeded.");
+      selected.push(cardInstanceId);
+    }
+    this.render();
+    return [...selected];
+  }
+
+  confirmSearchDeckSelection(playerId = "self") {
+    const search = this.processManager.getCurrentProcess();
+    const state = this.getSearchDeckState(playerId);
+    if (!state) throw new Error("SEARCH_DECK is not waiting for selection.");
+    if (state.selectedCardInstanceIds.length < state.minSelect || state.selectedCardInstanceIds.length > state.maxSelect) throw new Error("SEARCH_DECK selection count is invalid.");
+    if (new Set(state.selectedCardInstanceIds).size !== state.selectedCardInstanceIds.length ||
+        state.selectedCardInstanceIds.some((id) => !state.eligibleCardInstanceIds.includes(id))) {
+      throw new Error("SEARCH_DECK selection contains an invalid card.");
+    }
+    const parent = this.gameState.ruleState.processStack.at(-2);
+    if (parent?.type !== PROCESS_TYPE.ACT_ABILITY) throw new Error("SEARCH_DECK parent must be ACT_ABILITY.");
+    parent.context.effectResults[state.effectId] = { selectedCardInstanceIds: [...state.selectedCardInstanceIds] };
+    const source = this.gameState.players[playerId].stage.find((card) => card.instanceId === parent.context.sourceCardInstanceId);
+    const ability = source?.abilities.find((item) => item.id === parent.context.abilityId);
+    const topEffect = ability?.effects[parent.context.effectIndex];
+    this.#advanceActEffect(parent, topEffect);
+    search.step = SEARCH_DECK_STEP.COMPLETE;
+    search.status = PROCESS_STATUS.RUNNING;
+    this.executeSearchDeckProcess();
+    return [...state.selectedCardInstanceIds];
   }
 
   /** 選択中Stage Characterの現在slotを除く4つのDestinationを返す。 */
@@ -1756,6 +1939,9 @@ export class GameEngine {
     }
     if (process.type === PROCESS_TYPE.ACT_ABILITY) {
       return this.executeActAbilityProcess();
+    }
+    if (process.type === PROCESS_TYPE.SEARCH_DECK) {
+      return this.executeSearchDeckProcess();
     }
     if (process.type === PROCESS_TYPE.LEVEL_UP) {
       return this.executeLevelUpProcess();

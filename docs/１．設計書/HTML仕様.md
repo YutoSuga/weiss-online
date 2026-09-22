@@ -301,3 +301,7 @@ document.querySelector(
 * card-slot 共通仕様を定義
 * data-* 属性仕様を定義
 * CSSとJavaScriptの責務を明確化
+
+## F-4B追加要素
+
+`[data-resolution-owner]`は各playerのResolution表示で、空の間は`hidden`とする。`[data-deck-search]`は検索中だけ表示し、全Deckカード一覧、選択数、確定ボタンを含む。カードは現在のTOP→BOTTOM順で生成する。
