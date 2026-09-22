@@ -147,6 +147,7 @@ CLIMAX
 基本Play Costは、将来の `CardMaster.cost` に相当するカード固有のコストです。Ability Costとは別概念です。
 
 開発用の初期Deckは `card-masters.json` を `CardMasterLoader` でRegistryへ登録し、`test-decks.json` のimmutableな `DeckDefinition`（`masterId + count`）を各プレイヤー固有のCard instanceへ展開して生成します。
+現在のブラウザ確認用DefinitionはCharlotteの実在カード17種類（CHARACTER 40枚・EVENT 2枚・CLIMAX 8枚、計50枚）で構成し、「人気アイドル 西森 柚咲」の【起】集中を実データ構成で確認できます。その他16種類の能力は未実装です。
 
 ### Phase F-2C：Stage → Stage
 

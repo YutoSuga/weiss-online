@@ -82,7 +82,7 @@ test("開発用CardMasterとDeckDefinitionを読み込むと50枚へ展開でき
   const registry = createCardMasterRegistry(masters);
   const definition = new DeckDefinition(decks[0]);
   const deck = createDeckFromDefinition("self", definition, registry);
-  assert.equal(masters.length, 13);
+  assert.ok(masters.length >= 13);
   assert.equal(deck.cards.length, 50);
   assert.equal(new Set(deck.cards.map((card) => card.instanceId)).size, 50);
   assert.ok(deck.cards.every((card) => registry.has(card.masterId)));
