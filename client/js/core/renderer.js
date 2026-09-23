@@ -269,7 +269,7 @@ export class Renderer {
           if (actState) {
             const button = abilityList.ownerDocument.createElement("button");
             button.type = "button";
-            button.className = "card-detail-act-button";
+            button.className = "action-button card-detail-act-button";
             button.dataset.action = "use-act-ability";
             button.dataset.abilityId = ability.id;
             button.disabled = actState.disabledReason !== null;

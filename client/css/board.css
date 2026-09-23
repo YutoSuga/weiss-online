@@ -303,21 +303,33 @@ ul {
   gap: 4px;
 }
 
-.card-detail-act-button {
-  justify-self: start;
+.action-button {
+  width: auto;
+  min-height: 34px;
   padding: 4px 10px;
   border: 1px solid #60a5fa;
-  border-radius: 5px;
+  border-radius: 6px;
   background: #1e3a8a;
   color: #eff6ff;
+  font: inherit;
+  font-weight: 700;
   cursor: pointer;
 }
 
-.card-detail-act-button:disabled {
+.action-button:not(:disabled):hover,
+.action-button:not(:disabled):focus-visible {
+  background: #1d4ed8;
+}
+
+.action-button:disabled {
   border-color: #64748b;
   background: #334155;
   color: #cbd5e1;
   cursor: not-allowed;
+}
+
+.card-detail-act-button {
+  justify-self: start;
 }
 
 .card-detail-act-reason {
@@ -328,23 +340,16 @@ ul {
 
 .card-detail-action {
   width: 100%;
-  min-height: 34px;
   margin-top: 10px;
-  border: 1px solid #60a5fa;
-  border-radius: 6px;
-  background: #1e3a8a;
-  color: #eff6ff;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.card-detail-action:hover,
-.card-detail-action:focus-visible {
-  background: #1d4ed8;
 }
 
 .card-detail-action[hidden] {
   display: none;
+}
+
+.modal-action-button {
+  align-self: flex-start;
+  padding-inline: 14px;
 }
 
 .card-play-disabled-reason {

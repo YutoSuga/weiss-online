@@ -231,7 +231,7 @@ Controllerが候補判定とクラスの付け外しを担当し、CSSは判定�
 
 `CardSelectionView`はDOM上のselectable / selected表現を共有し、Mulligan、Deck Search、Resolution Viewが利用する。Mulliganは既存の手札交換選択、Deck Searchはeligible CardでDetail表示とtoggle・ineligible CardでDetail表示だけ、Resolution Viewは全CardでDetail表示だけを行う。ゲーム上の選択可否と確定処理は各ControllerからGameEngineへ委譲し、Viewはルール状態を保持しない。
 
-Deck Searchは「山札」「手札に加えるカードを0〜N枚選択してください」「選択枚数 X / N」「決定」を表示する。全山札をTOPからBOTTOMへ並べ、0枚でも`minSelect=0`なら決定できる。Resolution確認は「解決領域」「山札の上から4枚をめくりました」「クライマックス：N枚」「控え室に置く」を表示する。
+Deck Searchは「山札」「手札に加えるカードを0〜N枚選択してください」「選択枚数 X / N」「決定」を表示する。全山札をTOPからBOTTOMへ並べ、0枚でも`minSelect=0`なら決定できる。Resolution確認は「解決領域」「山札の上から4枚をめくりました」「クライマックス：N枚」「控え室に置く」を表示する。両ModalのAction ButtonはCard Detail操作と共通の視覚表現を使い、文言とpaddingに応じた幅で状態表示と同じ左端へ配置する。
 
 ## Modal内カード詳細（Phase F-4B UI/UX Follow-up 2）
 
