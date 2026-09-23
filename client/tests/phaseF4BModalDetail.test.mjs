@@ -177,3 +177,19 @@ test('narrow viewportではカード一覧とDetailを縦配置する', async ()
   const css = await read('../css/board.css');
   assert.match(css, /@media \(max-width: 760px\)[\s\S]*?\.card-selection-dialog__body\s*\{[\s\S]*?flex-direction:\s*column/);
 });
+
+test('Modal操作とCard Detail操作は共通Action Button表現を利用する', async () => {
+  const [html, css, renderer] = await Promise.all([
+    read('../index.html'),
+    read('../css/board.css'),
+    read('../js/core/renderer.js'),
+  ]);
+  assert.match(html, /class="action-button modal-action-button"[^>]*data-action="confirm-deck-search"/);
+  assert.match(html, /class="action-button modal-action-button"[^>]*data-action="confirm-brainstorm-reveal"/);
+  assert.match(html, /class="action-button card-detail-action"[^>]*data-action="clear-main-selection"/);
+  assert.match(renderer, /button\.className = "action-button card-detail-act-button"/);
+  assert.match(css, /\.action-button\s*\{[\s\S]*?width:\s*auto/);
+  assert.match(css, /\.action-button:disabled\s*\{[\s\S]*?cursor:\s*not-allowed/);
+  assert.match(css, /\.modal-action-button\s*\{[^}]*align-self:\s*flex-start/);
+  assert.doesNotMatch(css, /\.modal-action-button\s*\{[^}]*width:\s*100%/);
+});

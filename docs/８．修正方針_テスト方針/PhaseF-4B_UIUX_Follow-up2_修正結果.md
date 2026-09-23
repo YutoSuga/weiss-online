@@ -29,3 +29,9 @@ Follow-up 2でModal内にも`.card-detail-panel`を追加した一方、`Rendere
 ## 残課題
 
 汎用Modal component化、汎用Resolution Process、他Zone閲覧は今回のNon-goalとして未対応である。
+
+## Action Button UI追加調整
+
+Resolutionの「控え室に置く」とDeck Searchの「決定」に、通常盤面Card Detailの「使用する」/「使用不可」および「選択を解除」と共通のAction Button visual classを適用した。背景、枠線、角丸、文字、padding、hover / focus、disabled、cursorを共通化し、既存Card Detail固有の横幅と余白は用途別classに残した。
+
+Modal Action Buttonは`width: auto`を基準として文言と左右paddingに応じて伸縮させ、Modal panelのflex itemとして`align-self: flex-start`で状態表示と同じ左端へ配置した。PC / narrow viewportへ同じ規則を適用しており、SP専用再設計、Modal構造、カード一覧、Card Detail、ゲーム処理、UI layerは変更していない。カード一覧 → Card Detail → 状態 → Action Buttonという既存のdocument flowも維持している。
