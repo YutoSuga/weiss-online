@@ -190,7 +190,7 @@ export class Renderer {
     container = null,
     allowPrivate = false,
   } = {}) {
-    const panel = container ?? this.rootElement?.querySelector(".card-detail-panel");
+    const panel = container ?? this.rootElement?.querySelector("[data-board-card-detail]");
     if (!(panel instanceof HTMLElement)) {
       return;
     }

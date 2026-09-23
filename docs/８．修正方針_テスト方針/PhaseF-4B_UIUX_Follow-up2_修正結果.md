@@ -12,6 +12,20 @@ UI layer tokenを追加してPhase < Backdrop < Modal Contentを明示した。R
 
 専用構造テストにlayer、Modal Detail、共通描画責務、操作差、responsiveを追加した。ゲームロジック、Process、Mulligan、能力表示データは変更していない。実行結果は完了報告に記載する。
 
+## ブラウザ確認Regressionの追加修正
+
+### 原因
+
+Follow-up 2でModal内にも`.card-detail-panel`を追加した一方、`Renderer.renderCardDetail()`のcontainer未指定時は従来どおり`querySelector(".card-detail-panel")`を使用していた。HTML上ではDeck Search Modalが通常盤面の右上Detailより先に置かれているため、MAIN Controllerからの通常Card clickは失われておらず、再描画による初期化でもなかったが、最初に一致する非表示のDeck Search Modal内Detailへ描画されていた。
+
+### 修正内容
+
+通常盤面の右上Detailに`data-board-card-detail`を付与し、container未指定時の既定描画先をこの要素へ明示した。Resolution Controllerは`data-resolution-detail`、Deck Search Controllerは`data-deck-search-detail`を引き続きcontainer指定するため、共通`Renderer.renderCardDetail()`を3画面で再利用しつつ描画先を分離している。z-index、Phase表示、【起】表示、ゲームロジックおよびProcessは変更していない。
+
+### Regression test結果
+
+通常盤面での連続したCard切替、Modal終了後の通常Detail利用、ResolutionのModal内Detail、Deck Searchのeligible / ineligible別selection動作とModal内Detail、selection再描画後のDetail保持を専用テストで確認した。全既存テスト、全JS/MJS syntax check、`git diff --check`もpassした。
+
 ## 残課題
 
 汎用Modal component化、汎用Resolution Process、他Zone閲覧は今回のNon-goalとして未対応である。
