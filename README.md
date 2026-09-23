@@ -75,9 +75,9 @@ Interrupt Process
 
 ## 現在地点
 
-**Phase F-4B：「人気アイドル 西森 柚咲」【起】集中 COMPLETE**
+**Phase F-4：ACT Ability COMPLETE**
 
-次は **Phase F-4C：ACT基盤レビュー NEXT** です。
+F-4A ACT Ability v1基盤、F-4B「人気アイドル 西森 柚咲」【起】集中とUI/UX Follow-up、F-4C-1 ACT Ability基盤 実装レビューまで完了しました。次の主要実装対象は **Phase F-5：AUTO Ability** です。F-5の詳細分割・詳細設計はF-5着手時に決定します。
 
 現在、CLOCKフェイズの完了後には以下の流れが成立します。
 
@@ -115,8 +115,10 @@ CLIMAX
 - [x] **Phase F-3D Card表示・詳細表示の正式データモデル対応（COMPLETE）**
 - [x] **Phase F-4A ACT Ability v1 基盤（COMPLETE）**
 - [x] **Phase F-4B 「人気アイドル 西森 柚咲」【起】集中（COMPLETE）**
-- [ ] **Phase F-4C ACT基盤レビュー（NEXT）**
-- [ ] Phase F-5 AUTO Ability基盤
+- [x] **Phase F-4B UI/UX Follow-up（COMPLETE）**
+- [x] **Phase F-4C-1 ACT Ability基盤 実装レビュー（COMPLETE）**
+- [x] **Phase F-4 ACT Ability（COMPLETE）**
+- [ ] **Phase F-5 AUTO Ability基盤（NEXT）**
 - [ ] Phase F-6 CONTINUOUS Ability基盤
 
 ### Phase F-2A：MAINカード選択 / Destination UI
@@ -172,13 +174,13 @@ MAIN_PHASE / WAITING_INPUT中に自分のStage Characterを選択し、現在位
 
 ### Phase F-4：ACT Ability v1
 
-最初の検証候補は、`Kch/W78-001`「人気アイドル 西森 柚咲」の【起】集中です。
+代表ケースは、`Kch/W78-001S`「人気アイドル 西森 柚咲」の【起】集中です。
 
 - Ability Cost v1：`PAY_STOCK`、`REST_SELF`
 - 使用可能なACTは有効ボタン、使用不可ならdisabled / gray表示を想定
-- 集中Effect自体の詳細な解決仕様は、この段階では未確定
+- 集中のResolution確認、山札検索、手札追加、Shuffle、およびRule Check割り込み後のresume
 
-F-4AではStage上のACT検出、使用可能判定、`ACT_ABILITY` Process、`PAY_STOCK` / `REST_SELF` Cost Handler、開発用`TEST_LOG` Effect Handler、右上詳細のAbility単位操作を実装した。実カードの集中はF-4Bでこの基盤へ追加する。
+F-4AでStage上のACT検出、使用可能判定、`ACT_ABILITY` Process、Cost / Effect基盤を実装し、F-4Bで実カードの集中とUI/UX Follow-upを追加した。F-4C-1レビューでは汎用基盤、Effect Result、`WAITING_INPUT`、child Process、Refresh後のresumeを確認し、F-4完了またはF-5着手を妨げる問題なしと判定した。レビュー結果と、F-4未完了項目にはしない将来改善候補は[Phase F-4C-1 ACT Ability基盤 実装レビュー](docs/PhaseF-4C-1_ACT_Ability基盤_実装レビュー.md)を参照する。
 
 ### Phase F-5 / F-6
 
