@@ -308,3 +308,7 @@ document.querySelector(
 # F-4B確認ダイアログ（UI/UX Follow-up）
 
 `[data-resolution-confirmation]`は集中のResolution確認待ちだけ表示し、説明、`[data-resolution-list]`、CX枚数、`[data-action="confirm-brainstorm-reveal"]`を持つ。`[data-deck-search]`は見出し「山札」、動的な0〜N枚説明、カード一覧、動的な「選択枚数 X / N」、決定ボタンを持つ。両者のカード一覧は右側Card Detailと連携する。
+
+## Modal Card Detail（Phase F-4B UI/UX Follow-up 2）
+
+`[data-resolution-detail]`と`[data-deck-search-detail]`は各Modal内部のCard Detail containerで、通常盤面と同じ`data-card-detail-*` fieldsを持つ。各Modalの`card-selection-dialog__body`はカード一覧と詳細領域を包含する。Backdropは`.card-selection-dialog`、Modal Contentは`.card-selection-dialog__panel`が担い、Phase通知より上に表示する。

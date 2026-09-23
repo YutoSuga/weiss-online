@@ -81,14 +81,22 @@
   --hand-current-w: 528px;
   --hand-h: calc(var(--hand-card-h) + 44px);
   --stock-normal-offset: 18px;
+
+  /* UI layers: board < phase notification < modal backdrop < modal content. */
+  --z-phase: 20;
+  --z-modal-backdrop: 100;
+  --z-modal: 110;
 }
 
 .resolution-area { background: transparent; border: 0; padding: .2rem; }
 .resolution-area h3 { margin: 0 0 .2rem; font-size: .72rem; color: #f4d35e; }
 .resolution-slots { display: flex; gap: .2rem; }
 .resolution-slots .card-slot { width: 42px; height: 59px; }
-.card-selection-dialog { position: fixed; inset: 0; z-index: 100; background: rgb(0 0 0 / 72%); padding: 5vh 5vw; }
-.card-selection-dialog__panel { background: #18212b; border: 1px solid #8ba4b8; padding: 1rem; max-height: 90vh; overflow: auto; }
+.card-selection-dialog { position: fixed; inset: 0; z-index: var(--z-modal-backdrop); background: rgb(0 0 0 / 72%); padding: 5vh 5vw; }
+.card-selection-dialog__panel { position: relative; z-index: var(--z-modal); display: flex; flex-direction: column; gap: .75rem; background: #18212b; border: 1px solid #8ba4b8; padding: 1rem; max-height: 90vh; overflow: hidden; }
+.card-selection-dialog__body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 300px); gap: 1rem; min-height: 0; }
+.card-selection-dialog__cards { min-width: 0; overflow: auto; }
+.modal-card-detail { min-width: 0; max-height: 62vh; overflow: auto; }
 .card-selection-list { display: flex; flex-wrap: wrap; gap: .5rem; }
 .card-selection-list .card-slot { flex: 0 0 84px; height: 118px; }
 .card-slot.is-unselectable { opacity: .62; }
@@ -138,6 +146,8 @@ ul {
 }
 
 .phase-bar {
+  position: relative;
+  z-index: var(--z-phase);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -989,7 +999,7 @@ ul {
   position: fixed;
   top: 76px;
   left: 50%;
-  z-index: 1000;
+  z-index: var(--z-phase);
   min-width: 260px;
   max-width: min(520px, calc(100vw - 32px));
   padding: 12px 20px;
@@ -1339,4 +1349,27 @@ ul {
 
 .dev-actions button:hover {
   background: #92400e;
+}
+
+/* Modal details stack below their card lists on narrow viewports. */
+@media (max-width: 760px) {
+  .card-selection-dialog {
+    padding: 2vh 3vw;
+  }
+
+  .card-selection-dialog__panel {
+    max-height: 96vh;
+    overflow-y: auto;
+  }
+
+  .card-selection-dialog__body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card-selection-dialog__cards,
+  .modal-card-detail {
+    overflow: visible;
+    max-height: none;
+  }
 }

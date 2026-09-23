@@ -187,8 +187,10 @@ export class Renderer {
     showClearSelection = false,
     playDisabledReason = null,
     actAbilityStates = [],
+    container = null,
+    allowPrivate = false,
   } = {}) {
-    const panel = this.rootElement?.querySelector(".card-detail-panel");
+    const panel = container ?? this.rootElement?.querySelector(".card-detail-panel");
     if (!(panel instanceof HTMLElement)) {
       return;
     }
@@ -198,11 +200,11 @@ export class Renderer {
     const clearButton = panel.querySelector('[data-action="clear-main-selection"]');
     const disabledReason = panel.querySelector("[data-card-play-disabled-reason]");
     const hasCard = Boolean(card && typeof card === "object") &&
-      this.canViewerSeeCard(
+      (allowPrivate || this.canViewerSeeCard(
         card,
         OWNERS.includes(card.owner) ? card.owner : this.viewerId,
         this.resolveEffectiveVisibility(card, card.zone),
-      );
+      ));
 
     if (emptyMessage instanceof HTMLElement) {
       emptyMessage.hidden = hasCard;

@@ -275,7 +275,33 @@
     <div class="card-selection-dialog__panel">
       <h2>山札</h2>
       <p data-deck-search-description>手札に加えるカードを0〜0枚選択してください</p>
-      <div class="card-selection-list" data-deck-search-list></div>
+      <div class="card-selection-dialog__body">
+        <div class="card-selection-dialog__cards">
+          <div class="card-selection-list" data-deck-search-list></div>
+        </div>
+        <section class="info-panel card-detail-panel modal-card-detail" data-deck-search-detail aria-label="カード詳細">
+          <h2>カード詳細</h2>
+          <div class="card-detail">
+            <p data-card-detail-empty>カードを選択すると詳細を確認できます。</p>
+            <dl class="card-detail-fields" data-card-detail-fields hidden>
+              <div class="card-detail-image-frame">
+                <img data-card-detail-image alt="選択したカードの画像" hidden>
+                <span data-card-detail-image-placeholder>画像なし</span>
+              </div>
+              <div><dt>名前</dt><dd data-card-detail="name">-</dd></div>
+              <div><dt>種類</dt><dd data-card-detail="type">-</dd></div>
+              <div><dt>色</dt><dd data-card-detail="color">-</dd></div>
+              <div><dt>レベル</dt><dd data-card-detail="level">-</dd></div>
+              <div><dt>コスト</dt><dd data-card-detail="cost">-</dd></div>
+              <div><dt>パワー</dt><dd data-card-detail="power">-</dd></div>
+              <div><dt>ソウル</dt><dd data-card-detail="soul">-</dd></div>
+              <div><dt>トリガー</dt><dd data-card-detail="triggers">-</dd></div>
+              <div><dt>特徴</dt><dd data-card-detail="traits">-</dd></div>
+              <div class="card-detail-text"><dt>能力</dt><dd><ul class="card-detail-abilities" data-card-detail-abilities></ul></dd></div>
+            </dl>
+          </div>
+        </section>
+      </div>
       <p data-deck-search-count>選択枚数 0 / 0</p>
       <button type="button" data-action="confirm-deck-search">決定</button>
     </div>
@@ -285,7 +311,33 @@
     <div class="card-selection-dialog__panel">
       <h2>解決領域</h2>
       <p data-resolution-description>山札の上から4枚をめくりました</p>
-      <div class="card-selection-list" data-resolution-list></div>
+      <div class="card-selection-dialog__body">
+        <div class="card-selection-dialog__cards">
+          <div class="card-selection-list" data-resolution-list></div>
+        </div>
+        <section class="info-panel card-detail-panel modal-card-detail" data-resolution-detail aria-label="カード詳細">
+          <h2>カード詳細</h2>
+          <div class="card-detail">
+            <p data-card-detail-empty>カードを選択すると詳細を確認できます。</p>
+            <dl class="card-detail-fields" data-card-detail-fields hidden>
+              <div class="card-detail-image-frame">
+                <img data-card-detail-image alt="選択したカードの画像" hidden>
+                <span data-card-detail-image-placeholder>画像なし</span>
+              </div>
+              <div><dt>名前</dt><dd data-card-detail="name">-</dd></div>
+              <div><dt>種類</dt><dd data-card-detail="type">-</dd></div>
+              <div><dt>色</dt><dd data-card-detail="color">-</dd></div>
+              <div><dt>レベル</dt><dd data-card-detail="level">-</dd></div>
+              <div><dt>コスト</dt><dd data-card-detail="cost">-</dd></div>
+              <div><dt>パワー</dt><dd data-card-detail="power">-</dd></div>
+              <div><dt>ソウル</dt><dd data-card-detail="soul">-</dd></div>
+              <div><dt>トリガー</dt><dd data-card-detail="triggers">-</dd></div>
+              <div><dt>特徴</dt><dd data-card-detail="traits">-</dd></div>
+              <div class="card-detail-text"><dt>能力</dt><dd><ul class="card-detail-abilities" data-card-detail-abilities></ul></dd></div>
+            </dl>
+          </div>
+        </section>
+      </div>
       <p data-resolution-count>クライマックス：0枚</p>
       <button type="button" data-action="confirm-brainstorm-reveal">控え室に置く</button>
     </div>
