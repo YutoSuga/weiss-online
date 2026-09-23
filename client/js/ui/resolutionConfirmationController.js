@@ -11,6 +11,8 @@ export class ResolutionConfirmationController {
     this.description = rootElement?.querySelector?.("[data-resolution-description]") ?? null;
     this.count = rootElement?.querySelector?.("[data-resolution-count]") ?? null;
     this.button = rootElement?.querySelector?.('[data-action="confirm-brainstorm-reveal"]') ?? null;
+    this.detail = rootElement?.querySelector?.("[data-resolution-detail]") ?? null;
+    this.detailCardId = null;
     this.view = new CardSelectionView({ container: this.list, confirmButton: this.button });
     this.boundClick = this.handleClick.bind(this);
     this.boundSync = this.sync.bind(this);
@@ -28,7 +30,10 @@ export class ResolutionConfirmationController {
     if (slot) {
       const card = this.gameEngine.getBrainstormConfirmationState("self")?.cards
         .find(({ instanceId }) => instanceId === slot.dataset.cardId);
-      if (card) this.renderer?.renderCardDetail?.(card);
+      if (card) {
+        this.detailCardId = card.instanceId;
+        this.renderer?.renderCardDetail?.(card, { container: this.detail });
+      }
       return;
     }
     if (event.target === this.button) this.gameEngine.confirmBrainstormReveal("self");
@@ -40,6 +45,8 @@ export class ResolutionConfirmationController {
     this.dialog.hidden = !state;
     if (!state) {
       this.list.replaceChildren();
+      this.detailCardId = null;
+      this.renderer?.renderCardDetail?.(null, { container: this.detail });
       return;
     }
     this.list.replaceChildren(...state.cards.map((card, index) => {
@@ -56,5 +63,7 @@ export class ResolutionConfirmationController {
     }));
     if (this.description) this.description.textContent = `山札の上から${state.count}枚をめくりました`;
     if (this.count) this.count.textContent = `クライマックス：${state.climaxCount}枚`;
+    const detailCard = state.cards.find(({ instanceId }) => instanceId === this.detailCardId) ?? null;
+    this.renderer?.renderCardDetail?.(detailCard, { container: this.detail });
   }
 }

@@ -132,3 +132,7 @@ MAINのQueryは、選択可否とゲームActionの実行可否を分離する�
 `ZONE.RESOLUTION`は`VISIBILITY.PUBLIC`で、各`Player`の`resolution`配列に保持する。ACT contextは`effectIndex`、Group内index、`effectResults`、Brainstorm resume情報を持つ。`SEARCH_DECK`は独立Processで、UIローカルではなくProcess contextへ選択instanceIdを保存する。
 
 `CardAbility.text`はAbility Typeラベルを含まない能力本文とし、Rendererが`type`から【永】/【自】/【起】を一度だけ付加する。BRAINSTORM_REVEAL完了時はACT自身が`WAIT_FOR_BRAINSTORM_CONFIRMATION / WAITING_INPUT`となり、`getBrainstormConfirmationState()`が追跡対象CardとCX数を公開する。`confirmBrainstormReveal()`だけが追跡対象をWaiting Roomへ移してACTを再開する。`ResolutionConfirmationController`と`DeckSearchController`はCard clickを既存`Renderer.renderCardDetail()`へ渡す。
+
+## Card Detail描画責務（Phase F-4B UI/UX Follow-up 2）
+
+`Renderer.renderCardDetail(card, options)`は`options.container`を受け取り、未指定時は通常盤面、指定時はResolution / Deck Search Modal内へ同一の画像・基本情報・特徴・能力描画を行う（CardDetailView相当の共通責務）。非公開Zoneは原則として従来のvisibility判定に従い、自分のDeckを公開して検索するDeck Search中だけControllerが`allowPrivate`を明示する。`CardSelectionView`はMulligan / Deck Search / Resolutionのselectable・selected DOM表現のみを担う。ResolutionConfirmationControllerはdetail only、DeckSearchControllerはdetail対象IDをUIローカルに保持し、eligibleだけをtoggleする。いずれもCard Detail確認状態をGameStateへ保存しない。
