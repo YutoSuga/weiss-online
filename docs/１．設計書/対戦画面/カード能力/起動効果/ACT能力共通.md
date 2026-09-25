@@ -1,6 +1,8 @@
-# カード能力設計（Phase F-4A）
+# ACT能力共通設計
 
 ## 1. 目的と責務
+
+本書はACT Abilityに共通する実行基盤の正本である。カード能力全体の分類は[カード能力共通](../カード能力共通.md)、CardAbility schemaは[カードデータモデル](../../../システム共通/カードデータモデル.md)を参照する。
 
 `CardAbility` はCardMaster内で不変な能力定義を保持する。表示原文だけでなく、Engineが解釈する条件・Cost・Effectの構造化データである。対戦中の能力は新しいglobal IDを作らず、`source Card.instanceId + CardAbility.id`で特定する（`id`は同一CardMaster内で一意）。実行判断とmutationはGameEngine、スタックはProcessManager、入力の中継はController、表示はRendererが担当する。
 
@@ -65,7 +67,7 @@ contextは中断・再開に必要なProcess固有作業メモリである。Car
 
 GameEngineにtype別の巨大switchを置かない。Cost Resolverはtypeから小さなHandlerを得て`getDisabledReason`（非mutation）と`pay`（mutation）を分離する。Effect Resolverもtype検証と`resolve`をHandlerへ委譲する。Conditionは将来同じDispatcher方式を追加できる境界を`conditions[]`に残すが、F-4Aの正式対応Typeは**現在なし**であり、空配列だけを受理する。
 
-> **F-4C-1実装レビュー注記：** 上記はEffect type増加時にも維持する設計方向である。現行実装では、`TEST_LOG`等を除く正式Effect executionの一部が`GameEngine.#resolveActEffect()`のtype別分岐に残る。現時点では機能不具合でもF-4未完了事項でもないため、Effect typeがさらに2〜3種類以上増えて分岐が肥大化した段階で、validationとexecutionの登録・責務配置を再評価する。詳細は[Phase F-4C-1レビュー](../PhaseF-4C-1_ACT_Ability基盤_実装レビュー.md)を参照する。
+> **F-4C-1実装レビュー注記：** 上記はEffect type増加時にも維持する設計方向である。現行実装では、`TEST_LOG`等を除く正式Effect executionの一部が`GameEngine.#resolveActEffect()`のtype別分岐に残る。現時点では機能不具合でもF-4未完了事項でもないため、Effect typeがさらに2〜3種類以上増えて分岐が肥大化した段階で、validationとexecutionの登録・責務配置を再評価する。詳細は[Phase F-4C-1レビュー](../../../../PhaseF-4C-1_ACT_Ability基盤_実装レビュー.md)を参照する。
 
 ### 対応Cost Type
 
@@ -128,28 +130,12 @@ Stage Card選択時、右上詳細はACTごとに本文、使用/使用不可ボ
 
 AUTOの待機・解決はF-5、CONTINUOUS評価はF-6で設計する。共通性が明確になるまでは巨大なAbilityEngineへ抽象化しない。
 
-## Phase F-5B: AUTO TriggerとPending AUTO
+## AUTO Abilityとの境界
 
-AUTOは本文文字列を解析せず、`CardAbility.activationTrigger`の構造化データを照合する。F-5Bで受理する形は次の限定schemaである。
-
-```js
-{ event: "CARD_MOVED", subject: "SELF", fromZone: "hand", toZone: "stage" }
-{ event: "CARD_POSITION_CHANGED", subject: "OTHER_YOUR_CHARACTER", toPosition: "reverse" }
-{ event: "ATTACK_DECLARED", subject: "SELF", attackType: "FRONT" }
-{ event: "PHASE_STARTED", phase: "main" }
-{ event: "PHASE_ENDED", phase: "clock" }
-```
-
-通常の探索元Zoneは自分・相手それぞれのStage / Clock / Level / Waiting Room / Handであり、`activeZones`を持つAUTOだけを該当collectionから列挙する。Deck / StockはPRINTED AUTOの通常探索対象にしない。`CARD_MOVED / SELF`だけは移動済み本人をEventのinstance IDから直接引き、移動元を離れた能力もLKIで検出する。
-
-Ability sourceは`PRINTED`、`RULE`、`GRANTED`を識別する。PRINTEDはCardMaster、RULEはRule Ability Provider、GRANTEDは将来の付与定義を表す。F-5BはGRANTEDの識別値だけを予約し、付与処理は実装しない。全Characterの標準アンコール［③］はCardMasterへ複製せず、Stage → Waiting Roomの`CARD_MOVED`に対してProviderが返す`STANDARD_ENCORE_3` RULE Abilityである。
-
-一致1回ごとに`pendingAutos`へ別のPendingをappendする。PendingはID、生成順、master/owner/controller、source kind、source Card instance/master/ability ID、immutableなtrigger Event snapshotを保持し、Card objectは保持しない。sourceが後で移動してもPendingは削除しない。また`enabled`は保存しない。
-
-**Trigger成立 ≠ 現在使用可能 ≠ Effect解決済み**である。F-5BはTrigger成立とPending生成までで終了し、Playability、提示、辞退、Cost、EffectはF-5C以降で現在のGame Stateから評価する。
+AUTO固有のGame Event、Trigger Detection、Pending AUTO、Check Timing、AUTO Processは本書で定義せず、[AUTO能力共通設計](../自動効果/AUTO能力共通.md)を正本とする。Cost definition / handlerなどACTとAUTOが共有する境界だけを、実在要件が生じた時点で共通化する。
 
 ## Phase F-4B: BRAINSTORMと結果参照
 
 Keyword一覧は`BRAINSTORM`（集中）のみを追加した。Ability Typeは`ACT`でありkeywordとは別概念である。EffectはAbility-localで一意な`id`を持ち、Process進行用`effectIndex`とは分離する。ACT contextのフラットな`effectResults[effectId]`へ結果を置き、`{ source: "EFFECT_RESULT", effectId, field }`だけを明示参照として解決する。
 
-対応Effect Typeは`TEST_LOG`、`BRAINSTORM_REVEAL`、`EFFECT_GROUP`、`SEARCH_DECK`、`ADD_TO_HAND`、`SHUFFLE_DECK`。対応Costは`PAY_STOCK`と`REST_SELF`。Group条件は数値結果の`>= min`だけ、検索filterは`cardType: CHARACTER`と`traits.anyOf`だけを対応する。未知type、重複ID、欠落field、型不一致、未対応condition/filterはLoaderとruntimeでfail-fastし、AND/OR/NOT、任意式、allOf等は解釈しない。詳細は[集中.md](集中.md)を参照する。
+対応Effect Typeは`TEST_LOG`、`BRAINSTORM_REVEAL`、`EFFECT_GROUP`、`SEARCH_DECK`、`ADD_TO_HAND`、`SHUFFLE_DECK`。対応Costは`PAY_STOCK`と`REST_SELF`。Group条件は数値結果の`>= min`だけ、検索filterは`cardType: CHARACTER`と`traits.anyOf`だけを対応する。未知type、重複ID、欠落field、型不一致、未対応condition/filterはLoaderとruntimeでfail-fastし、AND/OR/NOT、任意式、allOf等は解釈しない。詳細は[集中](キーワード能力/集中.md)を参照する。

@@ -77,7 +77,7 @@ docs/README.md
 
 以下を新規作成してください。
 
-docs/１．設計書/エンティティ・オブジェクト一覧.md
+docs/１．設計書/システム共通/エンティティ・オブジェクト一覧.md
 
 既存の設計書と現在の実装を確認したうえで、主要なEntity / Data ObjectとService / Componentを整理してください。
 

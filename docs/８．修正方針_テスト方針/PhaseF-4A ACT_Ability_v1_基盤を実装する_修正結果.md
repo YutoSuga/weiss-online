@@ -93,7 +93,7 @@ Testing
 
 ✅ git diff --check
 
-✅ rg -n "effectQueue|AUTO.*execute|CONTINUOUS.*execute|西森|集中|stock\.pop|setPosition\(POSITION\.REST" client/js/core/renderer.js client/js/ui/mainPhaseController.js client/js/core/gameEngine.js client/js/abilities docs/１．設計書/カード能力.md — Controller / RendererにAbility Cost mutationがなく、AUTO / CONTINUOUS実行やeffectQueue変更がないことを確認
+✅ rg -n "effectQueue|AUTO.*execute|CONTINUOUS.*execute|西森|集中|stock\.pop|setPosition\(POSITION\.REST" client/js/core/renderer.js client/js/ui/mainPhaseController.js client/js/core/gameEngine.js client/js/abilities docs/１．設計書/対戦画面/カード能力/起動効果/ACT能力共通.md — Controller / RendererにAbility Cost mutationがなく、AUTO / CONTINUOUS実行やeffectQueue変更がないことを確認
 
 ✅ git status --short --branch — ## work、working tree clean
 

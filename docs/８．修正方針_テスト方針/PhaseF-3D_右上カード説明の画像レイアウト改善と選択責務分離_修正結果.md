@@ -41,11 +41,11 @@ client/js/ui/mainPhaseController.js
 
 client/tests/phaseF3D.test.mjs
 
-docs/１．設計書/UI操作.md
+docs/１．設計書/対戦画面/UI操作.md
 
-docs/１．設計書/JavaScript仕様.md
+docs/１．設計書/システム共通/JavaScript仕様.md
 
-docs/１．設計書/メインフェイズ.md
+docs/１．設計書/対戦画面/フェイズ/メインフェイズ.md
 
 新規: client/tests/mainHandSelection.test.mjs
 

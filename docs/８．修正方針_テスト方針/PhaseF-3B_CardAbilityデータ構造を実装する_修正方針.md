@@ -32,10 +32,10 @@ CardAbilityデータ構造を導入します。
 
 - README.md
 - docs/設計書一覧.md
-- docs/１．設計書/カードデータモデル.md
-- docs/１．設計書/エンティティ・オブジェクト一覧.md
-- docs/１．設計書/アーキテクチャ.md
-- docs/１．設計書/JavaScript仕様.md
+- docs/１．設計書/システム共通/カードデータモデル.md
+- docs/１．設計書/システム共通/エンティティ・オブジェクト一覧.md
+- docs/１．設計書/システム共通/アーキテクチャ.md
+- docs/１．設計書/システム共通/JavaScript仕様.md
 - client/js/models/cardMaster.js
 - client/js/models/cardMasterRegistry.js
 - client/js/models/card.js
@@ -1078,10 +1078,10 @@ card.baseSoul
 
 - README.md
 - docs/設計書一覧.md
-- docs/１．設計書/カードデータモデル.md
-- docs/１．設計書/エンティティ・オブジェクト一覧.md
-- docs/１．設計書/アーキテクチャ.md
-- docs/１．設計書/JavaScript仕様.md
+- docs/１．設計書/システム共通/カードデータモデル.md
+- docs/１．設計書/システム共通/エンティティ・オブジェクト一覧.md
+- docs/１．設計書/システム共通/アーキテクチャ.md
+- docs/１．設計書/システム共通/JavaScript仕様.md
 
 
 設計書には少なくとも以下を明記してください。
@@ -1268,10 +1268,10 @@ CardAbilityデータ構造を導入します。
 
 - README.md
 - docs/設計書一覧.md
-- docs/１．設計書/カードデータモデル.md
-- docs/１．設計書/エンティティ・オブジェクト一覧.md
-- docs/１．設計書/アーキテクチャ.md
-- docs/１．設計書/JavaScript仕様.md
+- docs/１．設計書/システム共通/カードデータモデル.md
+- docs/１．設計書/システム共通/エンティティ・オブジェクト一覧.md
+- docs/１．設計書/システム共通/アーキテクチャ.md
+- docs/１．設計書/システム共通/JavaScript仕様.md
 - client/js/models/cardMaster.js
 - client/js/models/cardMasterRegistry.js
 - client/js/models/card.js
@@ -2314,10 +2314,10 @@ card.baseSoul
 
 - README.md
 - docs/設計書一覧.md
-- docs/１．設計書/カードデータモデル.md
-- docs/１．設計書/エンティティ・オブジェクト一覧.md
-- docs/１．設計書/アーキテクチャ.md
-- docs/１．設計書/JavaScript仕様.md
+- docs/１．設計書/システム共通/カードデータモデル.md
+- docs/１．設計書/システム共通/エンティティ・オブジェクト一覧.md
+- docs/１．設計書/システム共通/アーキテクチャ.md
+- docs/１．設計書/システム共通/JavaScript仕様.md
 
 
 設計書には少なくとも以下を明記してください。

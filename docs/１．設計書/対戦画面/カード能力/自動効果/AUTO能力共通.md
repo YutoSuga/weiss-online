@@ -1,4 +1,4 @@
-# AUTO能力
+# AUTO能力共通設計
 
 ## 1. Phase F-5B / F-5Cの責務
 

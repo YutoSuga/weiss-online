@@ -27,7 +27,7 @@ docs/README.mdは作業開始時点ですでに存在せず、既存のdocs/設�
 
 ルートREADME.mdの設計書リンクを新しい日本語ファイル名へ更新し、新規のEntity / Object一覧へのリンクも追加しました。
 
-docs/１．設計書/エンティティ・オブジェクト一覧.mdを新規作成しました。CardMaster、CardAbility、Card、DeckDefinition、Deck、Player、GameStateについて、分類、責務、可変性、管理主体、現在の実装状況を整理しています。
+docs/１．設計書/システム共通/エンティティ・オブジェクト一覧.mdを新規作成しました。CardMaster、CardAbility、Card、DeckDefinition、Deck、Player、GameStateについて、分類、責務、可変性、管理主体、現在の実装状況を整理しています。
 
 Service / ComponentとしてCardMasterRegistry、GameEngine、ProcessManager、Renderer、Controllersを整理し、「実装済み」「概念設計」「F-3A予定」「F-3B予定」「F-3D予定」を明確に区別しました。
 
