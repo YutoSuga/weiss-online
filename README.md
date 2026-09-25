@@ -75,9 +75,9 @@ Interrupt Process
 
 ## 現在地点
 
-**Phase F-4：ACT Ability COMPLETE**
+**Phase F-5B：Game Event / AUTO Trigger Detection / Pending生成 COMPLETE**
 
-F-4A ACT Ability v1基盤、F-4B「人気アイドル 西森 柚咲」【起】集中とUI/UX Follow-up、F-4C-1 ACT Ability基盤 実装レビューまで完了しました。次の主要実装対象は **Phase F-5：AUTO Ability** です。F-5の詳細分割・詳細設計はF-5着手時に決定します。
+F-4 ACT Ability、F-5A AUTO Ability基盤の実装前設計レビュー、F-5BのGame Event / Trigger Detection / Pending AUTO生成まで完了しました。次の主要実装対象は **Phase F-5C：Pending AUTO提示・Check Point統合** です。AUTOの使用/不使用、Cost、Effect解決はまだ実装していません。
 
 現在、CLOCKフェイズの完了後には以下の流れが成立します。
 
@@ -118,7 +118,9 @@ CLIMAX
 - [x] **Phase F-4B UI/UX Follow-up（COMPLETE）**
 - [x] **Phase F-4C-1 ACT Ability基盤 実装レビュー（COMPLETE）**
 - [x] **Phase F-4 ACT Ability（COMPLETE）**
-- [ ] **Phase F-5 AUTO Ability基盤（NEXT）**
+- [x] **Phase F-5A AUTO Ability基盤 実装前設計レビュー（COMPLETE）**
+- [x] **Phase F-5B Game Event / AUTO Trigger Detection / Pending生成（COMPLETE）**
+- [ ] **Phase F-5C Pending AUTO提示・Check Point統合（NEXT）**
 - [ ] Phase F-6 CONTINUOUS Ability基盤
 
 ### Phase F-2A：MAINカード選択 / Destination UI
@@ -184,7 +186,9 @@ F-4AでStage上のACT検出、使用可能判定、`ACT_ABILITY` Process、Cost 
 
 ### Phase F-5 / F-6
 
-- **F-5 AUTO Ability基盤**：Game EventからTriggerを検出し、AUTO Abilityを解決する基盤
+- **F-5A（COMPLETE）**：AUTO Ability基盤の実装前設計レビュー
+- **F-5B（COMPLETE）**：5種類のGame EventからTriggerを検出し、PRINTED / RULE由来のPending AUTOを生成する基盤
+- **F-5C（NEXT）**：Rule Check安定化後のPending AUTO提示、Turn / Non-Turn順、使用/不使用とCheck Point統合
 - **F-6 CONTINUOUS Ability基盤**：GameStateや盤面状態に応じて継続的に状態を評価する基盤
 
 ## プレイ画面 / Zone

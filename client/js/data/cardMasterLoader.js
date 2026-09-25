@@ -3,6 +3,10 @@ import { CardMasterRegistry } from "../models/cardMasterRegistry.js";
 import { ABILITY_KEYWORD, ABILITY_TYPE } from "../constants/ability.js";
 import { getCostHandler } from "../abilities/costResolver.js";
 import { validateEffects } from "../abilities/effectResolver.js";
+import { AUTO_TRIGGER_SUBJECT, GAME_EVENT_TYPE } from "../constants/gameEvent.js";
+import { PHASE_VALUES } from "../constants/phase.js";
+import { ZONE_VALUES } from "../constants/zone.js";
+import { POSITION } from "../models/card.js";
 
 export const DEFAULT_CARD_MASTER_URL = new URL("../../data/card-masters.json", import.meta.url);
 
@@ -34,6 +38,16 @@ export function validateCardMasterDefinitions(value) {
       throw new TypeError(`CardMaster data[${index}].abilities must be an array.`);
     }
     definition.abilities.forEach((ability, abilityIndex) => {
+      if (ability?.type === ABILITY_TYPE.AUTO && ability.activationTrigger !== null) {
+        try {
+          validateAutoAbility(ability);
+        } catch (error) {
+          throw new TypeError(
+            `CardMaster data[${index}].abilities[${abilityIndex}] has an invalid AUTO trigger: ${error.message}`,
+            { cause: error },
+          );
+        }
+      }
       if (ability?.type !== ABILITY_TYPE.ACT) return;
       try {
         const keywords = ability.keywords ?? [];
@@ -57,6 +71,43 @@ export function validateCardMasterDefinitions(value) {
     });
   });
   return value;
+}
+
+function validateAutoAbility(ability) {
+  const trigger = ability.activationTrigger;
+  if (!trigger || typeof trigger !== "object" || Array.isArray(trigger)) {
+    throw new TypeError("activationTrigger must be an object or null.");
+  }
+  if (!Object.values(GAME_EVENT_TYPE).includes(trigger.event)) {
+    throw new RangeError("event is not supported in F-5B.");
+  }
+  const allowed = {
+    [GAME_EVENT_TYPE.CARD_MOVED]: ["event", "subject", "fromZone", "toZone"],
+    [GAME_EVENT_TYPE.CARD_POSITION_CHANGED]: ["event", "subject", "fromPosition", "toPosition"],
+    [GAME_EVENT_TYPE.ATTACK_DECLARED]: ["event", "subject", "attackType"],
+    [GAME_EVENT_TYPE.PHASE_STARTED]: ["event", "phase"],
+    [GAME_EVENT_TYPE.PHASE_ENDED]: ["event", "phase"],
+  }[trigger.event];
+  const unknown = Object.keys(trigger).filter((field) => !allowed.includes(field));
+  if (unknown.length > 0) throw new RangeError(`unsupported field: ${unknown.join(", ")}.`);
+  if ([GAME_EVENT_TYPE.CARD_MOVED, GAME_EVENT_TYPE.CARD_POSITION_CHANGED,
+    GAME_EVENT_TYPE.ATTACK_DECLARED].includes(trigger.event) &&
+    !Object.values(AUTO_TRIGGER_SUBJECT).includes(trigger.subject)) {
+    throw new RangeError("subject is required for this event.");
+  }
+  for (const field of ["fromZone", "toZone"]) {
+    if (trigger[field] != null && !ZONE_VALUES.includes(trigger[field])) throw new RangeError(`${field} is invalid.`);
+  }
+  for (const field of ["fromPosition", "toPosition"]) {
+    if (trigger[field] != null && !Object.values(POSITION).includes(trigger[field])) throw new RangeError(`${field} is invalid.`);
+  }
+  if (trigger.phase != null && !PHASE_VALUES.includes(trigger.phase)) throw new RangeError("phase is invalid.");
+  if (!Array.isArray(ability.activeZones) || ability.activeZones.some((zone) => !ZONE_VALUES.includes(zone))) {
+    throw new RangeError("activeZones must contain supported zones.");
+  }
+  if (trigger.subject !== AUTO_TRIGGER_SUBJECT.SELF && ability.activeZones.length === 0) {
+    throw new RangeError("non-SELF AUTO requires activeZones.");
+  }
 }
 
 /** データソースからCardMaster用plain object群を取得する。 */
