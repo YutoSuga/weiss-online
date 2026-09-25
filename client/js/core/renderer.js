@@ -2,6 +2,7 @@ import { VISIBILITY, ZONE, ZONE_VISIBILITY } from "../constants/zone.js";
 import { PHASE } from "../constants/phase.js";
 import { FACE } from "../models/card.js";
 import { ABILITY_TYPE } from "../constants/ability.js";
+import { PENDING_AUTO_STEP, PROCESS_TYPE } from "../constants/process.js";
 
 const ABILITY_LABELS = Object.freeze({
   [ABILITY_TYPE.CONTINUOUS]: "【永】",
@@ -69,6 +70,7 @@ export class Renderer {
     this.updateMessageOverlay(gameState);
     this.updatePhaseBar(gameState);
     this.updateTurnEndButton(gameState);
+    this.renderPendingAutoSelection(gameState);
 
     if (!gameState || typeof gameState !== "object") {
       return;
@@ -76,6 +78,46 @@ export class Renderer {
 
     this.renderPlayer(gameState.players?.self, "self");
     this.renderPlayer(gameState.players?.opponent, "opponent");
+  }
+
+  /** Engine/Processを正本として、1件の場合もPending AUTO選択を表示する。 */
+  renderPendingAutoSelection(gameState) {
+    let dialog = this.rootElement?.querySelector("[data-pending-auto-dialog]");
+    if (!(dialog instanceof HTMLElement)) {
+      dialog = document.createElement("aside");
+      dialog.dataset.pendingAutoDialog = "";
+      dialog.className = "pending-auto-dialog";
+      dialog.innerHTML = '<div class="pending-auto-panel"><h2>自動能力</h2><p data-pending-auto-message></p><div data-pending-auto-list></div><div data-cost-selection hidden><h3>コスト選択</h3><p>コストに使用するカードを選択してください</p><button type="button" data-action="back-pending-auto">効果選択に戻る</button><button type="button" data-action="confirm-prepared-costs">決定</button></div></div>';
+      this.rootElement?.body?.append(dialog);
+    }
+    const process = gameState?.ruleState?.processStack?.at(-1);
+    const visible = process?.type === PROCESS_TYPE.PENDING_AUTO;
+    dialog.hidden = !visible;
+    if (!visible) return;
+    const selectingCost = process.step === PENDING_AUTO_STEP.SELECT_COST;
+    dialog.querySelector("[data-pending-auto-message]").textContent = selectingCost
+      ? "支払うコストを選択してください"
+      : "待機中の自動能力を選択してください";
+    dialog.querySelector("[data-cost-selection]").hidden = !selectingCost;
+    const list = dialog.querySelector("[data-pending-auto-list]");
+    list.hidden = selectingCost;
+    list.replaceChildren();
+    if (selectingCost) return;
+    const pending = gameState.ruleState.pendingAutos.filter(({ masterPlayerId }) => masterPlayerId === process.playerId);
+    pending.forEach((item) => {
+      let card = null;
+      for (const player of Object.values(gameState.players)) {
+        card = [...player.hand, ...player.stage, ...player.clock, ...player.level, ...player.stock,
+          ...player.waitingRoom, ...player.memory, ...player.resolution, ...player.climax, ...player.deck.cards]
+          .find(({ instanceId }) => instanceId === item.source.cardInstanceId);
+        if (card) break;
+      }
+      const ability = card?.abilities.find(({ id }) => id === item.source.abilityId);
+      const entry = document.createElement("article");
+      entry.className = "pending-auto-entry";
+      entry.innerHTML = `<strong>${card?.name ?? item.source.cardMasterId}</strong><p>${ability?.keywords?.join(" / ") || "自動能力"}</p><p>${ability?.text ?? item.source.abilityId}</p><p>Cost: ${ability?.costs?.map(({ type, amount }) => `${type}${amount ? ` ${amount}` : ""}`).join(", ") || "なし"}</p><button type="button" data-action="resolve-pending-auto" data-pending-auto-id="${item.id}">解決する</button>`;
+      list.append(entry);
+    });
   }
 
   /**

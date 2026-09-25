@@ -21,6 +21,10 @@ const STANDARD_ENCORE_3 = Object.freeze({
   effects: Object.freeze([]),
 });
 
+export function getRuleAutoAbility(ruleAbilityId) {
+  return ruleAbilityId === RULE_ABILITY_ID.STANDARD_ENCORE_3 ? STANDARD_ENCORE_3 : null;
+}
+
 /** Eventからルール由来AUTO候補を供給する。Effect解決は行わない。 */
 export function getRuleAutoAbilityCandidates(event, locateCard) {
   if (event.type !== GAME_EVENT_TYPE.CARD_MOVED ||

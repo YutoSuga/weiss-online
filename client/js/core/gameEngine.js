@@ -6,6 +6,7 @@ import {
 import { ZONE } from "../constants/zone.js";
 import {
   ACT_ABILITY_STEP,
+  AUTO_ABILITY_STEP,
   CLOCK_STEP,
   DRAW_STEP,
   MAIN_STEP,
@@ -18,9 +19,10 @@ import {
   REFRESH_STEP,
   SEARCH_DECK_STEP,
   SWAP_STAGE_STEP,
+  PENDING_AUTO_STEP,
 } from "../constants/process.js";
-import { ABILITY_TYPE, EFFECT_TYPE } from "../constants/ability.js";
-import { getCostsDisabledReason, payCosts } from "../abilities/costResolver.js";
+import { ABILITY_SOURCE, ABILITY_TYPE, EFFECT_TYPE } from "../constants/ability.js";
+import { getCostsDisabledReason, getPreparedCostsDisabledReason, payCosts, prepareCostSelections } from "../abilities/costResolver.js";
 import {
   cardMatchesSearchFilter,
   resolveEffect,
@@ -37,6 +39,7 @@ import { ProcessManager } from "./processManager.js";
 import { GameEventDispatcher } from "./gameEventDispatcher.js";
 import { locateCard } from "../abilities/autoTriggerDetector.js";
 import { GAME_EVENT_TYPE } from "../constants/gameEvent.js";
+import { getRuleAutoAbility } from "../abilities/ruleAbilityProvider.js";
 
 const PHASE_ORDER = Object.freeze([
   PHASE.STAND,
@@ -542,7 +545,7 @@ export class GameEngine {
           break;
         case DRAW_STEP.CHECK_POINT: {
           this.processManager.updateStep(DRAW_STEP.COMPLETE);
-          const result = this.resolveRuleCheck();
+          const result = this.resolveCheckPoint();
           if (result !== RULE_CHECK_RESULT.CONTINUE) {
             return drawProcess;
           }
@@ -736,7 +739,7 @@ export class GameEngine {
         }
         case PLAY_CHARACTER_STEP.CHECK_POINT: {
           this.processManager.updateStep(PLAY_CHARACTER_STEP.COMPLETE);
-          const result = this.resolveRuleCheck();
+          const result = this.resolveCheckPoint();
           if (result !== RULE_CHECK_RESULT.CONTINUE) return process;
           break;
         }
@@ -902,7 +905,7 @@ export class GameEngine {
         }
         case ACT_ABILITY_STEP.CHECK_POINT_AFTER_COST:
           this.processManager.updateStep(ACT_ABILITY_STEP.RESOLVE_EFFECT);
-          if (this.resolveRuleCheck() !== RULE_CHECK_RESULT.CONTINUE) return process;
+          if (this.resolveCheckPoint() !== RULE_CHECK_RESULT.CONTINUE) return process;
           break;
         case ACT_ABILITY_STEP.RESOLVE_EFFECT: {
           const ability = getAbility();
@@ -936,7 +939,7 @@ export class GameEngine {
           return process;
         case ACT_ABILITY_STEP.CHECK_POINT_AFTER_EFFECT:
           this.processManager.updateStep(ACT_ABILITY_STEP.RESOLVE_EFFECT);
-          if (this.resolveRuleCheck() !== RULE_CHECK_RESULT.CONTINUE) return process;
+          if (this.resolveCheckPoint() !== RULE_CHECK_RESULT.CONTINUE) return process;
           break;
         case ACT_ABILITY_STEP.COMPLETE:
           this.completeCurrentProcess();
@@ -976,7 +979,7 @@ export class GameEngine {
       while (state.movedCardInstanceIds.length < state.targetCount) {
         const card = player.deck.draw();
         if (!card) {
-          if (this.resolveRuleCheck() !== RULE_CHECK_RESULT.CONTINUE) return false;
+          if (this.resolveCheckPoint() !== RULE_CHECK_RESULT.CONTINUE) return false;
           throw new Error("BRAINSTORM_REVEAL cannot continue from an empty Deck.");
         }
         card.moveTo({ zone: ZONE.RESOLUTION, index: player.resolution.length + 1 });
@@ -1220,7 +1223,7 @@ export class GameEngine {
         }
         case MOVE_STAGE_STEP.CHECK_POINT: {
           this.processManager.updateStep(MOVE_STAGE_STEP.COMPLETE);
-          if (this.resolveRuleCheck() !== RULE_CHECK_RESULT.CONTINUE) return process;
+          if (this.resolveCheckPoint() !== RULE_CHECK_RESULT.CONTINUE) return process;
           break;
         }
         case MOVE_STAGE_STEP.COMPLETE:
@@ -1297,7 +1300,7 @@ export class GameEngine {
         }
         case SWAP_STAGE_STEP.CHECK_POINT: {
           this.processManager.updateStep(SWAP_STAGE_STEP.COMPLETE);
-          if (this.resolveRuleCheck() !== RULE_CHECK_RESULT.CONTINUE) return process;
+          if (this.resolveCheckPoint() !== RULE_CHECK_RESULT.CONTINUE) return process;
           break;
         }
         case SWAP_STAGE_STEP.COMPLETE:
@@ -1468,7 +1471,7 @@ export class GameEngine {
           break;
         case CLOCK_STEP.CHECK_POINT_AFTER_CLOCK: {
           this.processManager.updateStep(CLOCK_STEP.DRAW_1);
-          const result = this.resolveRuleCheck();
+          const result = this.resolveCheckPoint();
           if (result !== RULE_CHECK_RESULT.CONTINUE) {
             return clockProcess;
           }
@@ -1480,7 +1483,7 @@ export class GameEngine {
           break;
         case CLOCK_STEP.CHECK_POINT_AFTER_DRAW_1: {
           this.processManager.updateStep(CLOCK_STEP.DRAW_2);
-          const result = this.resolveRuleCheck();
+          const result = this.resolveCheckPoint();
           if (result !== RULE_CHECK_RESULT.CONTINUE) {
             return clockProcess;
           }
@@ -1492,7 +1495,7 @@ export class GameEngine {
           break;
         case CLOCK_STEP.CHECK_POINT_AFTER_DRAW_2: {
           this.processManager.updateStep(CLOCK_STEP.COMPLETE);
-          const result = this.resolveRuleCheck();
+          const result = this.resolveCheckPoint();
           if (result !== RULE_CHECK_RESULT.CONTINUE) {
             return clockProcess;
           }
@@ -1741,7 +1744,7 @@ export class GameEngine {
           break;
         case REFRESH_PENALTY_STEP.CHECK_POINT: {
           this.processManager.updateStep(REFRESH_PENALTY_STEP.COMPLETE);
-          const result = this.resolveRuleCheck();
+          const result = this.resolveCheckPoint();
           if (result !== RULE_CHECK_RESULT.CONTINUE) {
             return penaltyProcess;
           }
@@ -2064,6 +2067,147 @@ export class GameEngine {
   }
 
   /**
+   * 公式Check Timingの単一入口。Rule Checkを先に安定化し、現在の能力解決へ
+   * 割り込まない場合だけTurn Player、次にNon-Turn PlayerのAUTO選択を開始する。
+   */
+  resolveCheckPoint() {
+    const ruleResult = this.resolveRuleCheck();
+    if (ruleResult !== RULE_CHECK_RESULT.CONTINUE) return ruleResult;
+    const current = this.processManager.getCurrentProcess();
+    if (current?.type === PROCESS_TYPE.AUTO_ABILITY || current?.type === PROCESS_TYPE.PENDING_AUTO) {
+      return RULE_CHECK_RESULT.CONTINUE;
+    }
+    const turnPlayer = this.gameState.turn.player;
+    const nonTurnPlayer = PLAYER_IDS.find((id) => id !== turnPlayer);
+    const playerId = [turnPlayer, nonTurnPlayer].find((id) =>
+      this.gameState.ruleState.pendingAutos.some((pending) => pending.masterPlayerId === id));
+    if (!playerId) return RULE_CHECK_RESULT.CONTINUE;
+    this.processManager.pushProcess({
+      type: PROCESS_TYPE.PENDING_AUTO,
+      playerId,
+      step: PENDING_AUTO_STEP.SELECT_AUTO,
+      status: PROCESS_STATUS.WAITING_INPUT,
+      context: { selectedPendingAutoId: null, preparedCosts: [] },
+    });
+    this.render();
+    return RULE_CHECK_RESULT.INTERRUPTED;
+  }
+
+  /** 現在のCheck Timing対象Playerが自由に選べるPending一覧。配列順は強制解決順ではない。 */
+  getPendingAutoOptions() {
+    const process = this.processManager.getCurrentProcess();
+    if (process?.type !== PROCESS_TYPE.PENDING_AUTO || process.step !== PENDING_AUTO_STEP.SELECT_AUTO) return [];
+    return this.gameState.ruleState.pendingAutos
+      .filter(({ masterPlayerId }) => masterPlayerId === process.playerId)
+      .map((pending) => {
+        const { card, ability } = this.#resolvePendingAuto(pending);
+        return { pending, card, ability, disabledReason: ability ? null : "能力定義が見つかりません。" };
+      });
+  }
+
+  /** Pendingを選ぶ。選択Costがなければ最終再検証後ただちにAUTO Processへ移管する。 */
+  selectPendingAuto(pendingAutoId) {
+    const process = this.processManager.getCurrentProcess();
+    if (process?.type !== PROCESS_TYPE.PENDING_AUTO || process.step !== PENDING_AUTO_STEP.SELECT_AUTO) {
+      throw new Error("自動能力の選択待ちではありません。");
+    }
+    const pending = this.gameState.ruleState.pendingAutos.find(({ id }) => id === pendingAutoId);
+    if (!pending || pending.masterPlayerId !== process.playerId) throw new Error("選択できる自動能力ではありません。");
+    const { card, ability } = this.#resolvePendingAuto(pending);
+    if (!ability) throw new Error("自動能力の定義が見つかりません。");
+    const player = this.gameState.players[process.playerId];
+    const preparedCosts = prepareCostSelections(ability.costs, { player, sourceCard: card });
+    process.context.selectedPendingAutoId = pending.id;
+    process.context.preparedCosts = preparedCosts;
+    if (preparedCosts.length > 0) {
+      process.step = PENDING_AUTO_STEP.SELECT_COST;
+      this.render();
+      return process;
+    }
+    return this.#commitPendingAuto(process, pending, card, ability);
+  }
+
+  /** Cost Selectionを破棄してAUTO一覧へ戻る（mutationもPending消費も行わない）。 */
+  backToPendingAutoSelection() {
+    const process = this.processManager.getCurrentProcess();
+    if (process?.type !== PROCESS_TYPE.PENDING_AUTO || process.step !== PENDING_AUTO_STEP.SELECT_COST) {
+      throw new Error("コスト選択待ちではありません。");
+    }
+    process.context.selectedPendingAutoId = null;
+    process.context.preparedCosts = [];
+    process.step = PENDING_AUTO_STEP.SELECT_AUTO;
+    this.render();
+  }
+
+  confirmPreparedCosts(preparedCosts) {
+    const process = this.processManager.getCurrentProcess();
+    if (process?.type !== PROCESS_TYPE.PENDING_AUTO || process.step !== PENDING_AUTO_STEP.SELECT_COST) {
+      throw new Error("コスト選択待ちではありません。");
+    }
+    const pending = this.gameState.ruleState.pendingAutos.find(({ id }) => id === process.context.selectedPendingAutoId);
+    const { card, ability } = this.#resolvePendingAuto(pending);
+    process.context.preparedCosts = structuredClone(preparedCosts);
+    return this.#commitPendingAuto(process, pending, card, ability);
+  }
+
+  #commitPendingAuto(process, pending, card, ability) {
+    if (!pending || !ability) throw new Error("自動能力が見つかりません。");
+    const player = this.gameState.players[process.playerId];
+    const reason = getPreparedCostsDisabledReason(ability.costs, process.context.preparedCosts, { player, sourceCard: card });
+    // Cost可否は誘発事実・AUTOのプレイ可否とは分離する。払えない任意Costなら後続効果を行わない。
+    const payCost = reason === null;
+    const index = this.gameState.ruleState.pendingAutos.findIndex(({ id }) => id === pending.id);
+    if (index < 0) throw new Error("Pending AUTOは既に消費されています。");
+    this.gameState.ruleState.pendingAutos.splice(index, 1);
+    this.processManager.popProcess();
+    const autoProcess = this.processManager.pushProcess({
+      type: PROCESS_TYPE.AUTO_ABILITY,
+      playerId: process.playerId,
+      step: AUTO_ABILITY_STEP.PAY_COST,
+      status: PROCESS_STATUS.RUNNING,
+      context: { pendingAuto: pending, preparedCosts: process.context.preparedCosts, payCost, effectIndex: 0 },
+    });
+    this.executeAutoAbilityProcess();
+    return autoProcess;
+  }
+
+  executeAutoAbilityProcess() {
+    const process = this.processManager.getCurrentProcess();
+    if (process?.type !== PROCESS_TYPE.AUTO_ABILITY) return process;
+    const { card, ability } = this.#resolvePendingAuto(process.context.pendingAuto);
+    const player = this.gameState.players[process.playerId];
+    while (this.processManager.getCurrentProcess() === process) {
+      if (process.step === AUTO_ABILITY_STEP.PAY_COST) {
+        if (process.context.payCost) {
+          const reason = getPreparedCostsDisabledReason(ability.costs, process.context.preparedCosts, { player, sourceCard: card });
+          if (reason) throw new Error(reason); // mutation直前の最終再検証
+          payCosts(ability.costs, { player, sourceCard: card });
+        }
+        process.step = process.context.payCost ? AUTO_ABILITY_STEP.RESOLVE_EFFECT : AUTO_ABILITY_STEP.COMPLETE;
+      } else if (process.step === AUTO_ABILITY_STEP.RESOLVE_EFFECT) {
+        if (process.context.effectIndex >= ability.effects.length) process.step = AUTO_ABILITY_STEP.COMPLETE;
+        else {
+          resolveEffect(ability.effects[process.context.effectIndex++], { gameEngine: this, player, playerId: process.playerId, sourceCard: card });
+        }
+      } else if (process.step === AUTO_ABILITY_STEP.COMPLETE) {
+        this.completeCurrentProcess();
+        return process;
+      } else throw new RangeError(`Unknown AUTO_ABILITY step: ${process.step}.`);
+    }
+    return process;
+  }
+
+  #resolvePendingAuto(pending) {
+    if (!pending) return { card: null, ability: null };
+    let card = null;
+    try { card = locateCard(this.gameState, pending.source.cardInstanceId).card; } catch { /* LKIだけで残るPendingを許容 */ }
+    const ability = pending.source.kind === ABILITY_SOURCE.RULE
+      ? getRuleAutoAbility(pending.source.abilityId)
+      : card?.abilities.find(({ id }) => id === pending.source.abilityId) ?? null;
+    return { card, ability };
+  }
+
+  /**
    * 現在Processを終了し、最新状態を再チェックする共通出口。
    * CONTINUE時はスタック下の既知Processを保存済みstepから再開する。
    *
@@ -2075,7 +2219,7 @@ export class GameEngine {
       return RULE_CHECK_RESULT.CONTINUE;
     }
 
-    const result = this.resolveRuleCheck();
+    const result = this.resolveCheckPoint();
     if (result === RULE_CHECK_RESULT.CONTINUE) {
       this.executeCurrentProcess();
       this.render();
@@ -2116,6 +2260,7 @@ export class GameEngine {
     if (process.type === PROCESS_TYPE.ACT_ABILITY) {
       return this.executeActAbilityProcess();
     }
+    if (process.type === PROCESS_TYPE.AUTO_ABILITY) return this.executeAutoAbilityProcess();
     if (process.type === PROCESS_TYPE.SEARCH_DECK) {
       return this.executeSearchDeckProcess();
     }

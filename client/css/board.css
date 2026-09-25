@@ -1378,3 +1378,8 @@ ul {
     max-height: none;
   }
 }
+
+.pending-auto-dialog { position: fixed; inset: 0; z-index: 1200; background: rgb(0 0 0 / 65%); padding: 4vh 8vw; overflow: auto; }
+.pending-auto-panel { max-width: 760px; margin: auto; padding: 1.25rem; border-radius: 12px; background: #fff; color: #222; }
+.pending-auto-entry { display: grid; gap: .35rem; margin: .75rem 0; padding: 1rem; border: 1px solid #bbb; border-radius: 8px; }
+.pending-auto-entry p { margin: 0; }
