@@ -37,6 +37,9 @@ const PLAYER_SIDE_VALUES = Object.freeze(["self", "opponent"]);
  * @property {unknown[]} processStack
  * @property {unknown[]} pendingInterrupts
  * @property {unknown[]} pendingChecks
+ * @property {unknown[]} pendingAutos
+ * @property {number} nextGameEventSequence
+ * @property {number} nextPendingAutoSequence
  */
 
 /**
@@ -142,7 +145,13 @@ export class GameState {
       (ruleState.pendingInterrupts != null &&
         !Array.isArray(ruleState.pendingInterrupts)) ||
       (ruleState.pendingChecks != null &&
-        !Array.isArray(ruleState.pendingChecks))
+        !Array.isArray(ruleState.pendingChecks)) ||
+      (ruleState.pendingAutos != null &&
+        !Array.isArray(ruleState.pendingAutos)) ||
+      (ruleState.nextGameEventSequence != null &&
+        (!Number.isInteger(ruleState.nextGameEventSequence) || ruleState.nextGameEventSequence < 1)) ||
+      (ruleState.nextPendingAutoSequence != null &&
+        (!Number.isInteger(ruleState.nextPendingAutoSequence) || ruleState.nextPendingAutoSequence < 1))
     ) {
       throw new TypeError("ruleState is invalid.");
     }
@@ -222,6 +231,9 @@ export class GameState {
       processStack: [...(ruleState.processStack ?? [])],
       pendingInterrupts: [...(ruleState.pendingInterrupts ?? [])],
       pendingChecks: [...(ruleState.pendingChecks ?? [])],
+      pendingAutos: [...(ruleState.pendingAutos ?? [])],
+      nextGameEventSequence: ruleState.nextGameEventSequence ?? 1,
+      nextPendingAutoSequence: ruleState.nextPendingAutoSequence ?? 1,
     };
 
     /** @type {GameResult} */

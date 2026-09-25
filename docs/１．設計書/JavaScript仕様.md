@@ -136,3 +136,13 @@ MAINのQueryは、選択可否とゲームActionの実行可否を分離する�
 ## Card Detail描画責務（Phase F-4B UI/UX Follow-up 2）
 
 `Renderer.renderCardDetail(card, options)`は`options.container`を受け取り、未指定時は通常盤面、指定時はResolution / Deck Search Modal内へ同一の画像・基本情報・特徴・能力描画を行う（CardDetailView相当の共通責務）。非公開Zoneは原則として従来のvisibility判定に従い、自分のDeckを公開して検索するDeck Search中だけControllerが`allowPrivate`を明示する。`CardSelectionView`はMulligan / Deck Search / Resolutionのselectable・selected DOM表現のみを担う。ResolutionConfirmationControllerはdetail only、DeckSearchControllerはdetail対象IDをUIローカルに保持し、eligibleだけをtoggleする。いずれもCard Detail確認状態をGameStateへ保存しない。
+
+## Phase F-5B: Game Event / Pending AUTO API
+
+`GameEventDispatcher.emit(type, actorPlayerId, payload)`は単調増加するEvent IDを付け、JSON互換の小さいpayloadをdeep copy / freezeした後、`detectAutoTriggers()`を同期実行する。Event全履歴は保存せず、該当したEvent snapshotだけをPendingから参照する。
+
+正式Eventは`CARD_MOVED`、`CARD_POSITION_CHANGED`、`ATTACK_DECLARED`、`PHASE_STARTED`、`PHASE_ENDED`の5種類である。未実装Eventは具体的なカードまたはPhaseで必要になった時に追加し、任意式を扱う巨大なEvent frameworkは先行実装しない。
+
+`GameEngine.moveCard()`はcollection remove / insert、Card表示metadata更新、reindexを完了してから`CARD_MOVED`を発行する。`changeCardPosition()`は値が変わる場合だけ変更完了後に発行する。`enterPhase()`は旧phaseの`PHASE_ENDED`をphase更新前、新phaseの`PHASE_STARTED`を更新後・固有Process開始前に発行する。`declareAttackEvent()`は将来のAttack宣言確定境界用であり、F-5BではAttack Processを実装しない。
+
+現在位置の正本はPlayer / Deckのcollection membershipである。`locateCard(instanceId)`は全collectionを読み取り、所在がちょうど1件でなければinvariant違反とする。Cardへ`currentLocation` / `previousLocation`は追加しない。`CARD_MOVED.from/to`だけを発生時snapshotとして保持する。

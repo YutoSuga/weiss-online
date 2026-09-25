@@ -10,6 +10,7 @@ export class CardAbility {
     keywords = [],
     text = "",
     activationTrigger = null,
+    activeZones = [],
     conditions = [],
     costs = [],
     effects = [],
@@ -23,6 +24,7 @@ export class CardAbility {
     assertStringArray("keywords", keywords);
     if (typeof text !== "string") throw new TypeError("text must be a string.");
     assertArray("conditions", conditions);
+    assertStringArray("activeZones", activeZones);
     assertArray("costs", costs);
     assertArray("effects", effects);
 
@@ -34,6 +36,7 @@ export class CardAbility {
       activationTrigger,
       "activationTrigger",
     );
+    this.activeZones = cloneAndDeepFreeze(activeZones, "activeZones");
     this.conditions = cloneAndDeepFreeze(conditions, "conditions");
     this.costs = cloneAndDeepFreeze(costs, "costs");
     this.effects = cloneAndDeepFreeze(effects, "effects");

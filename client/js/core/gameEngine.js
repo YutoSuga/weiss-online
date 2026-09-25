@@ -34,6 +34,9 @@ import {
 import { POSITION } from "../models/card.js";
 import { GameState } from "../models/gameState.js";
 import { ProcessManager } from "./processManager.js";
+import { GameEventDispatcher } from "./gameEventDispatcher.js";
+import { locateCard } from "../abilities/autoTriggerDetector.js";
+import { GAME_EVENT_TYPE } from "../constants/gameEvent.js";
 
 const PHASE_ORDER = Object.freeze([
   PHASE.STAND,
@@ -96,6 +99,7 @@ export class GameEngine {
     this.gameState = gameState;
     this.renderer = renderer;
     this.processManager = processManager;
+    this.gameEventDispatcher = new GameEventDispatcher(gameState);
     /** @type {Set<(gameState: GameState) => void>} */
     this.renderListeners = new Set();
   }
@@ -344,8 +348,23 @@ export class GameEngine {
       return;
     }
 
+    const previousPhase = this.gameState.phase;
+    if (previousPhase !== phase) {
+      this.emitGameEvent(GAME_EVENT_TYPE.PHASE_ENDED, this.gameState.turn.player, {
+        phase: previousPhase,
+        turnPlayerId: this.gameState.turn.player,
+        turnNumber: this.gameState.turn.number,
+      });
+    }
     this.gameState.phase = phase;
     this.#updatePhaseMessageOverlay(phase);
+    if (previousPhase !== phase) {
+      this.emitGameEvent(GAME_EVENT_TYPE.PHASE_STARTED, this.gameState.turn.player, {
+        phase,
+        turnPlayerId: this.gameState.turn.player,
+        turnNumber: this.gameState.turn.number,
+      });
+    }
 
     switch (phase) {
       case PHASE.STAND:
@@ -378,7 +397,101 @@ export class GameEngine {
     this.#assertPlayerId(playerId);
 
     this.gameState.players[playerId].stage.forEach((card) => {
-      card.setPosition(POSITION.STAND);
+      this.changeCardPosition(card, POSITION.STAND, playerId);
+    });
+  }
+
+  /** 確定済みの小さいsnapshotを発行し、AUTO検出とPending化まで同期実行する。 */
+  emitGameEvent(type, actorPlayerId, payload) {
+    return this.gameEventDispatcher.emit(type, actorPlayerId, payload);
+  }
+
+  /** collection membershipを正本としてCardの現在位置を読み取る。 */
+  locateCard(instanceId) {
+    return locateCard(this.gameState, instanceId);
+  }
+
+  /** 単一Card移動を完了してからCARD_MOVEDを一度だけ発行する。 */
+  moveCard(card, to, actorPlayerId = card?.owner) {
+    const located = this.locateCard(card?.instanceId);
+    const from = { ownerId: located.playerId, ...located.location };
+    const destinationPlayerId = to.ownerId ?? card.owner;
+    this.#assertPlayerId(destinationPlayerId);
+    const sourceCards = getZoneCollection(this.gameState.players[located.playerId], from.zone);
+    const destinationCards = getZoneCollection(this.gameState.players[destinationPlayerId], to.zone);
+    sourceCards.splice(sourceCards.indexOf(card), 1);
+    this.#reindexCards(sourceCards);
+    card.moveTo({ zone: to.zone, row: to.row ?? null,
+      index: to.index ?? destinationCards.length + 1 });
+    destinationCards.push(card);
+    if (to.zone !== ZONE.STAGE) this.#reindexCards(destinationCards);
+    const current = this.locateCard(card.instanceId);
+    return this.emitGameEvent(GAME_EVENT_TYPE.CARD_MOVED, actorPlayerId, {
+      cardInstanceId: card.instanceId,
+      cardMasterId: card.masterId,
+      cardType: card.cardType,
+      ownerId: card.owner,
+      from,
+      to: { ownerId: current.playerId, ...current.location },
+    });
+  }
+
+  /** 呼出側が完了させた既存mutationについて、移動後所在を検証してEvent化する。 */
+  emitCardMovedAfterMutation(card, from, actorPlayerId = card?.owner) {
+    const current = this.locateCard(card?.instanceId);
+    return this.emitGameEvent(GAME_EVENT_TYPE.CARD_MOVED, actorPlayerId, {
+      cardInstanceId: card.instanceId,
+      cardMasterId: card.masterId,
+      cardType: card.cardType,
+      ownerId: card.owner,
+      from: { ownerId: card.owner, row: null, index: null, ...from },
+      to: { ownerId: current.playerId, ...current.location },
+    });
+  }
+
+  /** position mutation完了後、実際に値が変わった場合だけEventを発行する。 */
+  changeCardPosition(card, toPosition, actorPlayerId = card?.owner) {
+    const located = this.locateCard(card?.instanceId);
+    const fromPosition = card.position;
+    if (fromPosition === toPosition) return null;
+    card.setPosition(toPosition);
+    return this.emitGameEvent(GAME_EVENT_TYPE.CARD_POSITION_CHANGED, actorPlayerId, {
+      cardInstanceId: card.instanceId,
+      cardMasterId: card.masterId,
+      cardType: card.cardType,
+      ownerId: card.owner,
+      location: { ownerId: located.playerId, ...located.location },
+      fromPosition,
+      toPosition,
+    });
+  }
+
+  /** 呼出側で完了済みのposition mutationをEvent化する。 */
+  emitPositionChangedAfterMutation(card, fromPosition, actorPlayerId = card?.owner) {
+    if (fromPosition === card?.position) return null;
+    const located = this.locateCard(card.instanceId);
+    return this.emitGameEvent(GAME_EVENT_TYPE.CARD_POSITION_CHANGED, actorPlayerId, {
+      cardInstanceId: card.instanceId,
+      cardMasterId: card.masterId,
+      cardType: card.cardType,
+      ownerId: card.owner,
+      location: { ownerId: located.playerId, ...located.location },
+      fromPosition,
+      toPosition: card.position,
+    });
+  }
+
+  /** Attack宣言が確定した境界から呼ぶ。F-5BではAttack Processや解決は開始しない。 */
+  declareAttackEvent(attackerCard, attackType, actorPlayerId = attackerCard?.owner) {
+    const located = this.locateCard(attackerCard?.instanceId);
+    if (located.location.zone !== ZONE.STAGE) throw new Error("Attacker must be on Stage.");
+    return this.emitGameEvent(GAME_EVENT_TYPE.ATTACK_DECLARED, actorPlayerId, {
+      attackerCardInstanceId: attackerCard.instanceId,
+      cardMasterId: attackerCard.masterId,
+      cardType: attackerCard.cardType,
+      ownerId: attackerCard.owner,
+      attackType,
+      location: { ownerId: located.playerId, ...located.location },
     });
   }
 
@@ -582,6 +695,9 @@ export class GameEngine {
             costCard.setPosition(POSITION.STAND);
             costCard.setFace(null);
             player.waitingRoom.push(costCard);
+            this.emitCardMovedAfterMutation(costCard, {
+              zone: ZONE.STOCK, index: player.stock.length + 1,
+            }, process.playerId);
           }
           this.processManager.updateStep(PLAY_CHARACTER_STEP.REMOVE_EXISTING);
           break;
@@ -592,10 +708,12 @@ export class GameEngine {
           );
           if (existingIndex >= 0) {
             const [existing] = player.stage.splice(existingIndex, 1);
+            const from = { zone: ZONE.STAGE, row: existing.row, index: existing.index };
             existing.moveTo({ zone: ZONE.WAITING_ROOM, row: null, index: player.waitingRoom.length + 1 });
             existing.setPosition(POSITION.STAND);
             existing.setFace(null);
             player.waitingRoom.push(existing);
+            this.emitCardMovedAfterMutation(existing, from, process.playerId);
           }
           this.processManager.updateStep(PLAY_CHARACTER_STEP.MOVE_TO_STAGE);
           break;
@@ -608,6 +726,9 @@ export class GameEngine {
           card.setPosition(POSITION.STAND);
           card.setFace(null);
           player.stage.push(card);
+          this.emitCardMovedAfterMutation(card, {
+            zone: ZONE.HAND, index: handIndex + 1,
+          }, process.playerId);
           this.addLog(process.playerId, `${card.name}を舞台に出しました。`);
           this.processManager.updateStep(PLAY_CHARACTER_STEP.CHECK_POINT);
           this.render();
@@ -768,10 +889,14 @@ export class GameEngine {
         case ACT_ABILITY_STEP.PAY_COST: {
           const sourceCard = getSource();
           const ability = getAbility();
+          const sourcePosition = sourceCard.position;
           // 1件も変更する前に全Costを再検証し、その後だけ記載順に一括支払いする。
           payCosts(ability.costs, { player, sourceCard }, (_cost, index) => {
             process.context.costIndex = index + 1;
           });
+          if (sourceCard.position !== sourcePosition) {
+            this.emitPositionChangedAfterMutation(sourceCard, sourcePosition, process.playerId);
+          }
           this.processManager.updateStep(ACT_ABILITY_STEP.CHECK_POINT_AFTER_COST);
           break;
         }
@@ -2505,4 +2630,12 @@ export class GameEngine {
 /** 旧データのlowercaseと正式CardMaster値のuppercaseを移行中も同義に扱う。 */
 function isCharacter(card) {
   return typeof card?.cardType === "string" && card.cardType.toUpperCase() === "CHARACTER";
+}
+
+function getZoneCollection(player, zone) {
+  if (zone === ZONE.DECK) return player.deck.cards;
+  if (zone === ZONE.WAITING_ROOM) return player.waitingRoom;
+  const collection = player[zone];
+  if (!Array.isArray(collection)) throw new RangeError(`Unsupported Card collection zone: ${zone}.`);
+  return collection;
 }

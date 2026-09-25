@@ -5,6 +5,13 @@ export const ABILITY_TYPE = Object.freeze({
   ACT: "ACT",
 });
 
+/** Ability definitionの供給元。使用可否ではなく定義の由来を表す。 */
+export const ABILITY_SOURCE = Object.freeze({
+  PRINTED: "PRINTED",
+  RULE: "RULE",
+  GRANTED: "GRANTED",
+});
+
 /** F-4AでGameEngineが解釈できるAbility Cost。 */
 export const COST_TYPE = Object.freeze({
   PAY_STOCK: "PAY_STOCK",
