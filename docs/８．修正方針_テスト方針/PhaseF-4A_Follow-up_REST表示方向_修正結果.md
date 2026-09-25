@@ -8,7 +8,7 @@ Stage CardのREST表示を右90°から左90°へ変更し、self / opponent共�
 
 - `client/css/board.css`
 - `client/tests/cardPositionDisplay.test.mjs`（新規）
-- `docs/１．設計書/レイアウト.md`
+- `docs/１．設計書/対戦画面/レイアウト.md`
 - `docs/８．修正方針_テスト方針/README.md`（新規）
 - `docs/８．修正方針_テスト方針/PhaseF-4A_Follow-up_REST表示方向_修正方針.md`（新規）
 - `docs/８．修正方針_テスト方針/PhaseF-4A_Follow-up_REST表示方向_修正結果.md`（新規）
@@ -22,7 +22,7 @@ STANDの`rotate(0deg)`とREVERSEの`rotate(180deg)`は維持した。owner別、
 
 ## 設計書変更内容
 
-`docs/１．設計書/レイアウト.md`へ、STANDは通常方向、RESTは左90°、REVERSEは既存の180°表示であることを記載した。REST方向はweiss-onlineの表示規約でありゲームロジック上の意味ではないこと、self / opponentで共通のsemanticsを使うこと、Card画像比率やcardTypeで変えないこと、詳細画像へ適用しないことも明記した。
+`docs/１．設計書/対戦画面/レイアウト.md`へ、STANDは通常方向、RESTは左90°、REVERSEは既存の180°表示であることを記載した。REST方向はweiss-onlineの表示規約でありゲームロジック上の意味ではないこと、self / opponentで共通のsemanticsを使うこと、Card画像比率やcardTypeで変えないこと、詳細画像へ適用しないことも明記した。
 
 `docs/８．修正方針_テスト方針/README.md`には、設計書をCurrent State、修正記録をHistoryとする責務分離、記録対象、方針→実装→テスト→設計書→結果→一覧→commitの手順、各記録の役割を記載した。過去の修正記録は整理・生成・renameしていない。
 

@@ -47,16 +47,16 @@ YutoSuga/weiss-online
 Docs：
 - README.md
 - docs/設計書一覧.md
-- docs/１．設計書/アーキテクチャ.md
-- docs/１．設計書/アプリケーションフロー.md
-- docs/１．設計書/カードデータモデル.md
-- docs/１．設計書/エンティティ・オブジェクト一覧.md
-- docs/１．設計書/ゲームエンジン.md
-- docs/１．設計書/JavaScript仕様.md
-- docs/１．設計書/メインフェイズ.md
-- docs/１．設計書/プロセス.md
-- docs/１．設計書/ルールチェック.md
-- docs/１．設計書/UI操作.md
+- docs/１．設計書/システム共通/アーキテクチャ.md
+- docs/１．設計書/システム共通/アプリケーションフロー.md
+- docs/１．設計書/システム共通/カードデータモデル.md
+- docs/１．設計書/システム共通/エンティティ・オブジェクト一覧.md
+- docs/１．設計書/システム共通/ゲームエンジン.md
+- docs/１．設計書/システム共通/JavaScript仕様.md
+- docs/１．設計書/対戦画面/フェイズ/メインフェイズ.md
+- docs/１．設計書/システム共通/プロセス.md
+- docs/１．設計書/システム共通/ルールチェック.md
+- docs/１．設計書/対戦画面/UI操作.md
 
 Code：
 - Card
@@ -980,7 +980,7 @@ Stage Cardを選択した際、
 
 以下を新設してください。
 
-docs/１．設計書/カード能力.md
+docs/１．設計書/対戦画面/カード能力/起動効果/ACT能力共通.md
 
 また、
 
@@ -1430,7 +1430,7 @@ F-4B 「人気アイドル 西森 柚咲」【起】集中 NEXT
 40. Stock / RESTの変化がrenderされる
 41. Stage Move / Swapと共存する
 
-42. docs/１．設計書/カード能力.md が新設されている
+42. docs/１．設計書/対戦画面/カード能力/起動効果/ACT能力共通.md が新設されている
 43. 設計書一覧.mdから参照できる
 44. CardAbility Schemaが記載されている
 45. ACT_ABILITY Processが記載されている
@@ -1668,16 +1668,16 @@ YutoSuga/weiss-online
 Docs：
 - README.md
 - docs/設計書一覧.md
-- docs/１．設計書/アーキテクチャ.md
-- docs/１．設計書/アプリケーションフロー.md
-- docs/１．設計書/カードデータモデル.md
-- docs/１．設計書/エンティティ・オブジェクト一覧.md
-- docs/１．設計書/ゲームエンジン.md
-- docs/１．設計書/JavaScript仕様.md
-- docs/１．設計書/メインフェイズ.md
-- docs/１．設計書/プロセス.md
-- docs/１．設計書/ルールチェック.md
-- docs/１．設計書/UI操作.md
+- docs/１．設計書/システム共通/アーキテクチャ.md
+- docs/１．設計書/システム共通/アプリケーションフロー.md
+- docs/１．設計書/システム共通/カードデータモデル.md
+- docs/１．設計書/システム共通/エンティティ・オブジェクト一覧.md
+- docs/１．設計書/システム共通/ゲームエンジン.md
+- docs/１．設計書/システム共通/JavaScript仕様.md
+- docs/１．設計書/対戦画面/フェイズ/メインフェイズ.md
+- docs/１．設計書/システム共通/プロセス.md
+- docs/１．設計書/システム共通/ルールチェック.md
+- docs/１．設計書/対戦画面/UI操作.md
 
 Code：
 - Card
@@ -2601,7 +2601,7 @@ Stage Cardを選択した際、
 
 以下を新設してください。
 
-docs/１．設計書/カード能力.md
+docs/１．設計書/対戦画面/カード能力/起動効果/ACT能力共通.md
 
 また、
 
@@ -3051,7 +3051,7 @@ F-4B 「人気アイドル 西森 柚咲」【起】集中 NEXT
 40. Stock / RESTの変化がrenderされる
 41. Stage Move / Swapと共存する
 
-42. docs/１．設計書/カード能力.md が新設されている
+42. docs/１．設計書/対戦画面/カード能力/起動効果/ACT能力共通.md が新設されている
 43. 設計書一覧.mdから参照できる
 44. CardAbility Schemaが記載されている
 45. ACT_ABILITY Processが記載されている
