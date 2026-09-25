@@ -11,6 +11,8 @@ export const PROCESS_TYPE = Object.freeze({
   MOVE_STAGE: "move_stage",
   SWAP_STAGE: "swap_stage",
   ACT_ABILITY: "act_ability",
+  PENDING_AUTO: "pending_auto",
+  AUTO_ABILITY: "auto_ability",
   SEARCH_DECK: "search_deck",
   REFRESH: "refresh",
   REFRESH_PENALTY: "refresh_penalty",
@@ -96,6 +98,19 @@ export const ACT_ABILITY_STEP = Object.freeze({
   RESOLVE_EFFECT: "resolve_effect",
   WAIT_FOR_BRAINSTORM_CONFIRMATION: "wait_for_brainstorm_confirmation",
   CHECK_POINT_AFTER_EFFECT: "check_point_after_effect",
+  COMPLETE: "complete",
+});
+
+/** Check TimingでのAUTO選択と、mutation前のCost準備。 */
+export const PENDING_AUTO_STEP = Object.freeze({
+  SELECT_AUTO: "select_auto",
+  SELECT_COST: "select_cost",
+});
+
+/** Cost commit後のAUTOプレイ・解決。 */
+export const AUTO_ABILITY_STEP = Object.freeze({
+  PAY_COST: "pay_cost",
+  RESOLVE_EFFECT: "resolve_effect",
   COMPLETE: "complete",
 });
 

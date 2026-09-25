@@ -54,6 +54,33 @@ export function getCostsDisabledReason(costs, context) {
   return null;
 }
 
+/**
+ * mutationせずにCost対象選択を準備する共通境界。
+ * 現在のPAY_STOCK / REST_SELFは対象が一意なので選択要求は空になる。
+ * 将来のACT/AUTO選択Cost handlerはprepareSelectionを実装してここへ合流する。
+ */
+export function prepareCostSelections(costs, context) {
+  return costs.flatMap((cost, costIndex) => {
+    const handler = getCostHandler(cost);
+    const selection = handler.prepareSelection?.(cost, context);
+    return selection ? [{ costIndex, costType: cost.type, ...selection }] : [];
+  });
+}
+
+/** Prepared Costをmutation直前に再検証する。 */
+export function getPreparedCostsDisabledReason(costs, preparedCosts, context) {
+  const required = prepareCostSelections(costs, context);
+  if (required.length !== preparedCosts.length) return "コストの選択が完了していません。";
+  for (const request of required) {
+    const prepared = preparedCosts.find(({ costIndex }) => costIndex === request.costIndex);
+    if (!prepared) return "コストの選択が完了していません。";
+    const cost = costs[request.costIndex];
+    const reason = getCostHandler(cost).validateSelection?.(cost, prepared, context);
+    if (reason) return reason;
+  }
+  return getCostsDisabledReason(costs, context);
+}
+
 /** 呼出側が全Costを先に検証した後だけ使用する。記載順に支払う。 */
 export function payCosts(costs, context, onPaid = undefined) {
   const reason = getCostsDisabledReason(costs, context);

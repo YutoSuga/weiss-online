@@ -55,7 +55,7 @@ HTML / CSS
 - 開発用のProcess Stack確認UI
 - DEVパネルから指定した自分の山札のCardを手札へ直接移動する確認操作
 
-カードの通常プレイ、Replacement、舞台内Move / Swapに加え、CardMasterと対戦中Card instanceの分離、immutableなCardAbilityデータ構造、ACT Ability v1基盤まで実装済みです。AUTO / CONTINUOUS能力の実行とオンライン対戦は未実装です。
+カードの通常プレイ、Replacement、舞台内Move / Swapに加え、CardMasterと対戦中Card instanceの分離、immutableなCardAbilityデータ構造、ACT Ability v1基盤、Pending AUTOの選択・AUTO Process移管基盤まで実装済みです。具体的なAUTO Effect、CONTINUOUS能力、オンライン対戦は未実装です。
 
 ## Process / Rule Interrupt
 
@@ -71,13 +71,13 @@ Interrupt Process
 元Processを保存済みstepから再開
 ```
 
-現在の `PROCESS_TYPE` には、`DRAW_PHASE`、`CLOCK_PHASE`、`MAIN_PHASE`、`PLAY_CHARACTER`、`MOVE_STAGE`、`SWAP_STAGE`、`ACT_ABILITY`、`REFRESH`、`REFRESH_PENALTY`、`LEVEL_UP` があります。`CLOCK_ACTION` は定数として存在しますが、独立したProcessとしては未実装です。
+現在の `PROCESS_TYPE` には、`DRAW_PHASE`、`CLOCK_PHASE`、`MAIN_PHASE`、`PLAY_CHARACTER`、`MOVE_STAGE`、`SWAP_STAGE`、`ACT_ABILITY`、`PENDING_AUTO`、`AUTO_ABILITY`、`REFRESH`、`REFRESH_PENALTY`、`LEVEL_UP` があります。`CLOCK_ACTION` は定数として存在しますが、独立したProcessとしては未実装です。
 
 ## 現在地点
 
-**Phase F-5B：Game Event / AUTO Trigger Detection / Pending生成 COMPLETE**
+**Phase F-5C：Pending AUTO / AUTO選択基盤 COMPLETE / F-5D NEXT**
 
-F-4 ACT Ability、F-5A AUTO Ability基盤の実装前設計レビュー、F-5BのGame Event / Trigger Detection / Pending AUTO生成まで完了しました。次の主要実装対象は **Phase F-5C：Pending AUTO提示・Check Point統合** です。AUTOの使用/不使用、Cost、Effect解決はまだ実装していません。
+F-5BのGame Event / Trigger Detection / Pending生成に続き、F-5Cで単一PendingAutoCollection、Check Timing、Turn / Non-Turn順、1件ずつのAUTO選択、共通Prepared Cost境界、AUTO Processへの移管と選択UIまで完了しました。次の主要実装対象は **Phase F-5D：具体的なAUTO Cost / Effect解決の拡張** です。F-5全体は未完了です。
 
 現在、CLOCKフェイズの完了後には以下の流れが成立します。
 
@@ -120,7 +120,8 @@ CLIMAX
 - [x] **Phase F-4 ACT Ability（COMPLETE）**
 - [x] **Phase F-5A AUTO Ability基盤 実装前設計レビュー（COMPLETE）**
 - [x] **Phase F-5B Game Event / AUTO Trigger Detection / Pending生成（COMPLETE）**
-- [ ] **Phase F-5C Pending AUTO提示・Check Point統合（NEXT）**
+- [x] **Phase F-5C Pending AUTO / AUTO選択基盤（COMPLETE）**
+- [ ] **Phase F-5D AUTO Cost / Effect解決拡張（NEXT）**
 - [ ] Phase F-6 CONTINUOUS Ability基盤
 
 ### Phase F-2A：MAINカード選択 / Destination UI
@@ -188,7 +189,8 @@ F-4AでStage上のACT検出、使用可能判定、`ACT_ABILITY` Process、Cost 
 
 - **F-5A（COMPLETE）**：AUTO Ability基盤の実装前設計レビュー
 - **F-5B（COMPLETE）**：5種類のGame EventからTriggerを検出し、PRINTED / RULE由来のPending AUTOを生成する基盤
-- **F-5C（NEXT）**：Rule Check安定化後のPending AUTO提示、Turn / Non-Turn順、使用/不使用とCheck Point統合
+- **F-5C（COMPLETE）**：Rule Check安定化後のPending AUTO提示、Turn / Non-Turn順、AUTO選択、Prepared CostとAUTO Process移管
+- **F-5D（NEXT）**：標準アンコール復帰、選択Cost handler、具体的なAUTO Cost / Effect解決の拡張
 - **F-6 CONTINUOUS Ability基盤**：GameStateや盤面状態に応じて継続的に状態を評価する基盤
 
 ## プレイ画面 / Zone
