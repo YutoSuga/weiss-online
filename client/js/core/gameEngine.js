@@ -2225,19 +2225,24 @@ export class GameEngine {
     });
   }
 
-  /** 使用可能候補がない場合だけ、表示済みの使用不能Pendingを取り消してCheck Timingを進める。 */
-  closeUnavailablePendingAutos() {
+  /** 指定した任意AUTOを使用せず1件だけ消費し、共通Check Timing出口へ戻す。 */
+  declinePendingAuto(pendingAutoId) {
     const process = this.processManager.getCurrentProcess();
     if (process?.type !== PROCESS_TYPE.PENDING_AUTO || process.step !== PENDING_AUTO_STEP.SELECT_AUTO) {
       throw new Error("自動能力の選択待ちではありません。");
     }
-    const options = this.getPendingAutoOptions();
-    if (options.some(({ disabledReason }) => disabledReason === null)) throw new Error("使用可能な自動能力があります。");
-    const ids = new Set(options.map(({ pending }) => pending.id));
-    this.gameState.ruleState.pendingAutos = this.gameState.ruleState.pendingAutos.filter(({ id }) => !ids.has(id));
+    const index = this.gameState.ruleState.pendingAutos.findIndex(
+      ({ id, masterPlayerId }) => id === pendingAutoId && masterPlayerId === process.playerId,
+    );
+    if (index < 0) throw new Error("選択できる自動能力ではありません。");
+    this.gameState.ruleState.pendingAutos.splice(index, 1);
     this.processManager.popProcess();
-    this.resolveCheckPoint();
-    this.render();
+    const result = this.resolveCheckPoint();
+    if (result === RULE_CHECK_RESULT.CONTINUE) {
+      this.executeCurrentProcess();
+      this.render();
+    }
+    return result;
   }
 
   /**

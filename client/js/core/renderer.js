@@ -89,7 +89,7 @@ export class Renderer {
       dialog = document.createElement("aside");
       dialog.dataset.pendingAutoDialog = "";
       dialog.className = "pending-auto-dialog";
-      dialog.innerHTML = '<div class="pending-auto-panel"><h2>自動能力</h2><p data-pending-auto-message></p><div data-pending-auto-list></div><div data-cost-selection hidden><h3>コスト選択</h3><p>コストに使用するカードを選択してください</p><button type="button" data-action="back-pending-auto">効果選択に戻る</button><button type="button" data-action="confirm-prepared-costs">決定</button></div></div>';
+      dialog.innerHTML = '<div class="pending-auto-panel"><h2>自動効果発動</h2><p data-pending-auto-message></p><div data-pending-auto-list></div><div data-cost-selection hidden><h3>コスト選択</h3><p>コストに使用するカードを選択してください</p><button type="button" data-action="back-pending-auto">効果選択に戻る</button><button type="button" data-action="confirm-prepared-costs">決定</button></div></div>';
       this.rootElement?.body?.append(dialog);
     }
     const process = gameState?.ruleState?.processStack?.at(-1);
@@ -99,7 +99,7 @@ export class Renderer {
     const selectingCost = process.step === PENDING_AUTO_STEP.SELECT_COST;
     dialog.querySelector("[data-pending-auto-message]").textContent = selectingCost
       ? "支払うコストを選択してください"
-      : "待機中の自動能力を選択してください";
+      : "発動する自動効果を選択してください";
     dialog.querySelector("[data-cost-selection]").hidden = !selectingCost;
     const list = dialog.querySelector("[data-pending-auto-list]");
     list.hidden = selectingCost;
@@ -124,16 +124,9 @@ export class Renderer {
           (!card || card.zone !== ZONE.WAITING_ROOM)) disabledReason = "アンコール対象が控室にありません。";
       const entry = document.createElement("article");
       entry.className = "pending-auto-entry";
-      entry.innerHTML = `<strong>${card?.name ?? item.source.cardMasterId}</strong><p>${ability?.keywords?.join(" / ") || "自動能力"}</p><p>${ability?.text ?? item.source.abilityId}</p><p>Cost: ${ability?.costs?.map(({ type, amount }) => `${type}${amount ? ` ${amount}` : ""}`).join(", ") || "なし"}</p>${disabledReason ? `<p class="disabled-reason">${disabledReason}</p>` : ""}<button type="button" data-action="resolve-pending-auto" data-pending-auto-id="${item.id}"${disabledReason ? " disabled" : ""}>使用</button>`;
+      entry.innerHTML = `<strong>${card?.name ?? item.source.cardMasterId}</strong><p>${ability?.keywords?.join(" / ") || "自動能力"}</p><p>${ability?.text ?? item.source.abilityId}</p><p>Cost: ${ability?.costs?.map(({ type, amount }) => `${type}${amount ? ` ${amount}` : ""}`).join(", ") || "なし"}</p>${disabledReason ? `<p class="disabled-reason">${disabledReason}</p>` : ""}<button type="button" data-action="resolve-pending-auto" data-pending-auto-id="${item.id}"${disabledReason ? " disabled" : ""}>使用</button><button type="button" data-action="decline-pending-auto" data-pending-auto-id="${item.id}">使用しない</button>`;
       list.append(entry);
     });
-    if (pending.length > 0 && [...list.querySelectorAll('[data-action="resolve-pending-auto"]')].every((button) => button.disabled)) {
-      const close = document.createElement("button");
-      close.type = "button";
-      close.dataset.action = "close-unavailable-pending-autos";
-      close.textContent = "閉じる";
-      list.append(close);
-    }
   }
 
   /**

@@ -230,6 +230,7 @@ READMEは現在地点と概要を扱い、詳細な仕様は `docs/` を参照�
 - [JavaScript仕様](docs/１．設計書/システム共通/JavaScript仕様.md)
 - [HTML仕様](docs/１．設計書/対戦画面/HTML仕様.md)
 - [レイアウト仕様](docs/１．設計書/対戦画面/レイアウト.md)
+- [結合レベルのテストチェックシート運用](docs/９．テスト/README.md)
 
 ## 将来候補
 

@@ -11,13 +11,13 @@ export class PendingAutoController {
     if (!button) return;
     if (button.dataset.action === "resolve-pending-auto") {
       this.gameEngine.selectPendingAuto(button.dataset.pendingAutoId);
+    } else if (button.dataset.action === "decline-pending-auto") {
+      this.gameEngine.declinePendingAuto(button.dataset.pendingAutoId);
     } else if (button.dataset.action === "back-pending-auto") {
       this.gameEngine.backToPendingAutoSelection();
     } else if (button.dataset.action === "confirm-prepared-costs") {
       const process = this.gameEngine.processManager.getCurrentProcess();
       this.gameEngine.confirmPreparedCosts(process.context.preparedCosts);
-    } else if (button.dataset.action === "close-unavailable-pending-autos") {
-      this.gameEngine.closeUnavailablePendingAutos();
     }
   }
 }
