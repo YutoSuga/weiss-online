@@ -24,6 +24,9 @@ export class GameEventDispatcher {
           cardMasterId: candidate.sourceCard.masterId,
           abilityId: candidate.ability.id,
         },
+        triggerContext: candidate.sourceKind === "RULE" && event.type === "CARD_MOVED"
+          ? { originalStagePosition: { row: event.payload.from.row, index: event.payload.from.index } }
+          : {},
         trigger: event,
       });
     });

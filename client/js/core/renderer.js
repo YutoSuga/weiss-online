@@ -1,8 +1,10 @@
 import { VISIBILITY, ZONE, ZONE_VISIBILITY } from "../constants/zone.js";
 import { PHASE } from "../constants/phase.js";
 import { FACE } from "../models/card.js";
-import { ABILITY_TYPE } from "../constants/ability.js";
+import { ABILITY_SOURCE, ABILITY_TYPE } from "../constants/ability.js";
 import { PENDING_AUTO_STEP, PROCESS_TYPE } from "../constants/process.js";
+import { getRuleAutoAbility } from "../abilities/ruleAbilityProvider.js";
+import { getCostsDisabledReason } from "../abilities/costResolver.js";
 
 const ABILITY_LABELS = Object.freeze({
   [ABILITY_TYPE.CONTINUOUS]: "【永】",
@@ -112,12 +114,26 @@ export class Renderer {
           .find(({ instanceId }) => instanceId === item.source.cardInstanceId);
         if (card) break;
       }
-      const ability = card?.abilities.find(({ id }) => id === item.source.abilityId);
+      const ability = item.source.kind === ABILITY_SOURCE.RULE
+        ? getRuleAutoAbility(item.source.abilityId)
+        : card?.abilities.find(({ id }) => id === item.source.abilityId);
+      let disabledReason = ability ? getCostsDisabledReason(ability.costs, {
+        player: gameState.players[item.masterPlayerId], sourceCard: card,
+      }) : "能力定義が見つかりません。";
+      if (item.source.kind === ABILITY_SOURCE.RULE &&
+          (!card || card.zone !== ZONE.WAITING_ROOM)) disabledReason = "アンコール対象が控室にありません。";
       const entry = document.createElement("article");
       entry.className = "pending-auto-entry";
-      entry.innerHTML = `<strong>${card?.name ?? item.source.cardMasterId}</strong><p>${ability?.keywords?.join(" / ") || "自動能力"}</p><p>${ability?.text ?? item.source.abilityId}</p><p>Cost: ${ability?.costs?.map(({ type, amount }) => `${type}${amount ? ` ${amount}` : ""}`).join(", ") || "なし"}</p><button type="button" data-action="resolve-pending-auto" data-pending-auto-id="${item.id}">解決する</button>`;
+      entry.innerHTML = `<strong>${card?.name ?? item.source.cardMasterId}</strong><p>${ability?.keywords?.join(" / ") || "自動能力"}</p><p>${ability?.text ?? item.source.abilityId}</p><p>Cost: ${ability?.costs?.map(({ type, amount }) => `${type}${amount ? ` ${amount}` : ""}`).join(", ") || "なし"}</p>${disabledReason ? `<p class="disabled-reason">${disabledReason}</p>` : ""}<button type="button" data-action="resolve-pending-auto" data-pending-auto-id="${item.id}"${disabledReason ? " disabled" : ""}>使用</button>`;
       list.append(entry);
     });
+    if (pending.length > 0 && [...list.querySelectorAll('[data-action="resolve-pending-auto"]')].every((button) => button.disabled)) {
+      const close = document.createElement("button");
+      close.type = "button";
+      close.dataset.action = "close-unavailable-pending-autos";
+      close.textContent = "閉じる";
+      list.append(close);
+    }
   }
 
   /**

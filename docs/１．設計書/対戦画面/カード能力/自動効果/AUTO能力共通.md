@@ -95,3 +95,13 @@ RendererはProcessと単一Collectionからカード名、能力本文、keyword
 ## 9. 標準アンコール / 将来範囲
 
 `STANDARD_ENCORE_3`はRULE sourceであり、全CardMasterへコピーしない。CharacterのStage → Waiting RoomだけでPendingを生成する。元Stage row/indexはEvent LKIに残す。3 StockとStageへのREST復帰を一体として扱う完全解決はF-5D以降で実装する。GRANTED source、選択Cost handler、大量のAUTO Effect DSLもF-5Cの対象外である。
+
+## 10. Phase F-5D-1 RULE AUTO / 標準3コストアンコール
+
+標準3コストアンコールはCardMasterに印刷された能力ではなく、Rule Ability Providerが一度だけ保持する`RULE`由来AUTOである。`STANDARD_ENCORE_3`はPRINTED AUTOと同じ`pendingAutos`、Check Timing、`AUTO_ABILITY` Processを使い、専用Queueを持たない。
+
+`CARD_MOVED (STAGE → WAITING_ROOM)`のEvent対象がCharacterなら同期的にRULE候補を作る。Pendingは通常の`trigger`に加え、Eventの移動元から`triggerContext.originalStagePosition { row, index }`をsnapshotする。これはCard instanceの恒久状態ではない。
+
+選択表示時とAUTOへの移管直前には、対象instanceが現在もmaster playerのWaiting Roomにあること、および3 Stockを支払えることを現在Stateから再評価する。使用不能でもPending一覧には理由付きで表示し、使用ボタンを無効化する。当該Playerに使用可能候補が一つもなければ「閉じる」で表示済みの使用不能Pendingを取り消し、Check Timingを継続する。
+
+Effectの`ENCORE_RETURN`は共通Stage配置へ委譲する。占有CardのStage → Waiting Room、対象CardのWaiting Room → Stageはそれぞれ通常の`CARD_MOVED`を発行し、その場でTrigger DetectionとPending追加まで行う。現在のAUTO解決には割り込まず、`AUTO_ABILITY COMPLETE → Rule Check → Check Timing`後に新Pendingを提示する。詳細は[アンコール](キーワード能力/アンコール.md)を正本とする。

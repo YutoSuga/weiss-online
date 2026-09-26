@@ -1,4 +1,4 @@
-import { ABILITY_SOURCE, ABILITY_TYPE, COST_TYPE } from "../constants/ability.js";
+import { ABILITY_SOURCE, ABILITY_TYPE, COST_TYPE, EFFECT_TYPE } from "../constants/ability.js";
 import { AUTO_TRIGGER_SUBJECT, GAME_EVENT_TYPE } from "../constants/gameEvent.js";
 import { ZONE } from "../constants/zone.js";
 
@@ -18,7 +18,7 @@ const STANDARD_ENCORE_3 = Object.freeze({
   }),
   activeZones: Object.freeze([ZONE.STAGE]),
   costs: Object.freeze([{ type: COST_TYPE.PAY_STOCK, amount: 3 }]),
-  effects: Object.freeze([]),
+  effects: Object.freeze([{ type: EFFECT_TYPE.ENCORE_RETURN }]),
 });
 
 export function getRuleAutoAbility(ruleAbilityId) {

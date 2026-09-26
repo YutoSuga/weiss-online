@@ -426,6 +426,7 @@ export class GameEngine {
     this.#reindexCards(sourceCards);
     card.moveTo({ zone: to.zone, row: to.row ?? null,
       index: to.index ?? destinationCards.length + 1 });
+    if (to.position) card.setPosition(to.position);
     destinationCards.push(card);
     if (to.zone !== ZONE.STAGE) this.#reindexCards(destinationCards);
     const current = this.locateCard(card.instanceId);
@@ -437,6 +438,25 @@ export class GameEngine {
       from,
       to: { ownerId: current.playerId, ...current.location },
     });
+  }
+
+  /** 任意ZoneのCardを指定Stage slotへ置く共通処理。占有Cardは先に通常移動で控室へ置く。 */
+  placeCardOnStage(card, playerId, destination, position = POSITION.STAND) {
+    if (!card || card.owner !== playerId || !this.#isMainStageDestination(destination, playerId)) {
+      throw new Error("Invalid Stage placement.");
+    }
+    const occupying = this.#findStageCard(playerId, destination);
+    if (occupying && occupying !== card) this.moveCard(occupying, { zone: ZONE.WAITING_ROOM }, playerId);
+    return this.moveCard(card, { zone: ZONE.STAGE, row: destination.row, index: destination.index, position }, playerId);
+  }
+
+  /** RULE Encore effectの入口。使用可否は直前にも検証済みであることを要求する。 */
+  returnEncoreCardToStage(card, originalStagePosition, playerId) {
+    const located = card ? this.locateCard(card.instanceId) : null;
+    if (!located || located.playerId !== playerId || located.location.zone !== ZONE.WAITING_ROOM) {
+      throw new Error("アンコール対象が控室にありません。");
+    }
+    return this.placeCardOnStage(card, playerId, originalStagePosition, POSITION.REST);
   }
 
   /** 呼出側が完了させた既存mutationについて、移動後所在を検証してEvent化する。 */
@@ -706,32 +726,13 @@ export class GameEngine {
           break;
         }
         case PLAY_CHARACTER_STEP.REMOVE_EXISTING: {
-          const existingIndex = player.stage.findIndex(
-            (card) => card.row === destination.row && card.index === destination.index,
-          );
-          if (existingIndex >= 0) {
-            const [existing] = player.stage.splice(existingIndex, 1);
-            const from = { zone: ZONE.STAGE, row: existing.row, index: existing.index };
-            existing.moveTo({ zone: ZONE.WAITING_ROOM, row: null, index: player.waitingRoom.length + 1 });
-            existing.setPosition(POSITION.STAND);
-            existing.setFace(null);
-            player.waitingRoom.push(existing);
-            this.emitCardMovedAfterMutation(existing, from, process.playerId);
-          }
           this.processManager.updateStep(PLAY_CHARACTER_STEP.MOVE_TO_STAGE);
           break;
         }
         case PLAY_CHARACTER_STEP.MOVE_TO_STAGE: {
-          const handIndex = player.hand.findIndex((card) => card.id === process.context.cardId);
-          const [card] = player.hand.splice(handIndex, 1);
-          this.#reindexCards(player.hand);
-          card.moveTo({ zone: ZONE.STAGE, row: destination.row, index: destination.index });
-          card.setPosition(POSITION.STAND);
+          const card = getHandCard();
           card.setFace(null);
-          player.stage.push(card);
-          this.emitCardMovedAfterMutation(card, {
-            zone: ZONE.HAND, index: handIndex + 1,
-          }, process.playerId);
+          this.placeCardOnStage(card, process.playerId, destination, POSITION.STAND);
           this.addLog(process.playerId, `${card.name}を舞台に出しました。`);
           this.processManager.updateStep(PLAY_CHARACTER_STEP.CHECK_POINT);
           this.render();
@@ -2101,7 +2102,7 @@ export class GameEngine {
       .filter(({ masterPlayerId }) => masterPlayerId === process.playerId)
       .map((pending) => {
         const { card, ability } = this.#resolvePendingAuto(pending);
-        return { pending, card, ability, disabledReason: ability ? null : "能力定義が見つかりません。" };
+        return { pending, card, ability, disabledReason: this.#getPendingAutoDisabledReason(pending, card, ability) };
       });
   }
 
@@ -2115,6 +2116,8 @@ export class GameEngine {
     if (!pending || pending.masterPlayerId !== process.playerId) throw new Error("選択できる自動能力ではありません。");
     const { card, ability } = this.#resolvePendingAuto(pending);
     if (!ability) throw new Error("自動能力の定義が見つかりません。");
+    const disabledReason = this.#getPendingAutoDisabledReason(pending, card, ability);
+    if (disabledReason) throw new Error(disabledReason);
     const player = this.gameState.players[process.playerId];
     const preparedCosts = prepareCostSelections(ability.costs, { player, sourceCard: card });
     process.context.selectedPendingAutoId = pending.id;
@@ -2153,9 +2156,10 @@ export class GameEngine {
   #commitPendingAuto(process, pending, card, ability) {
     if (!pending || !ability) throw new Error("自動能力が見つかりません。");
     const player = this.gameState.players[process.playerId];
-    const reason = getPreparedCostsDisabledReason(ability.costs, process.context.preparedCosts, { player, sourceCard: card });
-    // Cost可否は誘発事実・AUTOのプレイ可否とは分離する。払えない任意Costなら後続効果を行わない。
-    const payCost = reason === null;
+    const reason = this.#getPendingAutoDisabledReason(pending, card, ability) ??
+      getPreparedCostsDisabledReason(ability.costs, process.context.preparedCosts, { player, sourceCard: card });
+    if (reason) throw new Error(reason);
+    const payCost = true;
     const index = this.gameState.ruleState.pendingAutos.findIndex(({ id }) => id === pending.id);
     if (index < 0) throw new Error("Pending AUTOは既に消費されています。");
     this.gameState.ruleState.pendingAutos.splice(index, 1);
@@ -2187,7 +2191,7 @@ export class GameEngine {
       } else if (process.step === AUTO_ABILITY_STEP.RESOLVE_EFFECT) {
         if (process.context.effectIndex >= ability.effects.length) process.step = AUTO_ABILITY_STEP.COMPLETE;
         else {
-          resolveEffect(ability.effects[process.context.effectIndex++], { gameEngine: this, player, playerId: process.playerId, sourceCard: card });
+          resolveEffect(ability.effects[process.context.effectIndex++], { gameEngine: this, player, playerId: process.playerId, sourceCard: card, pendingAuto: process.context.pendingAuto });
         }
       } else if (process.step === AUTO_ABILITY_STEP.COMPLETE) {
         this.completeCurrentProcess();
@@ -2205,6 +2209,35 @@ export class GameEngine {
       ? getRuleAutoAbility(pending.source.abilityId)
       : card?.abilities.find(({ id }) => id === pending.source.abilityId) ?? null;
     return { card, ability };
+  }
+
+  #getPendingAutoDisabledReason(pending, card, ability) {
+    if (!ability) return "能力定義が見つかりません。";
+    if (pending.source.kind === ABILITY_SOURCE.RULE && pending.source.abilityId === "STANDARD_ENCORE_3") {
+      if (!card) return "アンコール対象が見つかりません。";
+      const located = this.locateCard(card.instanceId);
+      if (located.playerId !== pending.masterPlayerId || located.location.zone !== ZONE.WAITING_ROOM) {
+        return "アンコール対象が控室にありません。";
+      }
+    }
+    return getCostsDisabledReason(ability.costs, {
+      player: this.gameState.players[pending.masterPlayerId], sourceCard: card,
+    });
+  }
+
+  /** 使用可能候補がない場合だけ、表示済みの使用不能Pendingを取り消してCheck Timingを進める。 */
+  closeUnavailablePendingAutos() {
+    const process = this.processManager.getCurrentProcess();
+    if (process?.type !== PROCESS_TYPE.PENDING_AUTO || process.step !== PENDING_AUTO_STEP.SELECT_AUTO) {
+      throw new Error("自動能力の選択待ちではありません。");
+    }
+    const options = this.getPendingAutoOptions();
+    if (options.some(({ disabledReason }) => disabledReason === null)) throw new Error("使用可能な自動能力があります。");
+    const ids = new Set(options.map(({ pending }) => pending.id));
+    this.gameState.ruleState.pendingAutos = this.gameState.ruleState.pendingAutos.filter(({ id }) => !ids.has(id));
+    this.processManager.popProcess();
+    this.resolveCheckPoint();
+    this.render();
   }
 
   /**
@@ -2699,7 +2732,7 @@ export class GameEngine {
 
   /** @returns {boolean} */
   #isMainStageDestination(destination, playerId) {
-    return playerId === "self" && MAIN_STAGE_DESTINATIONS.some(
+    return PLAYER_IDS.includes(playerId) && MAIN_STAGE_DESTINATIONS.some(
       (candidate) =>
         destination?.row === candidate.row &&
         destination?.index === candidate.index,

@@ -16,6 +16,8 @@ export class PendingAutoController {
     } else if (button.dataset.action === "confirm-prepared-costs") {
       const process = this.gameEngine.processManager.getCurrentProcess();
       this.gameEngine.confirmPreparedCosts(process.context.preparedCosts);
+    } else if (button.dataset.action === "close-unavailable-pending-autos") {
+      this.gameEngine.closeUnavailablePendingAutos();
     }
   }
 }
