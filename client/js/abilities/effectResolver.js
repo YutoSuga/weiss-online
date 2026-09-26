@@ -80,6 +80,12 @@ const handlers = {
     validate(effect) { assertId(effect); validateEffectResultReference(effect.cards, "ADD_TO_HAND cards"); },
   },
   [EFFECT_TYPE.SHUFFLE_DECK]: { validate(effect) { assertId(effect); } },
+  [EFFECT_TYPE.ENCORE_RETURN]: {
+    validate(effect) { assertKeys(effect, ["type"], "ENCORE_RETURN"); },
+    resolve(_effect, { gameEngine, sourceCard, pendingAuto, playerId }) {
+      gameEngine.returnEncoreCardToStage(sourceCard, pendingAuto.triggerContext.originalStagePosition, playerId);
+    },
+  },
 };
 
 export function getEffectHandler(effect) {
