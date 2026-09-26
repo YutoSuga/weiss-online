@@ -266,6 +266,9 @@ export class DevController {
         case "deck-to-stock":
           this.#moveDeckCardToStock();
           break;
+        case "opponent-deck-to-stock":
+          this.#moveDeckCardToStock("opponent");
+          break;
         case "deck-card-to-hand":
           this.#moveSelectedDeckCardToHand();
           break;
@@ -388,13 +391,13 @@ export class DevController {
   }
 
   /** @returns {void} */
-  #moveDeckCardToStock() {
+  #moveDeckCardToStock(playerId = "self") {
     const card = this.#requireMethod(
       this.gameEngine,
       "moveDeckCardToStock",
-    ).call(this.gameEngine, "self");
+    ).call(this.gameEngine, playerId);
     if (!card) {
-      console.warn("DevController: self deck is empty.");
+      console.warn(`DevController: ${playerId} deck is empty.`);
       return;
     }
     this.#requireMethod(this.gameEngine, "render").call(this.gameEngine);

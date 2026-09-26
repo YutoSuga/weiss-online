@@ -14,6 +14,7 @@ export const PROCESS_TYPE = Object.freeze({
   PENDING_AUTO: "pending_auto",
   AUTO_ABILITY: "auto_ability",
   SEARCH_DECK: "search_deck",
+  SELECT_ZONE_CARD: "select_zone_card",
   REFRESH: "refresh",
   REFRESH_PENALTY: "refresh_penalty",
   LEVEL_UP: "level_up",
@@ -116,6 +117,11 @@ export const AUTO_ABILITY_STEP = Object.freeze({
 
 export const SEARCH_DECK_STEP = Object.freeze({
   PREPARE: "prepare",
+  WAIT_FOR_SELECTION: "wait_for_selection",
+  COMPLETE: "complete",
+});
+
+export const SELECT_ZONE_CARD_STEP = Object.freeze({
   WAIT_FOR_SELECTION: "wait_for_selection",
   COMPLETE: "complete",
 });

@@ -18,6 +18,7 @@ import {
   REFRESH_PENALTY_STEP,
   REFRESH_STEP,
   SEARCH_DECK_STEP,
+  SELECT_ZONE_CARD_STEP,
   SWAP_STAGE_STEP,
   PENDING_AUTO_STEP,
 } from "../constants/process.js";
@@ -25,6 +26,7 @@ import { ABILITY_SOURCE, ABILITY_TYPE, EFFECT_TYPE } from "../constants/ability.
 import { getCostsDisabledReason, getPreparedCostsDisabledReason, payCosts, prepareCostSelections } from "../abilities/costResolver.js";
 import {
   cardMatchesSearchFilter,
+  getEffectsDisabledReason,
   resolveEffect,
   resolveEffectResult,
   validateEffects,
@@ -2191,7 +2193,14 @@ export class GameEngine {
       } else if (process.step === AUTO_ABILITY_STEP.RESOLVE_EFFECT) {
         if (process.context.effectIndex >= ability.effects.length) process.step = AUTO_ABILITY_STEP.COMPLETE;
         else {
-          resolveEffect(ability.effects[process.context.effectIndex++], { gameEngine: this, player, playerId: process.playerId, sourceCard: card, pendingAuto: process.context.pendingAuto });
+          const effect = ability.effects[process.context.effectIndex];
+          if (effect.type === EFFECT_TYPE.REPLACE_OPPONENT_STOCK_TOP) {
+            process.context.effectIndex += 1;
+            this.#startOpponentStockReplacement(process, effect);
+            return process;
+          }
+          process.context.effectIndex += 1;
+          resolveEffect(effect, { gameEngine: this, player, playerId: process.playerId, sourceCard: card, pendingAuto: process.context.pendingAuto });
         }
       } else if (process.step === AUTO_ABILITY_STEP.COMPLETE) {
         this.completeCurrentProcess();
@@ -2222,7 +2231,57 @@ export class GameEngine {
     }
     return getCostsDisabledReason(ability.costs, {
       player: this.gameState.players[pending.masterPlayerId], sourceCard: card,
+    }) ?? getEffectsDisabledReason(ability.effects, {
+      gameState: this.gameState, playerId: pending.masterPlayerId, sourceCard: card,
     });
+  }
+
+  #opponentOf(playerId) { return PLAYER_IDS.find((id) => id !== playerId); }
+
+  #startOpponentStockReplacement(autoProcess, effect) {
+    const targetPlayerId = this.#opponentOf(autoProcess.playerId);
+    const target = this.gameState.players[targetPlayerId];
+    const top = target.stock.at(-1);
+    if (!top) throw new Error("相手のストックがありません。");
+    this.moveCard(top, { ownerId: targetPlayerId, zone: ZONE.WAITING_ROOM }, autoProcess.playerId);
+    this.processManager.pushProcess({
+      type: PROCESS_TYPE.SELECT_ZONE_CARD,
+      playerId: autoProcess.playerId,
+      step: SELECT_ZONE_CARD_STEP.WAIT_FOR_SELECTION,
+      status: PROCESS_STATUS.WAITING_INPUT,
+      context: { effectId: effect.id, targetPlayerId, sourceZone: ZONE.WAITING_ROOM,
+        destinationZone: ZONE.STOCK, minSelect: 1, maxSelect: 1, selectedCardInstanceIds: [] },
+    });
+    this.render();
+  }
+
+  getZoneCardSelectionState(playerId = "self") {
+    const process = this.processManager.getCurrentProcess();
+    if (process?.type !== PROCESS_TYPE.SELECT_ZONE_CARD || process.playerId !== playerId ||
+        process.step !== SELECT_ZONE_CARD_STEP.WAIT_FOR_SELECTION) return null;
+    const cards = getZoneCollection(this.gameState.players[process.context.targetPlayerId], process.context.sourceZone);
+    return { ...process.context, cards: [...cards], eligibleCardInstanceIds: cards.map(({ instanceId }) => instanceId) };
+  }
+
+  toggleZoneCardSelection(cardInstanceId, playerId = "self") {
+    const process = this.processManager.getCurrentProcess();
+    const state = this.getZoneCardSelectionState(playerId);
+    if (!state || !state.eligibleCardInstanceIds.includes(cardInstanceId)) throw new Error("選択できるカードではありません。");
+    process.context.selectedCardInstanceIds.splice(0, 1, cardInstanceId);
+    this.render();
+    return [...process.context.selectedCardInstanceIds];
+  }
+
+  confirmZoneCardSelection(playerId = "self") {
+    const child = this.processManager.getCurrentProcess();
+    const state = this.getZoneCardSelectionState(playerId);
+    if (!state || state.selectedCardInstanceIds.length !== 1) throw new Error("カードを1枚選択してください。");
+    const card = state.cards.find(({ instanceId }) => instanceId === state.selectedCardInstanceIds[0]);
+    this.moveCard(card, { ownerId: state.targetPlayerId, zone: state.destinationZone }, playerId);
+    child.step = SELECT_ZONE_CARD_STEP.COMPLETE;
+    child.status = PROCESS_STATUS.RUNNING;
+    this.completeCurrentProcess();
+    return card;
   }
 
   /** 指定した任意AUTOを使用せず1件だけ消費し、共通Check Timing出口へ戻す。 */
