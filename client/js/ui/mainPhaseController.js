@@ -297,7 +297,7 @@ export class MainPhaseController {
     const message = this.replacementPanel?.querySelector("[data-confirmation-message]");
     const primary = this.replacementPanel?.querySelector('[data-replacement-action="replace"]');
     if (message) message.textContent = "この場所にはカードがあります。";
-    if (primary) primary.textContent = this.pendingAction === "swap" ? "入れ替える" : "置き換える";
+    if (primary) primary.textContent = this.pendingAction === "swap" ? "入れ替える" : "置き換える（圧殺）";
   }
 
   /** @param {HTMLElement} slot @returns {void} */

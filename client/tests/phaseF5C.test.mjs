@@ -111,15 +111,15 @@ test("共通Prepared Costは選択だけでmutationせず、戻ると破棄しPe
   assert.equal(f.gameState.ruleState.pendingAutos.some(({ id }) => id === pendingId), true);
 });
 
-test("UI実装は1件でも一覧を表示し本文/Cost/解決操作とCostから戻る操作を持つ", async () => {
+test("UI実装は1件でも一覧を表示し本文/Cost/使用・不使用とCostから戻る操作を持つ", async () => {
   const { readFile } = await import("node:fs/promises");
   const renderer = await readFile(new URL("../js/core/renderer.js", import.meta.url), "utf8");
   const controller = await readFile(new URL("../js/ui/pendingAutoController.js", import.meta.url), "utf8");
-  assert.match(renderer, /待機中の自動能力を選択してください/);
+  assert.match(renderer, /発動する自動効果を選択してください/);
   assert.match(renderer, /ability\?\.text/);
   assert.match(renderer, /Cost:/);
   assert.match(renderer, /resolve-pending-auto/);
   assert.match(renderer, /効果選択に戻る/);
-  assert.doesNotMatch(renderer, /自動効果を使用しない/);
+  assert.match(renderer, /decline-pending-auto/);
   assert.match(controller, /backToPendingAutoSelection/);
 });

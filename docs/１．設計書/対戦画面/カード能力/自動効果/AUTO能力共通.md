@@ -40,7 +40,7 @@ F-5Cはこの移管境界と空Effectの最小Processまでを実装する。標
 - Check TimingではRule Checkを先に安定させ、ターンプレイヤーの待機中AUTOを1つ選んでプレイし、再度Check Timingへ戻る。ターンプレイヤー分がなくなってから非ターンプレイヤーを同様に処理する。
 - 同じPlayerの複数の待機中AUTOはそのPlayerが1つを選ぶ。`sequence`は監査用でありFIFO順を強制しない。
 - 能力解決中の誘発も直ちに待機状態へ加えるが、現在の能力へ割り込ませず、その解決後のCheck Timingで候補にする。
-- プレイできない待機中能力はルールに従って待機状態を取り消す。任意Costを支払わない選択とは区別し、AUTO一覧に「AUTO自体を使用しない」は置かない。
+- 任意の待機中能力は1件ごとに「使用」または「使用しない」を選ぶ。使用不能な能力も理由付きで提示し、「使用しない」によりその1件を処理済みにできる。
 - 領域移動誘発は移動前情報を参照し得るため、Eventのimmutableな`from/to`とCard識別子をLKIとしてPendingに残す。
 
 公式ページへのネットワーク接続が実行環境で拒否されたため、版の日付と条文内容はリポジトリでF-4/F-5A時に確認済みのVer.1.112記録とも照合した。後の版へ更新する場合は版番号だけを差し替えず、上記各契約を再照合する。
@@ -66,7 +66,7 @@ PRINTEDはSELF CARD eventならEvent対象instanceのCardMasterから直接取�
 
 Pendingは誘発1回の事実であり、`id / sequence / masterPlayerId / ownerId / controllerId / source / trigger`を持つ。`source`は`kind (PRINTED | RULE)`、Card instance/master、Ability IDだけを保持する。`trigger`はEvent ID/type/actorと限定payloadを含むimmutable snapshotである。同じAbilityが異なるEventで誘発すれば別Pendingとなる。生成後にsourceが移動しても残る。
 
-`gameState.ruleState.pendingAutos`はPlayer別ではない単一`PendingAutoCollection`（array）で、`pendingChecks`と分離する。これはQueueではない。追加時は末尾へ保存するが、選択はID指定であり`sequence`順を強制しない。Check Timingは`masterPlayerId`で候補を抽出する。PendingはAUTO Processへの移管時にだけ1件consumeし、単なるsource移動では削除しない。
+`gameState.ruleState.pendingAutos`はPlayer別ではない単一`PendingAutoCollection`（array）で、`pendingChecks`と分離する。これはQueueではない。追加時は末尾へ保存するが、選択はID指定であり`sequence`順を強制しない。Check Timingは`masterPlayerId`で候補を抽出する。PendingはAUTO Processへの移管時、またはプレイヤーがその1件を「使用しない」とした時にconsumeし、単なるsource移動では削除しない。
 
 ## 6. Check Timing / Process
 
@@ -84,13 +84,15 @@ AUTO_ABILITY: PAY_COST → RESOLVE_EFFECT → COMPLETE → Check Timing
 
 AUTO解決中のEvent dispatcherは停止しない。追加Pendingは単一Collectionへ入る一方、`resolveCheckPoint()`は現在の`AUTO_ABILITY`へ別AUTOを割り込ませない。完了後にB/C/D全体を再提示する。
 
+「使用しない」はUIを閉じる操作ではない。指定Pendingだけをconsumeし、Costを支払わず、`AUTO_ABILITY`を開始せず、Effectも実行しない。その後は共通Check Timingを再開し、残PendingがあればPlayer優先順を再評価して選択UIを表示する。全PendingがなくなればCheck Timingを終了し、保存済みstep/statusの親Processを共通Process出口から再開する。
+
 ## 7. 共通Cost Selection / Prepared Cost
 
 `prepareCostSelections()`と`getPreparedCostsDisabledReason()`はACT/AUTO共通のCost Resolverに置く。Prepared項目は最低限`costIndex / costType`とhandler固有の選択値（将来の`selectedCardInstanceIds`等）を持つ。選択はStateを変更しない。確定時と`payCosts()`直前に現在Stateで再検証し、全Cost検証後だけ記載順にmutationする。現行ACT Costは`PAY_STOCK / REST_SELF`だけで、Engineが対象を一意に決められ、ユーザー対象選択はまだない。
 
 ## 8. UI責務
 
-RendererはProcessと単一Collectionからカード名、能力本文、keyword、Cost、選択状態を表示するだけで、ControllerはPending ID / Prepared CostをEngineへ渡す。正本はDOMに置かない。AUTO選択には「自動効果を使用しない」を置かず、Cost選択だけ「効果選択に戻る」を提供する。
+RendererはProcessと単一Collectionからカード名、能力本文、keyword、Cost、選択状態を表示するだけで、ControllerはPending ID / Prepared CostをEngineへ渡す。正本はDOMに置かない。各Pendingに「使用」「使用しない」を置き、使用不能理由がある場合は「使用」だけをdisabledにする。「使用しない」は常に選択可能とし、モーダル全体の「閉じる」は置かない。Cost選択では「効果選択に戻る」を提供する。
 
 ## 9. 標準アンコール / 将来範囲
 
@@ -102,6 +104,6 @@ RendererはProcessと単一Collectionからカード名、能力本文、keyword
 
 `CARD_MOVED (STAGE → WAITING_ROOM)`のEvent対象がCharacterなら同期的にRULE候補を作る。Pendingは通常の`trigger`に加え、Eventの移動元から`triggerContext.originalStagePosition { row, index }`をsnapshotする。これはCard instanceの恒久状態ではない。
 
-選択表示時とAUTOへの移管直前には、対象instanceが現在もmaster playerのWaiting Roomにあること、および3 Stockを支払えることを現在Stateから再評価する。使用不能でもPending一覧には理由付きで表示し、使用ボタンを無効化する。当該Playerに使用可能候補が一つもなければ「閉じる」で表示済みの使用不能Pendingを取り消し、Check Timingを継続する。
+選択表示時とAUTOへの移管直前には、対象instanceが現在もmaster playerのWaiting Roomにあること、および3 Stockを支払えることを現在Stateから再評価する。標準3コストアンコールは任意であり、使用不能でもPending一覧には理由付きで表示して「使用」だけを無効化し、「使用しない」は選べる。「使用しない」は当該Pending 1件だけをCost / Effectなしでconsumeし、Check Timingを継続する。
 
 Effectの`ENCORE_RETURN`は共通Stage配置へ委譲する。占有CardのStage → Waiting Room、対象CardのWaiting Room → Stageはそれぞれ通常の`CARD_MOVED`を発行し、その場でTrigger DetectionとPending追加まで行う。現在のAUTO解決には割り込まず、`AUTO_ABILITY COMPLETE → Rule Check → Check Timing`後に新Pendingを提示する。詳細は[アンコール](キーワード能力/アンコール.md)を正本とする。
