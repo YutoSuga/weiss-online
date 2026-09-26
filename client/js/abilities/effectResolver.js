@@ -86,6 +86,13 @@ const handlers = {
       gameEngine.returnEncoreCardToStage(sourceCard, pendingAuto.triggerContext.originalStagePosition, playerId);
     },
   },
+  [EFFECT_TYPE.REPLACE_OPPONENT_STOCK_TOP]: {
+    validate(effect) { assertKeys(effect, ["type", "id"], "REPLACE_OPPONENT_STOCK_TOP"); assertId(effect); },
+    getDisabledReason(_effect, { gameState, playerId }) {
+      const opponentId = playerId === "self" ? "opponent" : "self";
+      return gameState.players[opponentId].stock.length === 0 ? "相手のストックがありません。" : null;
+    },
+  },
 };
 
 export function getEffectHandler(effect) {
@@ -113,6 +120,14 @@ export function resolveEffect(effect, context) {
   const handler = getEffectHandler(effect);
   if (typeof handler.resolve !== "function") throw new Error(`${effect.type} requires ACT process resolution.`);
   handler.resolve(effect, context);
+}
+
+export function getEffectsDisabledReason(effects, context) {
+  for (const effect of effects) {
+    const reason = getEffectHandler(effect).getDisabledReason?.(effect, context);
+    if (reason) return reason;
+  }
+  return null;
 }
 
 export function resolveEffectResult(reference, effectResults, expectedType) {

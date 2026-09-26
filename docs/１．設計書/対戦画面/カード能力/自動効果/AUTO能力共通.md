@@ -107,3 +107,13 @@ RendererはProcessと単一Collectionからカード名、能力本文、keyword
 選択表示時とAUTOへの移管直前には、対象instanceが現在もmaster playerのWaiting Roomにあること、および3 Stockを支払えることを現在Stateから再評価する。標準3コストアンコールは任意であり、使用不能でもPending一覧には理由付きで表示して「使用」だけを無効化し、「使用しない」は選べる。「使用しない」は当該Pending 1件だけをCost / Effectなしでconsumeし、Check Timingを継続する。
 
 Effectの`ENCORE_RETURN`は共通Stage配置へ委譲する。占有CardのStage → Waiting Room、対象CardのWaiting Room → Stageはそれぞれ通常の`CARD_MOVED`を発行し、その場でTrigger DetectionとPending追加まで行う。現在のAUTO解決には割り込まず、`AUTO_ABILITY COMPLETE → Rule Check → Check Timing`後に新Pendingを提示する。詳細は[アンコール](キーワード能力/アンコール.md)を正本とする。
+
+## 11. Phase F-5D-2 PRINTED AUTO代表実装
+
+`CHA/W40-026SP`「“大切な何か”乙坂 歩未」の2能力をCardMasterの構造化`CardAbility`として保持する。Card instanceへ定義を複製せず、SELFの`CARD_MOVED (HAND → STAGE)`では移動後instanceからCardMasterの全能力を列挙する。同じEventに一致するAUTO①・AUTO②は、カード単位で重複排除せず、同じEvent snapshotを参照する別IDのPRINTED Pendingとして共通`pendingAutos`へ登録する。RULE/PRINTEDは候補供給元だけが異なり、Pending UI、使用/不使用、`AUTO_ABILITY`、Check Timing、親Process復帰を共有する。
+
+使用可否はPending作成時に保存しない。選択表示時とcommit直前の現在Stateで、AUTO①は相手Stock 1枚以上、AUTO②は自分Stock 1枚以上を判定する。使用不能でも誘発/Pendingを維持し、理由とdisabledの「使用」を表示して「使用しない」を許す。
+
+AUTO①は相手Stock配列の末尾（最後に置かれたtop）を共通`moveCard()`でWaiting Roomへ移動する。移動成功後、`SELECT_ZONE_CARD / WAITING_INPUT`子Processと既存`CardSelectionView`を使い、その時点の相手Waiting Room全体からexactly 1枚を選択して共通`moveCard()`で相手Stockへ置く。したがって前半で移動したカード自身も候補であり、Effect開始前のWaiting Room枚数は使用条件にしない。両移動は通常の`CARD_MOVED`を発行する。選択確定後は子Processをpopし、AUTO完了、Rule Check、Check Timing、残Pending、親Process resumeの共通出口へ進む。
+
+AUTO②のF-5D-2範囲はCardMaster定義、Trigger、独立Pending、現在StateによるStock可否判定までである。PAY_STOCK、Deck top→Clock、複合Cost、検索（Level 1以下Characterを0～1枚）、公開、Hand追加、shuffle、Refresh詳細は未実装であり、推測したEffectを置かない。

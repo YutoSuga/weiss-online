@@ -47,7 +47,7 @@ test("ブラウザ確認用Deckは指定された実在17種・50枚のCardMaste
         level: master.level, cost: master.cost, triggerIcons: master.triggerIcons, traits: master.traits },
       { cardNumber, name, cardType, color, level, cost, triggerIcons, traits },
     );
-    if (id !== "kch-w78-001s") assert.deepEqual(master.abilities, []);
+    if (!["kch-w78-001s", "cha-w40-026sp"].includes(id)) assert.deepEqual(master.abilities, []);
   }
 
   const deck = createDeckFromDefinition("self", definition, registry);

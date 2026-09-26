@@ -599,14 +599,57 @@
     "color": "GREEN",
     "level": 0,
     "cost": 0,
-    "basePower": null,
-    "baseSoul": null,
+    "basePower": 1500,
+    "baseSoul": 1,
     "triggerIcons": [],
     "traits": [
       "能力者",
       "ピザソース"
     ],
-    "abilities": [],
+    "abilities": [
+      {
+        "id": "cha-w40-026sp-auto-1",
+        "type": "AUTO",
+        "keywords": [],
+        "text": "このカードが手札から舞台に置かれた時、あなたは相手のストックの上から1枚を、控え室に置いてよい。そうしたら、あなたは相手の控え室のカードを1枚選び、ストック置場に置く。",
+        "activationTrigger": {
+          "event": "CARD_MOVED",
+          "subject": "SELF",
+          "fromZone": "hand",
+          "toZone": "stage"
+        },
+        "activeZones": [],
+        "conditions": [],
+        "costs": [],
+        "effects": [
+          {
+            "id": "replace-opponent-stock",
+            "type": "REPLACE_OPPONENT_STOCK_TOP"
+          }
+        ]
+      },
+      {
+        "id": "cha-w40-026sp-auto-2",
+        "type": "AUTO",
+        "keywords": [],
+        "text": "［(1) あなたの山札の上から1枚をクロック置場に置く］このカードが手札から舞台に置かれた時、あなたはコストを払ってよい。そうしたら、あなたは自分の山札を見てレベル1以下のキャラを1枚まで選んで相手に見せ、手札に加え、その山札をシャッフルする。",
+        "activationTrigger": {
+          "event": "CARD_MOVED",
+          "subject": "SELF",
+          "fromZone": "hand",
+          "toZone": "stage"
+        },
+        "activeZones": [],
+        "conditions": [],
+        "costs": [
+          {
+            "type": "PAY_STOCK",
+            "amount": 1
+          }
+        ],
+        "effects": []
+      }
+    ],
     "imageUrl": null
   },
   {

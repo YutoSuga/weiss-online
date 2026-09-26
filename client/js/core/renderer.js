@@ -5,6 +5,7 @@ import { ABILITY_SOURCE, ABILITY_TYPE } from "../constants/ability.js";
 import { PENDING_AUTO_STEP, PROCESS_TYPE } from "../constants/process.js";
 import { getRuleAutoAbility } from "../abilities/ruleAbilityProvider.js";
 import { getCostsDisabledReason } from "../abilities/costResolver.js";
+import { getEffectsDisabledReason } from "../abilities/effectResolver.js";
 
 const ABILITY_LABELS = Object.freeze({
   [ABILITY_TYPE.CONTINUOUS]: "【永】",
@@ -119,6 +120,8 @@ export class Renderer {
         : card?.abilities.find(({ id }) => id === item.source.abilityId);
       let disabledReason = ability ? getCostsDisabledReason(ability.costs, {
         player: gameState.players[item.masterPlayerId], sourceCard: card,
+      }) ?? getEffectsDisabledReason(ability.effects, {
+        gameState, playerId: item.masterPlayerId, sourceCard: card,
       }) : "能力定義が見つかりません。";
       if (item.source.kind === ABILITY_SOURCE.RULE &&
           (!card || card.zone !== ZONE.WAITING_ROOM)) disabledReason = "アンコール対象が控室にありません。";

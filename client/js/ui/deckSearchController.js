@@ -28,19 +28,30 @@ export class DeckSearchController {
   handleClick(event) {
     const slot = event.target instanceof Element ? event.target.closest(".card-slot") : null;
     if (slot) {
-      const state = this.gameEngine.getSearchDeckState("self");
+      const state = this.#getState();
       const card = state?.cards.find(({ instanceId }) => instanceId === slot.dataset.cardId);
       if (card) this.detailCardId = card.instanceId;
-      if (slot.dataset.selectable === "true") this.gameEngine.toggleSearchDeckSelection(slot.dataset.cardId, "self");
+      if (slot.dataset.selectable === "true") {
+        if (state?.sourceZone) this.gameEngine.toggleZoneCardSelection(slot.dataset.cardId, "self");
+        else if (slot.dataset.selectable === "true") this.gameEngine.toggleSearchDeckSelection(slot.dataset.cardId, "self");
+      }
       // toggle時の再描画後も、Modal内の確認対象を保持する。
       if (card) this.renderer?.renderCardDetail?.(card, { container: this.detail, allowPrivate: true });
       return;
     }
-    if (event.target === this.button) this.gameEngine.confirmSearchDeckSelection("self");
+    if (event.target === this.button) {
+      const state = this.#getState();
+      if (state?.sourceZone) this.gameEngine.confirmZoneCardSelection("self");
+      else this.gameEngine.confirmSearchDeckSelection("self");
+    }
+  }
+
+  #getState() {
+    return this.gameEngine?.getZoneCardSelectionState?.("self") ?? this.gameEngine?.getSearchDeckState?.("self");
   }
 
   sync() {
-    const state = this.gameEngine?.getSearchDeckState?.("self");
+    const state = this.#getState();
     if (!(this.dialog instanceof HTMLElement) || !(this.list instanceof HTMLElement)) return;
     this.dialog.hidden = !state;
     if (!state) {
@@ -63,7 +74,9 @@ export class DeckSearchController {
       this.view.setState(slot, { selectable: eligible.has(card.instanceId), selected: selected.has(card.instanceId) });
       return slot;
     }));
-    if (this.description) this.description.textContent = `手札に加えるカードを0〜${state.maxSelect}枚選択してください`;
+    if (this.description) this.description.textContent = state.sourceZone
+      ? "相手の控え室からストックに置くカードを1枚選択してください"
+      : `手札に加えるカードを0〜${state.maxSelect}枚選択してください`;
     if (this.count) this.count.textContent = `選択枚数 ${selected.size} / ${state.maxSelect}`;
     if (this.button) this.button.disabled = selected.size < state.minSelect || selected.size > state.maxSelect;
     const detailCard = state.cards.find(({ instanceId }) => instanceId === this.detailCardId) ?? null;

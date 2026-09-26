@@ -55,7 +55,7 @@ HTML / CSS
 - 開発用のProcess Stack確認UI
 - DEVパネルから指定した自分の山札のCardを手札へ直接移動する確認操作
 
-カードの通常プレイ、Replacement、舞台内Move / Swapに加え、CardMasterと対戦中Card instanceの分離、immutableなCardAbilityデータ構造、ACT Ability v1基盤、Pending AUTOの選択・AUTO Process移管基盤まで実装済みです。具体的なAUTO Effect、CONTINUOUS能力、オンライン対戦は未実装です。
+カードの通常プレイ、Replacement、舞台内Move / Swapに加え、CardMasterと対戦中Card instanceの分離、immutableなCardAbilityデータ構造、ACT Ability v1基盤、Pending AUTOの選択・AUTO Process移管基盤まで実装済みです。標準3コストアンコールと最初のPRINTED AUTO（CHA/W40-026SP AUTO①）のEffectを実装済みです。CONTINUOUS能力、オンライン対戦は未実装です。
 
 ## Process / Rule Interrupt
 
@@ -75,7 +75,7 @@ Interrupt Process
 
 ## 現在地点
 
-**Phase F-5C：Pending AUTO / AUTO選択基盤 COMPLETE / F-5D NEXT**
+**Phase F-5D-2：最初のPRINTED AUTO代表実装 COMPLETE**
 
 F-5BのGame Event / Trigger Detection / Pending生成に続き、F-5Cで単一PendingAutoCollection、Check Timing、Turn / Non-Turn順、1件ずつのAUTO選択、共通Prepared Cost境界、AUTO Processへの移管と選択UIまで完了しました。次の主要実装対象は **Phase F-5D：具体的なAUTO Cost / Effect解決の拡張** です。F-5全体は未完了です。
 
@@ -121,7 +121,8 @@ CLIMAX
 - [x] **Phase F-5A AUTO Ability基盤 実装前設計レビュー（COMPLETE）**
 - [x] **Phase F-5B Game Event / AUTO Trigger Detection / Pending生成（COMPLETE）**
 - [x] **Phase F-5C Pending AUTO / AUTO選択基盤（COMPLETE）**
-- [ ] **Phase F-5D AUTO Cost / Effect解決拡張（NEXT）**
+- [x] **Phase F-5D-1 RULE AUTO / 標準3コストアンコール（COMPLETE）**
+- [x] **Phase F-5D-2 PRINTED AUTO代表実装（COMPLETE、AUTO②解決は後続）**
 - [ ] Phase F-6 CONTINUOUS Ability基盤
 
 ### Phase F-2A：MAINカード選択 / Destination UI
