@@ -863,8 +863,11 @@ export class Renderer {
       Number.isFinite(normalOffset) &&
       offset < normalOffset;
 
+    const stackOrigin = owner === "opponent" ? "bottom" : "top";
+    const oppositeEdge = owner === "opponent" ? "top" : "bottom";
     slots.forEach((slot, index) => {
-      slot.style.top = `${index * offset}px`;
+      slot.style[stackOrigin] = `${index * offset}px`;
+      slot.style[oppositeEdge] = "";
     });
     container.dataset.stockCompressed = String(compressed);
     container.style.setProperty("--stock-offset", `${offset}px`);

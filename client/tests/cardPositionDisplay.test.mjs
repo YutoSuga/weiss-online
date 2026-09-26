@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { Renderer } from "../js/core/renderer.js";
 
 const readBoardCss = () => readFile(
   new URL("../css/board.css", import.meta.url),
@@ -22,4 +23,47 @@ test("REST表示はownerやCard typeで分岐せず詳細画像へ適用しな�
   assert.equal(restRules.length, 1);
   assert.equal(restRules[0][1].trim(), ".stage-slot[data-position=\"rest\"]");
   assert.doesNotMatch(restRules[0][1], /data-owner|card-detail|card-type/);
+});
+
+test("Stock表示は相手を下端、自分を上端から積み上げる", () => {
+  const OriginalHTMLElement = globalThis.HTMLElement;
+  class TestElement {}
+  globalThis.HTMLElement = TestElement;
+
+  const makeFixture = (owner) => {
+    const slots = [1, 2, 3].map((index) => ({
+      dataset: { index: String(index) },
+      style: { top: "stale", bottom: "stale" },
+      getBoundingClientRect: () => ({ height: 90 }),
+    }));
+    const container = Object.assign(new TestElement(), {
+      clientHeight: 180,
+      dataset: {},
+      ownerDocument: {
+        defaultView: {
+          getComputedStyle: () => ({
+            getPropertyValue: () => "18",
+          }),
+        },
+      },
+      querySelectorAll: () => slots,
+      style: { setProperty() {} },
+    });
+    const renderer = new Renderer({ querySelector: () => container });
+    renderer.updateStockStackLayout(owner);
+    return slots;
+  };
+
+  try {
+    assert.deepEqual(
+      makeFixture("opponent").map(({ style }) => [style.top, style.bottom]),
+      [["", "0px"], ["", "18px"], ["", "36px"]],
+    );
+    assert.deepEqual(
+      makeFixture("self").map(({ style }) => [style.top, style.bottom]),
+      [["0px", ""], ["18px", ""], ["36px", ""]],
+    );
+  } finally {
+    globalThis.HTMLElement = OriginalHTMLElement;
+  }
 });
