@@ -75,12 +75,18 @@ test("歩未のCardMasterは確認済み画像URLを持つ", async () => {
 test("Pending AUTO UIはsource Card画像、画像なしfallback、全件描画と従来の選択操作を備える", async () => {
   const renderer = await readFile(new URL("../js/core/renderer.js", import.meta.url), "utf8");
   const controller = await readFile(new URL("../js/ui/pendingAutoController.js", import.meta.url), "utf8");
+  const pendingRenderer = renderer.slice(
+    renderer.indexOf("  renderPendingAutoSelection("),
+    renderer.indexOf("  updateMessageOverlay("),
+  );
   assert.match(renderer, /pending\.forEach/);
   assert.match(renderer, /data-pending-auto-image/);
   assert.match(renderer, /data-pending-auto-image-placeholder>画像なし/);
   assert.match(renderer, /card\?\.imageUrl/);
   assert.match(renderer, /disabledReason \? " disabled"/);
   assert.match(renderer, /decline-pending-auto/);
+  assert.match(pendingRenderer, /ability\?\.text \?\? item\.source\.abilityId/);
+  assert.doesNotMatch(pendingRenderer, /formatAbility/);
   assert.match(controller, /selectPendingAuto/);
   assert.match(controller, /declinePendingAuto/);
 });
