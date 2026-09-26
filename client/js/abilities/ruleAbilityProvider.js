@@ -9,7 +9,7 @@ export const RULE_ABILITY_ID = Object.freeze({
 const STANDARD_ENCORE_3 = Object.freeze({
   id: RULE_ABILITY_ID.STANDARD_ENCORE_3,
   type: ABILITY_TYPE.AUTO,
-  text: "【自】アンコール［③］",
+  text: "アンコール［③］",
   activationTrigger: Object.freeze({
     event: GAME_EVENT_TYPE.CARD_MOVED,
     subject: AUTO_TRIGGER_SUBJECT.SELF,

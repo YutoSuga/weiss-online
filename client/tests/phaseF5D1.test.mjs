@@ -10,6 +10,7 @@ import { POSITION } from "../js/models/card.js";
 import { ZONE } from "../js/constants/zone.js";
 import { MAIN_STEP, PROCESS_STATUS, PROCESS_TYPE } from "../js/constants/process.js";
 import { PHASE } from "../js/constants/phase.js";
+import { getRuleAutoAbility } from "../js/abilities/ruleAbilityProvider.js";
 
 function fixture(stockCount = 3) {
   const registry = new CardMasterRegistry();
@@ -153,6 +154,12 @@ test("Pending UIは新文言、項目ごとの使用しない、使用不能理�
   assert.match(renderer, /使用しない/);
   assert.doesNotMatch(renderer, /close-unavailable-pending-autos/);
   assert.match(controller, /declinePendingAuto/);
+});
+
+test("標準3コストアンコールはAUTO種別記号をUI用本文へ重複させない", () => {
+  const ability = getRuleAutoAbility("STANDARD_ENCORE_3");
+  assert.equal(ability.text, "アンコール［③］");
+  assert.doesNotMatch(ability.text, /【自】/);
 });
 
 test("圧殺確認UIは置き換える（圧殺）と表示する", async () => {
