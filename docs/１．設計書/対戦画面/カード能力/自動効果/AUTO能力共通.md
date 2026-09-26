@@ -92,7 +92,11 @@ AUTO解決中のEvent dispatcherは停止しない。追加Pendingは単一Colle
 
 ## 8. UI責務
 
-RendererはProcessと単一Collectionからカード名、能力本文、keyword、Cost、選択状態を表示するだけで、ControllerはPending ID / Prepared CostをEngineへ渡す。正本はDOMに置かない。各Pendingに「使用」「使用しない」を置き、使用不能理由がある場合は「使用」だけをdisabledにする。「使用しない」は常に選択可能とし、モーダル全体の「閉じる」は置かない。Cost選択では「効果選択に戻る」を提供する。
+RendererはProcessと単一Collectionからカード名、能力本文、Cost、選択状態を表示するだけで、ControllerはPending ID / Prepared CostをEngineへ渡す。正本はDOMに置かない。各Pendingに「使用」「使用しない」を置き、使用不能理由がある場合は「使用」だけをdisabledにする。「使用しない」は常に選択可能とし、モーダル全体の「閉じる」は置かない。Cost選択では「効果選択に戻る」を提供する。
+
+Pendingのカード画像は、画像URLをPendingへ複製せず、`source.cardInstanceId`で全Zoneから現在のCard instanceを特定し、Card → CardMasterの`imageUrl`を表示時に参照する。Pendingはsource移動後も残り、Card instanceも移動先Zoneから特定できる。RULE / PRINTEDで同じ表示経路を使い、URL未設定または画像ロード失敗時は「画像なし」を表示してAUTO選択操作を維持する。キーワード専用表示名は設けず、能力本文を正とする。
+
+PCのPending一覧は2列Gridとし、1件は1列分、2件は同一行、3件以上は2列のまま折り返す。モーダルを画面高以内に制限し、5件以上など一覧が収まらない場合はタイトルと説明を上部に維持したまま一覧部分を縦スクロールする。狭幅画面では最低限1列へ戻す。
 
 ## 9. 標準アンコール / 将来範囲
 

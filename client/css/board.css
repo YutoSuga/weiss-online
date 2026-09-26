@@ -1379,7 +1379,23 @@ ul {
   }
 }
 
-.pending-auto-dialog { position: fixed; inset: 0; z-index: 1200; background: rgb(0 0 0 / 65%); padding: 4vh 8vw; overflow: auto; }
-.pending-auto-panel { max-width: 760px; margin: auto; padding: 1.25rem; border-radius: 12px; background: #fff; color: #222; }
-.pending-auto-entry { display: grid; gap: .35rem; margin: .75rem 0; padding: 1rem; border: 1px solid #bbb; border-radius: 8px; }
+.pending-auto-dialog { position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center; background: rgb(0 0 0 / 65%); padding: 4vh 5vw; overflow: hidden; }
+.pending-auto-dialog[hidden] { display: none; }
+.pending-auto-panel { display: flex; flex-direction: column; width: min(1040px, 100%); max-height: 92vh; min-height: 0; padding: 1.25rem; border-radius: 12px; background: #fff; color: #222; }
+.pending-auto-panel > h2, .pending-auto-panel > [data-pending-auto-message] { flex: none; }
+.pending-auto-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; min-height: 0; overflow-y: auto; padding-right: .25rem; }
+.pending-auto-entry { display: flex; flex-direction: column; gap: .65rem; min-width: 0; padding: 1rem; border: 1px solid #bbb; border-radius: 8px; }
+.pending-auto-entry__body { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: .75rem; min-width: 0; }
+.pending-auto-image-frame { display: grid; place-items: center; align-self: start; width: 112px; min-height: 156px; border: 1px solid #ccc; border-radius: 4px; background: #eee; color: #666; font-size: .8rem; text-align: center; }
+.pending-auto-image-frame img { display: block; width: 100%; height: auto; max-height: 160px; object-fit: contain; }
+.pending-auto-image-frame img[hidden], .pending-auto-image-frame [hidden] { display: none; }
+.pending-auto-entry__details { display: grid; align-content: start; gap: .35rem; min-width: 0; overflow-wrap: anywhere; }
+.pending-auto-entry__actions { display: flex; gap: .5rem; margin-top: auto; }
+.pending-auto-entry__actions button { flex: 1; min-height: 34px; }
 .pending-auto-entry p { margin: 0; }
+
+@media (max-width: 760px) {
+  .pending-auto-dialog { padding: 2vh 3vw; }
+  .pending-auto-panel { max-height: 96vh; }
+  .pending-auto-list { grid-template-columns: minmax(0, 1fr); }
+}

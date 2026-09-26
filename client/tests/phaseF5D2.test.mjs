@@ -8,6 +8,7 @@ import { GameState } from "../js/models/gameState.js";
 import { Player } from "../js/models/player.js";
 import { ZONE } from "../js/constants/zone.js";
 import { PROCESS_TYPE } from "../js/constants/process.js";
+import { readFile } from "node:fs/promises";
 
 const abilities = [
   { id: "cha-w40-026sp-auto-1", type: "AUTO", text: "stock replace", activationTrigger: { event: "CARD_MOVED", subject: "SELF", fromZone: "hand", toZone: "stage" }, costs: [], effects: [{ id: "replace", type: "REPLACE_OPPONENT_STOCK_TOP" }] },
@@ -63,4 +64,30 @@ test("AUTO①はStock topを通常移動し、そのカードを含む控え室�
 
 test("AUTO②の使用可否は自分Stock 0/1枚で再評価し、RULEと同じPending collectionを使う", () => {
   for (const count of [0,1]) { const f=fixture({ selfStock: count }); trigger(f); f.engine.resolveCheckPoint(); const option=f.engine.getPendingAutoOptions().find((o)=>o.pending.source.abilityId===abilities[1].id); assert.equal(Boolean(option.disabledReason), count===0); }
+});
+
+test("歩未のCardMasterは確認済み画像URLを持つ", async () => {
+  const masters = JSON.parse(await readFile(new URL("../data/card-masters.json", import.meta.url), "utf8"));
+  const ayumi = masters.find(({ cardNumber }) => cardNumber === "CHA/W40-026SP");
+  assert.equal(ayumi.imageUrl, "https://ws-tcg.com/wordpress/wp-content/images/cardlist/c/cha_w40/cha_w40_026sp.png");
+});
+
+test("Pending AUTO UIはsource Card画像、画像なしfallback、全件描画と従来の選択操作を備える", async () => {
+  const renderer = await readFile(new URL("../js/core/renderer.js", import.meta.url), "utf8");
+  const controller = await readFile(new URL("../js/ui/pendingAutoController.js", import.meta.url), "utf8");
+  assert.match(renderer, /pending\.forEach/);
+  assert.match(renderer, /data-pending-auto-image/);
+  assert.match(renderer, /data-pending-auto-image-placeholder>画像なし/);
+  assert.match(renderer, /card\?\.imageUrl/);
+  assert.match(renderer, /disabledReason \? " disabled"/);
+  assert.match(renderer, /decline-pending-auto/);
+  assert.match(controller, /selectPendingAuto/);
+  assert.match(controller, /declinePendingAuto/);
+});
+
+test("Pending AUTOはPC 2列Gridと一覧内部スクロールを使用する", async () => {
+  const css = await readFile(new URL("../css/board.css", import.meta.url), "utf8");
+  assert.match(css, /\.pending-auto-list\s*\{[^}]*grid-template-columns:\s*repeat\(2,/s);
+  assert.match(css, /\.pending-auto-list\s*\{[^}]*overflow-y:\s*auto/s);
+  assert.match(css, /\.pending-auto-panel\s*\{[^}]*max-height:\s*92vh/s);
 });

@@ -90,7 +90,7 @@ export class Renderer {
       dialog = document.createElement("aside");
       dialog.dataset.pendingAutoDialog = "";
       dialog.className = "pending-auto-dialog";
-      dialog.innerHTML = '<div class="pending-auto-panel"><h2>自動効果発動</h2><p data-pending-auto-message></p><div data-pending-auto-list></div><div data-cost-selection hidden><h3>コスト選択</h3><p>コストに使用するカードを選択してください</p><button type="button" data-action="back-pending-auto">効果選択に戻る</button><button type="button" data-action="confirm-prepared-costs">決定</button></div></div>';
+      dialog.innerHTML = '<div class="pending-auto-panel"><h2>自動効果発動</h2><p data-pending-auto-message></p><div class="pending-auto-list" data-pending-auto-list></div><div data-cost-selection hidden><h3>コスト選択</h3><p>コストに使用するカードを選択してください</p><button type="button" data-action="back-pending-auto">効果選択に戻る</button><button type="button" data-action="confirm-prepared-costs">決定</button></div></div>';
       this.rootElement?.body?.append(dialog);
     }
     const process = gameState?.ruleState?.processStack?.at(-1);
@@ -127,7 +127,12 @@ export class Renderer {
           (!card || card.zone !== ZONE.WAITING_ROOM)) disabledReason = "アンコール対象が控室にありません。";
       const entry = document.createElement("article");
       entry.className = "pending-auto-entry";
-      entry.innerHTML = `<strong>${card?.name ?? item.source.cardMasterId}</strong><p>${ability?.keywords?.join(" / ") || "自動能力"}</p><p>${ability?.text ?? item.source.abilityId}</p><p>Cost: ${ability?.costs?.map(({ type, amount }) => `${type}${amount ? ` ${amount}` : ""}`).join(", ") || "なし"}</p>${disabledReason ? `<p class="disabled-reason">${disabledReason}</p>` : ""}<button type="button" data-action="resolve-pending-auto" data-pending-auto-id="${item.id}"${disabledReason ? " disabled" : ""}>使用</button><button type="button" data-action="decline-pending-auto" data-pending-auto-id="${item.id}">使用しない</button>`;
+      entry.innerHTML = `<div class="pending-auto-entry__body"><div class="pending-auto-image-frame"><img alt="${card?.name ?? item.source.cardMasterId}のカード画像" data-pending-auto-image hidden><span data-pending-auto-image-placeholder>画像なし</span></div><div class="pending-auto-entry__details"><strong>${card?.name ?? item.source.cardMasterId}</strong><p>${ability?.text ?? item.source.abilityId}</p><p>Cost: ${ability?.costs?.map(({ type, amount }) => `${type}${amount ? ` ${amount}` : ""}`).join(", ") || "なし"}</p>${disabledReason ? `<p class="disabled-reason">${disabledReason}</p>` : ""}</div></div><div class="pending-auto-entry__actions"><button type="button" data-action="resolve-pending-auto" data-pending-auto-id="${item.id}"${disabledReason ? " disabled" : ""}>使用</button><button type="button" data-action="decline-pending-auto" data-pending-auto-id="${item.id}">使用しない</button></div>`;
+      this.renderImageWithFallback(
+        entry.querySelector("[data-pending-auto-image]"),
+        entry.querySelector("[data-pending-auto-image-placeholder]"),
+        card?.imageUrl,
+      );
       list.append(entry);
     });
   }
@@ -346,6 +351,11 @@ export class Renderer {
   renderCardDetailImage(panel, imageUrl) {
     const image = panel.querySelector("[data-card-detail-image]");
     const placeholder = panel.querySelector("[data-card-detail-image-placeholder]");
+    this.renderImageWithFallback(image, placeholder, imageUrl);
+  }
+
+  /** CardMaster画像の表示と「画像なし」fallbackを画面間で共通化する。 */
+  renderImageWithFallback(image, placeholder, imageUrl) {
     if (!(image instanceof HTMLImageElement) || !(placeholder instanceof HTMLElement)) return;
     const showPlaceholder = () => {
       image.hidden = true;
