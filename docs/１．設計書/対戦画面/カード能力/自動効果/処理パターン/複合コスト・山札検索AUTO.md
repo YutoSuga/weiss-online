@@ -37,6 +37,8 @@ Deck 0またはClock 7+なら、`resolveRuleCheck()`が`REFRESH` / `LEVEL_UP`を
 
 候補配列を処理済みとみなして連続実行せず、毎回再判定する。Deck/Waiting Room敗北候補もCost途中では評価しない。解消可能なRule Processまたは保存済み能力解決がある間は保留し、それらの完了後に再評価する。
 
+Refresh完了で発生するRefresh penalty（リフレッシュポイント処理）はRefresh本体と一体の連続stepではない。`pendingChecks`へ保持し、Refreshをpopした後の再Rule Checkで独立候補にする。したがってRefresh後もClock 7+なら、**Refresh penaltyとLevel Upを共に順序選択対象とする（ルール関係B）**。どちらを選んでも完了後に最新Stateから残候補を再列挙する。公式PDF本文は実行環境の403により枝番を再照合できず、採用版参照メモに保存済みの9章要旨を根拠とする。
+
 ## 5. Effect途中のRule Check
 
 Costとは境界が異なる。各Effect mutation後は`effectIndex`を先に進め、`CHECK_POINT_AFTER_EFFECT`へ移してからRule Checkする。
@@ -57,6 +59,30 @@ Effect mutation → Check Point → Rule Process → 再Rule Check → AUTO resu
 | `selectedCardInstanceIds` | SEARCH_DECKの選択。Card objectでなく識別子を保持 |
 | parent/child Process | AUTOを下、SEARCH_DECK/Rule Processを上に積み、pop後に保存stepへ復帰 |
 | `step`, `status` | 次の処理と`WAITING_INPUT`を明示 |
+
+### 6.1 Rule ProcessとCheck Timingの境界
+
+`resolveCheckPoint()`はRule Checkの入口でもあるが、Ruleが安定したという事実だけでPending AUTOを提示してはならない。Process stackのどの深さであっても`ACT_ABILITY`または`AUTO_ABILITY`が残っていれば、その能力は解決途中である。
+
+1. Abilityが次の`costIndex` / `effectIndex` / `step`を保存する。
+2. Check PointがRule ProcessをAbilityの上へpushする。
+3. Rule Process内のCheck Pointと完了出口は、Rule候補がなくなるまでRule Checkを反復する。
+4. Rule状態が安定したら、Pending AUTOをcollectionに保持したまま親Abilityをresumeする。
+5. 親Abilityが`COMPLETE`になりpopされた後、初めて通常Check TimingとしてPending AUTOを提示する。
+
+つまり **「Rule Processが終わった」≠「解決中の能力が終わった」** である。Pendingの生成・保持は能力解決中も許可する一方、提示と次のAUTO開始だけを能力完了後まで遅延する。これはAUTO②用フラグではなく、ACT/AUTO共通のProcess stack不変条件である。
+
+```mermaid
+flowchart TD
+  A[Ability mutation] --> B[resume位置を保存]
+  B --> C[Rule Check]
+  C -->|候補あり| D[Rule Processをpush/解決]
+  D --> C
+  C -->|安定・stackにAbilityあり| E[親Abilityへresume]
+  E -->|残Effect| A
+  E -->|Ability COMPLETE/pop| F[Check Timing]
+  F --> G[Pending AUTOを提示]
+```
 
 ## 7. SEARCH_DECK責務
 

@@ -29,6 +29,11 @@ function fixture(deckDefs=["cost","low","high","event"], {clock=0, waiting=0, st
  return {engine,state,self,ayumi,pending:state.ruleState.pendingAutos.find(p=>p.source.abilityId===auto2.id)};
 }
 function use(x){ x.engine.selectPendingAuto(x.pending.id); }
+function retainAnotherPending(x) {
+ const pending={...x.pending,id:`${x.pending.id}-deferred`};
+ x.state.ruleState.pendingAutos.push(pending);
+ return pending;
+}
 
 test("AUTO②はStock→Deck top Clockを一度だけ払い、Lv1以下Characterだけを0～1枚検索する",()=>{
  const x=fixture(); const paid=x.self.stock[0], top=x.self.deck.cards[0]; use(x);
@@ -50,6 +55,7 @@ test("AUTO②は選択カードを公開ログ付きでHandへ加え、Rule Chec
 
 test("Deck 1 / Waiting Room 0でも複合Cost完了後までRule Checkせず、StockカードでRefreshして敗北しない",()=>{
  const x=fixture(["cost"],{waiting:0});
+ retainAnotherPending(x);
  let checks=0; const resolve=x.engine.resolveCheckPoint.bind(x.engine);
  x.engine.resolveCheckPoint=()=>{ checks+=1; return resolve(); };
  use(x);
@@ -63,7 +69,7 @@ test("Deck 1 / Waiting Room 0でも複合Cost完了後までRule Checkせず、S
 });
 
 test("Cost後にDeck 0とClock 7が同時成立すると共通順序選択へ入り、AUTOを保存位置から再開する",()=>{
- const x=fixture(["cost"],{clock:6,waiting:0}); use(x);
+ const x=fixture(["cost"],{clock:6,waiting:0}); const deferred=retainAnotherPending(x); use(x);
  assert.deepEqual(x.state.ruleState.pendingInterrupts.map(i=>i.type),[PROCESS_TYPE.REFRESH,PROCESS_TYPE.LEVEL_UP]);
  assert.equal(x.state.ruleState.processStack[0].type,PROCESS_TYPE.AUTO_ABILITY);
  x.engine.selectPendingInterrupt(0);
@@ -72,15 +78,42 @@ test("Cost後にDeck 0とClock 7が同時成立すると共通順序選択へ入
  assert.ok(levelIndex>=0); x.engine.selectPendingInterrupt(levelIndex);
  assert.equal(x.engine.processManager.getCurrentProcess().type,PROCESS_TYPE.LEVEL_UP);
  x.engine.submitLevelUpSelection("self",0); assert.equal(x.engine.processManager.getCurrentProcess().type,PROCESS_TYPE.SEARCH_DECK);
- x.engine.confirmSearchDeckSelection(); assert.equal(x.state.ruleState.processStack.length,0);
+ assert.ok(x.state.ruleState.pendingAutos.some(({id})=>id===deferred.id),"能力途中ではPendingを保持する");
+ x.engine.confirmSearchDeckSelection(); assert.equal(x.engine.processManager.getCurrentProcess().type,PROCESS_TYPE.PENDING_AUTO);
+ x.engine.declinePendingAuto(deferred.id); assert.equal(x.state.ruleState.processStack.length,0);
+});
+
+test("Clock 6 / Deck 1でLevel Upを先に選んでもRefresh・penalty後はPendingより先にAUTOへ復帰する",()=>{
+ const x=fixture(["cost"],{clock:6,waiting:0}); const deferred=retainAnotherPending(x); use(x);
+ const levelIndex=x.state.ruleState.pendingInterrupts.findIndex(i=>i.type===PROCESS_TYPE.LEVEL_UP);
+ x.engine.selectPendingInterrupt(levelIndex);
+ x.engine.submitLevelUpSelection("self",0);
+ assert.equal(x.engine.processManager.getCurrentProcess().type,PROCESS_TYPE.SEARCH_DECK);
+ assert.ok(x.state.log.some(e=>e.message.includes("リフレッシュペナルティが完了")));
+ assert.ok(x.state.ruleState.pendingAutos.some(({id})=>id===deferred.id));
+ x.engine.confirmSearchDeckSelection();
+ assert.equal(x.engine.processManager.getCurrentProcess().type,PROCESS_TYPE.PENDING_AUTO);
+ x.engine.declinePendingAuto(deferred.id);
+});
+
+test("Clock 6のみではLevel Up後にCostを再実行せずAUTO検索へ復帰する",()=>{
+ const x=fixture(["cost","low"],{clock:6,waiting:0}); const paid=x.self.stock[0]; use(x);
+ assert.equal(x.engine.processManager.getCurrentProcess().type,PROCESS_TYPE.LEVEL_UP);
+ x.engine.submitLevelUpSelection("self",0);
+ assert.equal(x.engine.processManager.getCurrentProcess().type,PROCESS_TYPE.SEARCH_DECK);
+ assert.equal(x.self.waitingRoom.filter(card=>card===paid).length,1);
+ const auto=x.state.ruleState.processStack.at(-2);
+ assert.equal(auto.context.costIndex,2); assert.equal(auto.context.costPaymentInProgress,false);
 });
 
 test("検索した最後の1枚でDeck 0になるとRefresh・penalty後にAUTOへ復帰してshuffleする",()=>{
- const x=fixture(["cost","low"],{waiting:3}); use(x); const target=x.engine.getSearchDeckState().cards[0];
+ const x=fixture(["cost","low"],{waiting:3}); const deferred=retainAnotherPending(x); use(x); const target=x.engine.getSearchDeckState().cards[0];
  x.engine.toggleSearchDeckSelection(target.instanceId); x.engine.confirmSearchDeckSelection();
  assert.ok(x.self.hand.includes(target)); assert.ok(x.state.log.some(e=>e.message.includes("リフレッシュが完了")));
  assert.ok(x.state.log.some(e=>e.message.includes("リフレッシュペナルティが完了")));
- assert.equal(x.state.ruleState.processStack.length,0); assert.ok(x.state.log.filter(e=>e.message.includes("山札をシャッフル")).length>=1);
+ assert.equal(x.engine.processManager.getCurrentProcess().type,PROCESS_TYPE.PENDING_AUTO);
+ assert.ok(x.state.log.filter(e=>e.message.includes("山札をシャッフル")).length>=1);
+ x.engine.declinePendingAuto(deferred.id); assert.equal(x.state.ruleState.processStack.length,0);
 });
 
 test("実在データはAUTO②の複合Cost・検索・Hand追加・shuffleを宣言する",async()=>{
