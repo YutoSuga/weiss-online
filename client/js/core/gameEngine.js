@@ -1146,12 +1146,21 @@ export class GameEngine {
       throw new Error("SEARCH_DECK selection contains an invalid card.");
     }
     const parent = this.gameState.ruleState.processStack.at(-2);
-    if (parent?.type !== PROCESS_TYPE.ACT_ABILITY) throw new Error("SEARCH_DECK parent must be ACT_ABILITY.");
+    if (![PROCESS_TYPE.ACT_ABILITY, PROCESS_TYPE.AUTO_ABILITY].includes(parent?.type)) {
+      throw new Error("SEARCH_DECK parent must be ACT_ABILITY or AUTO_ABILITY.");
+    }
+    parent.context.effectResults ??= {};
     parent.context.effectResults[state.effectId] = { selectedCardInstanceIds: [...state.selectedCardInstanceIds] };
-    const source = this.gameState.players[playerId].stage.find((card) => card.instanceId === parent.context.sourceCardInstanceId);
-    const ability = source?.abilities.find((item) => item.id === parent.context.abilityId);
-    const topEffect = ability?.effects[parent.context.effectIndex];
-    this.#advanceActEffect(parent, topEffect);
+    if (parent.type === PROCESS_TYPE.ACT_ABILITY) {
+      const source = this.gameState.players[playerId].stage.find((card) => card.instanceId === parent.context.sourceCardInstanceId);
+      const ability = source?.abilities.find((item) => item.id === parent.context.abilityId);
+      const topEffect = ability?.effects[parent.context.effectIndex];
+      this.#advanceActEffect(parent, topEffect);
+      parent.step = ACT_ABILITY_STEP.CHECK_POINT_AFTER_EFFECT;
+    } else {
+      parent.context.effectIndex += 1;
+      parent.step = AUTO_ABILITY_STEP.CHECK_POINT_AFTER_EFFECT;
+    }
     search.step = SEARCH_DECK_STEP.COMPLETE;
     search.status = PROCESS_STATUS.RUNNING;
     this.executeSearchDeckProcess();
@@ -2071,6 +2080,24 @@ export class GameEngine {
     return RULE_CHECK_RESULT.INTERRUPTED;
   }
 
+  /** 同時に成立した共通Rule処理から、プレイヤーが次に解決する1件を選ぶ。 */
+  selectPendingInterrupt(index) {
+    if (!Number.isInteger(index) || index < 0 || index >= this.gameState.ruleState.pendingInterrupts.length) {
+      throw new RangeError("選択できるルール処理ではありません。");
+    }
+    const candidates = [...this.gameState.ruleState.pendingInterrupts];
+    if (candidates.length < 2) throw new Error("ルール処理の順序選択待ちではありません。");
+    const selected = candidates[index];
+    this.gameState.ruleState.pendingInterrupts.splice(0);
+    if (selected.type === PROCESS_TYPE.REFRESH) this.startRefresh(selected.playerId);
+    else if (selected.type === PROCESS_TYPE.LEVEL_UP) this.startLevelUp(selected.playerId);
+    else if (selected.type === PROCESS_TYPE.REFRESH_PENALTY) {
+      this.#consumePendingCheck(selected.pendingCheckIndex);
+      this.startRefreshPenalty(selected.playerId);
+    } else throw new RangeError(`Unsupported interrupt type: ${selected.type}.`);
+    return selected;
+  }
+
   /**
    * 公式Check Timingの単一入口。Rule Checkを先に安定化し、現在の能力解決へ
    * 割り込まない場合だけTurn Player、次にNon-Turn PlayerのAUTO選択を開始する。
@@ -2173,7 +2200,7 @@ export class GameEngine {
       playerId: process.playerId,
       step: AUTO_ABILITY_STEP.PAY_COST,
       status: PROCESS_STATUS.RUNNING,
-      context: { pendingAuto: pending, preparedCosts: process.context.preparedCosts, payCost, effectIndex: 0 },
+      context: { pendingAuto: pending, preparedCosts: process.context.preparedCosts, payCost, effectIndex: 0, effectResults: {} },
     });
     this.executeAutoAbilityProcess();
     return autoProcess;
@@ -2191,7 +2218,10 @@ export class GameEngine {
           if (reason) throw new Error(reason); // mutation直前の最終再検証
           payCosts(ability.costs, { player, sourceCard: card });
         }
-        process.step = process.context.payCost ? AUTO_ABILITY_STEP.RESOLVE_EFFECT : AUTO_ABILITY_STEP.COMPLETE;
+        process.step = process.context.payCost ? AUTO_ABILITY_STEP.CHECK_POINT_AFTER_COST : AUTO_ABILITY_STEP.COMPLETE;
+      } else if (process.step === AUTO_ABILITY_STEP.CHECK_POINT_AFTER_COST) {
+        process.step = AUTO_ABILITY_STEP.RESOLVE_EFFECT;
+        if (this.resolveCheckPoint() !== RULE_CHECK_RESULT.CONTINUE) return process;
       } else if (process.step === AUTO_ABILITY_STEP.RESOLVE_EFFECT) {
         if (process.context.effectIndex >= ability.effects.length) process.step = AUTO_ABILITY_STEP.COMPLETE;
         else {
@@ -2201,15 +2231,52 @@ export class GameEngine {
             this.#startOpponentStockReplacement(process, effect);
             return process;
           }
+          if (effect.type === EFFECT_TYPE.SEARCH_DECK) {
+            this.#startSearchDeck(process, effect, card);
+            return process;
+          }
+          if (effect.type === EFFECT_TYPE.ADD_TO_HAND) {
+            const ids = resolveEffectResult(effect.cards, process.context.effectResults, "instanceIds");
+            ids.forEach((id) => {
+              const selected = player.deck.cards.find((candidate) => candidate.instanceId === id);
+              if (!selected) throw new Error(`Selected Deck card "${id}" does not exist.`);
+              this.addLog(process.playerId, `「${selected.name}」を相手に公開し、手札に加えました。`);
+              player.deck.remove(selected);
+              selected.moveTo({ zone: ZONE.HAND, index: player.hand.length + 1 });
+              player.hand.push(selected);
+            });
+            this.#reindexCards(player.deck.cards);
+          } else if (effect.type === EFFECT_TYPE.SHUFFLE_DECK) {
+            player.deck.shuffle();
+            this.#reindexCards(player.deck.cards);
+            process.context.effectResults[effect.id] = { shuffled: true };
+          } else {
+            resolveEffect(effect, { gameEngine: this, player, playerId: process.playerId, sourceCard: card, pendingAuto: process.context.pendingAuto });
+          }
           process.context.effectIndex += 1;
-          resolveEffect(effect, { gameEngine: this, player, playerId: process.playerId, sourceCard: card, pendingAuto: process.context.pendingAuto });
+          process.step = AUTO_ABILITY_STEP.CHECK_POINT_AFTER_EFFECT;
         }
+      } else if (process.step === AUTO_ABILITY_STEP.CHECK_POINT_AFTER_EFFECT) {
+        process.step = AUTO_ABILITY_STEP.RESOLVE_EFFECT;
+        if (this.resolveCheckPoint() !== RULE_CHECK_RESULT.CONTINUE) return process;
       } else if (process.step === AUTO_ABILITY_STEP.COMPLETE) {
         this.completeCurrentProcess();
         return process;
       } else throw new RangeError(`Unknown AUTO_ABILITY step: ${process.step}.`);
     }
     return process;
+  }
+
+  #startSearchDeck(parent, effect, sourceCard) {
+    this.processManager.pushProcess({
+      type: PROCESS_TYPE.SEARCH_DECK, playerId: parent.playerId,
+      step: SEARCH_DECK_STEP.PREPARE, status: PROCESS_STATUS.RUNNING,
+      context: { playerId: parent.playerId, sourceCardInstanceId: sourceCard.instanceId,
+        abilityId: parent.context.pendingAuto.source.abilityId, effectId: effect.id,
+        minSelect: effect.minSelect, maxSelect: effect.maxSelect, filter: effect.filter,
+        selectedCardInstanceIds: [] },
+    });
+    this.executeSearchDeckProcess();
   }
 
   #resolvePendingAuto(pending) {

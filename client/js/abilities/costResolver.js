@@ -34,8 +34,28 @@ const restSelfCostHandler = Object.freeze({
   },
 });
 
+const moveDeckTopToClockCostHandler = Object.freeze({
+  validate(cost) {
+    if (Object.keys(cost).some((key) => !["type", "amount"].includes(key)) || cost.amount !== 1) {
+      throw new TypeError("MOVE_DECK_TOP_TO_CLOCK amount must be 1.");
+    }
+  },
+  getDisabledReason(_cost, { player }) {
+    return player.deck.cards.length === 0 ? "山札にカードがありません。" : null;
+  },
+  pay(_cost, { player }) {
+    const card = player.deck.draw();
+    if (!card) throw new Error("山札の上のカードをクロックへ置けません。");
+    card.moveTo({ zone: ZONE.CLOCK, index: player.clock.length + 1 });
+    card.setPosition(POSITION.STAND);
+    card.setFace(null);
+    player.clock.push(card);
+  },
+});
+
 const COST_HANDLERS = Object.freeze({
   [COST_TYPE.PAY_STOCK]: payStockCostHandler,
+  [COST_TYPE.MOVE_DECK_TOP_TO_CLOCK]: moveDeckTopToClockCostHandler,
   [COST_TYPE.REST_SELF]: restSelfCostHandler,
 });
 

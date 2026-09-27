@@ -47,6 +47,11 @@ export function validateCardMasterDefinitions(value) {
             { cause: error },
           );
         }
+        if (!Array.isArray(ability.costs) || !Array.isArray(ability.effects)) {
+          throw new TypeError("AUTO costs and effects must be arrays.");
+        }
+        ability.costs.forEach(getCostHandler);
+        validateEffects(ability.effects);
       }
       if (ability?.type !== ABILITY_TYPE.ACT) return;
       try {

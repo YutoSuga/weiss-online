@@ -111,7 +111,9 @@ export const PENDING_AUTO_STEP = Object.freeze({
 /** Cost commit後のAUTOプレイ・解決。 */
 export const AUTO_ABILITY_STEP = Object.freeze({
   PAY_COST: "pay_cost",
+  CHECK_POINT_AFTER_COST: "check_point_after_cost",
   RESOLVE_EFFECT: "resolve_effect",
+  CHECK_POINT_AFTER_EFFECT: "check_point_after_effect",
   COMPLETE: "complete",
 });
 

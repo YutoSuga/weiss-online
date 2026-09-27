@@ -15,6 +15,7 @@ export const ABILITY_SOURCE = Object.freeze({
 /** F-4AでGameEngineが解釈できるAbility Cost。 */
 export const COST_TYPE = Object.freeze({
   PAY_STOCK: "PAY_STOCK",
+  MOVE_DECK_TOP_TO_CLOCK: "MOVE_DECK_TOP_TO_CLOCK",
   REST_SELF: "REST_SELF",
 });
 
