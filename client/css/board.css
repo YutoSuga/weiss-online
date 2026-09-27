@@ -98,7 +98,15 @@
 .card-selection-dialog__cards { min-width: 0; overflow: auto; }
 .modal-card-detail { min-width: 0; max-height: 62vh; overflow: auto; }
 .card-selection-list { display: flex; flex-wrap: wrap; gap: .5rem; }
-.card-selection-list .card-slot { flex: 0 0 84px; height: 118px; }
+.card-selection-list .card-slot {
+  flex: 0 0 84px;
+  width: 84px;
+  height: 118px;
+  overflow: hidden;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
 .card-slot.is-unselectable { opacity: .62; }
 .card-slot.is-selected { outline: 3px solid #f4d35e; }
 

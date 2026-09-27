@@ -119,6 +119,31 @@ test("Encoreは3 Stockを払い、空の元slotへRESTで戻してCARD_MOVEDを�
   assert.ok(f.gameState.ruleState.pendingAutos.every((pending) => pending.source.cardInstanceId !== f.a.instanceId));
 });
 
+test("アンコール対象以外のStageカードは他の全slotでrow/index/positionを維持する", () => {
+  const slots = [
+    ["front", 1], ["front", 2], ["front", 3], ["back", 1],
+  ];
+  for (const [unrelatedRow, unrelatedIndex] of slots) {
+    const f = fixture();
+    const unrelated = f.make("self", ZONE.STAGE, "character", unrelatedRow, unrelatedIndex);
+    unrelated.setPosition(POSITION.REVERSE);
+    f.self.stage.push(unrelated);
+    const before = { zone: unrelated.zone, row: unrelated.row, index: unrelated.index,
+      position: unrelated.position };
+
+    f.engine.moveCard(f.a, { zone: ZONE.WAITING_ROOM });
+    const id = encore(f.gameState, f.a).id;
+    f.engine.resolveCheckPoint();
+    f.engine.selectPendingAuto(id);
+
+    assert.deepEqual({ zone: unrelated.zone, row: unrelated.row, index: unrelated.index,
+      position: unrelated.position }, before, `${unrelatedRow}-${unrelatedIndex}`);
+    assert.deepEqual({ zone: f.a.zone, row: f.a.row, index: f.a.index,
+      position: f.a.position }, { zone: ZONE.STAGE, row: "back", index: 2,
+      position: POSITION.REST });
+  }
+});
+
 test("圧殺はBのCARD_MOVEDとEncore Pendingを先に作り、A配置後・A AUTO完了後に提示する", () => {
   const f = fixture(6);
   f.engine.moveCard(f.a, { zone: ZONE.WAITING_ROOM });

@@ -26,6 +26,22 @@ test('ResolutionとDeck SearchはModal内Detailと空状態を持つ', async () 
   assert.equal((html.match(/カードを選択すると詳細を確認できます。/g) ?? []).length, 2);
 });
 
+test('Resolution一覧は画像の有無によらず固定枠を維持し画像全体を枠内に収める', async () => {
+  const [css, resolution] = await Promise.all([
+    read('../css/board.css'),
+    read('../js/ui/resolutionConfirmationController.js'),
+  ]);
+  assert.match(css, /\.card-selection-list \.card-slot\s*\{[^}]*flex:\s*0 0 84px/s);
+  assert.match(css, /\.card-selection-list \.card-slot\s*\{[^}]*width:\s*84px/s);
+  assert.match(css, /\.card-selection-list \.card-slot\s*\{[^}]*height:\s*118px/s);
+  assert.match(css, /\.card-selection-list \.card-slot\s*\{[^}]*overflow:\s*hidden/s);
+  assert.match(css, /\.card-selection-list \.card-slot\s*\{[^}]*background-size:\s*contain/s);
+  assert.match(css, /\.card-selection-list \.card-slot\s*\{[^}]*background-repeat:\s*no-repeat/s);
+  assert.match(resolution, /slot\.textContent = card\.name/,
+    '画像なしカードは従来の名称fallbackを維持する');
+  assert.match(resolution, /if \(card\.imageUrl\) slot\.style\.backgroundImage/);
+});
+
 test('3箇所のCard Detailはcontainer指定可能なRenderer責務を共有する', async () => {
   const [renderer, deckSearch, resolution] = await Promise.all([
     read('../js/core/renderer.js'),
