@@ -1972,9 +1972,15 @@ export class GameEngine {
       }
 
       if (deckEmpty && waitingRoomEmpty) {
-        const deferredBy = levelUpExecutable
-          ? [{ type: PROCESS_TYPE.LEVEL_UP, playerId }]
-          : [];
+        // 解決中の能力が山札を空にした場合は、その能力のRule Check境界で
+        // 割り込みを処理してから保存位置へ復帰させる。能力Processを破棄して
+        // 先に敗北確定すると、複合Cost/Effectの残処理を二重実行なく再開できない。
+        const resolvingAbility = this.gameState.ruleState.processStack.some(({ type, playerId: processPlayerId }) =>
+          processPlayerId === playerId && [PROCESS_TYPE.ACT_ABILITY, PROCESS_TYPE.AUTO_ABILITY].includes(type));
+        const deferredBy = [
+          ...(levelUpExecutable ? [{ type: PROCESS_TYPE.LEVEL_UP, playerId }] : []),
+          ...(resolvingAbility ? [{ type: PROCESS_TYPE.AUTO_ABILITY, playerId }] : []),
+        ];
         defeatCandidates.push({
           playerId,
           reason: DEFEAT_REASON.EMPTY_DECK_AND_WAITING_ROOM,
@@ -2200,7 +2206,15 @@ export class GameEngine {
       playerId: process.playerId,
       step: AUTO_ABILITY_STEP.PAY_COST,
       status: PROCESS_STATUS.RUNNING,
-      context: { pendingAuto: pending, preparedCosts: process.context.preparedCosts, payCost, effectIndex: 0, effectResults: {} },
+      context: {
+        pendingAuto: pending,
+        preparedCosts: process.context.preparedCosts,
+        payCost,
+        costIndex: 0,
+        costPaymentInProgress: false,
+        effectIndex: 0,
+        effectResults: {},
+      },
     });
     this.executeAutoAbilityProcess();
     return autoProcess;
@@ -2216,7 +2230,13 @@ export class GameEngine {
         if (process.context.payCost) {
           const reason = getPreparedCostsDisabledReason(ability.costs, process.context.preparedCosts, { player, sourceCard: card });
           if (reason) throw new Error(reason); // mutation直前の最終再検証
-          payCosts(ability.costs, { player, sourceCard: card });
+          // Cost全体を一つの支払い境界にする。各handlerは記載順にmutationするが、
+          // 最後のitemが完了するまではCheck Pointへ制御を返さない。
+          process.context.costPaymentInProgress = true;
+          payCosts(ability.costs, { player, sourceCard: card }, (_cost, index) => {
+            process.context.costIndex = index + 1;
+          });
+          process.context.costPaymentInProgress = false;
         }
         process.step = process.context.payCost ? AUTO_ABILITY_STEP.CHECK_POINT_AFTER_COST : AUTO_ABILITY_STEP.COMPLETE;
       } else if (process.step === AUTO_ABILITY_STEP.CHECK_POINT_AFTER_COST) {

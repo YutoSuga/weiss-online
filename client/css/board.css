@@ -107,6 +107,12 @@
   background-repeat: no-repeat;
   background-size: contain;
 }
+.card-selection-dialog__footer { flex: none; display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.card-selection-dialog__footer p { margin: 0; }
+.rule-interrupt-dialog { position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center; padding: 5vw; background: rgb(0 0 0 / 72%); }
+.rule-interrupt-dialog[hidden] { display: none; }
+.rule-interrupt-dialog__panel { width: min(480px, 100%); padding: 1rem; border: 1px solid #8ba4b8; background: #18212b; }
+.rule-interrupt-dialog__actions { display: grid; gap: .75rem; }
 .card-slot.is-unselectable { opacity: .62; }
 .card-slot.is-selected { outline: 3px solid #f4d35e; }
 
@@ -1372,18 +1378,40 @@ ul {
 
   .card-selection-dialog__panel {
     max-height: 96vh;
-    overflow-y: auto;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .card-selection-dialog__body {
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
-  .card-selection-dialog__cards,
-  .modal-card-detail {
-    overflow: visible;
-    max-height: none;
+  [data-deck-search] .card-selection-dialog__cards {
+    flex: 1 1 auto;
+    min-height: 120px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  [data-deck-search] .modal-card-detail {
+    flex: 0 1 28vh;
+    max-height: 28vh;
+    overflow-y: auto;
+  }
+
+  [data-deck-search] .card-selection-dialog__footer {
+    position: relative;
+    z-index: 1;
+    padding-top: .5rem;
+    background: #18212b;
+  }
+
+  [data-deck-search] .modal-action-button {
+    min-width: 7rem;
+    min-height: 44px;
   }
 }
 
