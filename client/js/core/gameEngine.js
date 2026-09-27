@@ -425,7 +425,9 @@ export class GameEngine {
     const sourceCards = getZoneCollection(this.gameState.players[located.playerId], from.zone);
     const destinationCards = getZoneCollection(this.gameState.players[destinationPlayerId], to.zone);
     sourceCards.splice(sourceCards.indexOf(card), 1);
-    this.#reindexCards(sourceCards);
+    // Stage index is a board-slot coordinate, not an array-order index. Closing
+    // the gap after a Stage card leaves would move every remaining card.
+    if (from.zone !== ZONE.STAGE) this.#reindexCards(sourceCards);
     card.moveTo({ zone: to.zone, row: to.row ?? null,
       index: to.index ?? destinationCards.length + 1 });
     if (to.position) card.setPosition(to.position);
