@@ -48,8 +48,22 @@ test("AUTO②は選択カードを公開ログ付きでHandへ加え、Rule Chec
  assert.equal(x.state.ruleState.processStack.length,0);
 });
 
+test("Deck 1 / Waiting Room 0でも複合Cost完了後までRule Checkせず、StockカードでRefreshして敗北しない",()=>{
+ const x=fixture(["cost"],{waiting:0});
+ let checks=0; const resolve=x.engine.resolveCheckPoint.bind(x.engine);
+ x.engine.resolveCheckPoint=()=>{ checks+=1; return resolve(); };
+ use(x);
+ assert.equal(checks>0,true,"Cost全体完了後にCheck Pointへ入る");
+ assert.equal(x.state.gameResult.finished,false);
+ assert.ok(x.state.log.some(e=>e.message.includes("リフレッシュが完了")));
+ assert.ok(x.state.log.some(e=>e.message.includes("リフレッシュペナルティが完了")));
+ assert.equal(x.engine.processManager.getCurrentProcess().type,PROCESS_TYPE.SEARCH_DECK);
+ const auto=x.state.ruleState.processStack.at(-2);
+ assert.equal(auto.context.costIndex,2); assert.equal(auto.context.costPaymentInProgress,false);
+});
+
 test("Cost後にDeck 0とClock 7が同時成立すると共通順序選択へ入り、AUTOを保存位置から再開する",()=>{
- const x=fixture(["cost"],{clock:6,waiting:4}); use(x);
+ const x=fixture(["cost"],{clock:6,waiting:0}); use(x);
  assert.deepEqual(x.state.ruleState.pendingInterrupts.map(i=>i.type),[PROCESS_TYPE.REFRESH,PROCESS_TYPE.LEVEL_UP]);
  assert.equal(x.state.ruleState.processStack[0].type,PROCESS_TYPE.AUTO_ABILITY);
  x.engine.selectPendingInterrupt(0);
@@ -73,4 +87,16 @@ test("実在データはAUTO②の複合Cost・検索・Hand追加・shuffleを�
  const data=JSON.parse(await readFile(new URL("../data/card-masters.json",import.meta.url),"utf8")); const ability=data.find(c=>c.cardNumber==="CHA/W40-026SP").abilities[1];
  assert.deepEqual(ability.costs.map(c=>c.type),["PAY_STOCK","MOVE_DECK_TOP_TO_CLOCK"]);
  assert.deepEqual(ability.effects.map(e=>e.type),["SEARCH_DECK","ADD_TO_HAND","SHUFFLE_DECK"]);
+});
+
+test("Rule順序選択UIとスマホ山札検索footerは操作可能な構造・overflowを持つ",async()=>{
+ const [html,css,main,controller]=await Promise.all([
+  readFile(new URL("../index.html",import.meta.url),"utf8"),
+  readFile(new URL("../css/board.css",import.meta.url),"utf8"),
+  readFile(new URL("../js/main.dev.js",import.meta.url),"utf8"),
+  readFile(new URL("../js/ui/ruleInterruptController.js",import.meta.url),"utf8"),
+ ]);
+ assert.match(html,/data-rule-interrupt-list/); assert.match(controller,/selectPendingInterrupt/); assert.match(main,/RuleInterruptController/);
+ assert.match(html,/card-selection-dialog__footer/); assert.match(css,/\[data-deck-search\] \.card-selection-dialog__cards[\s\S]*overflow-y: auto/);
+ assert.match(css,/\[data-deck-search\] \.modal-action-button[\s\S]*min-height: 44px/);
 });

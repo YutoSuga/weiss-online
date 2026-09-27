@@ -302,8 +302,18 @@
           </div>
         </section>
       </div>
-      <p data-deck-search-count>選択枚数 0 / 0</p>
-      <button class="action-button modal-action-button" type="button" data-action="confirm-deck-search">決定</button>
+      <div class="card-selection-dialog__footer">
+        <p data-deck-search-count>選択枚数 0 / 0</p>
+        <button class="action-button modal-action-button" type="button" data-action="confirm-deck-search">決定</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="rule-interrupt-dialog" data-rule-interrupt hidden aria-label="ルール処理順の選択">
+    <div class="rule-interrupt-dialog__panel">
+      <h2>ルール処理順を選択</h2>
+      <p>先に処理するルールを選んでください。</p>
+      <div class="rule-interrupt-dialog__actions" data-rule-interrupt-list></div>
     </div>
   </section>
 
