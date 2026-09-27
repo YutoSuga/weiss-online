@@ -35,14 +35,18 @@ function validateCondition(condition) {
 
 function validateFilter(filter) {
   if (!isObject(filter)) throw new TypeError("SEARCH_DECK filter must be an object.");
-  assertKeys(filter, ["cardType", "traits"], "SEARCH_DECK filter");
+  assertKeys(filter, ["cardType", "traits", "maxLevel"], "SEARCH_DECK filter");
   if (filter.cardType !== "CHARACTER") throw new RangeError("SEARCH_DECK filter.cardType must be CHARACTER.");
-  if (!isObject(filter.traits)) throw new TypeError("SEARCH_DECK filter.traits must be an object.");
-  assertKeys(filter.traits, ["anyOf"], "SEARCH_DECK filter.traits");
-  if (!Array.isArray(filter.traits.anyOf) || filter.traits.anyOf.length === 0 ||
-      filter.traits.anyOf.some((trait) => typeof trait !== "string" || trait.trim() === "")) {
-    throw new TypeError("SEARCH_DECK filter.traits.anyOf must be a non-empty string array.");
+  if (filter.traits !== undefined) {
+    if (!isObject(filter.traits)) throw new TypeError("SEARCH_DECK filter.traits must be an object.");
+    assertKeys(filter.traits, ["anyOf"], "SEARCH_DECK filter.traits");
+    if (!Array.isArray(filter.traits.anyOf) || filter.traits.anyOf.length === 0 ||
+        filter.traits.anyOf.some((trait) => typeof trait !== "string" || trait.trim() === "")) {
+      throw new TypeError("SEARCH_DECK filter.traits.anyOf must be a non-empty string array.");
+    }
   }
+  if (filter.maxLevel !== undefined && (!Number.isInteger(filter.maxLevel) || filter.maxLevel < 0))
+    throw new TypeError("SEARCH_DECK filter.maxLevel must be a non-negative integer.");
 }
 
 const handlers = {
@@ -143,5 +147,7 @@ export function resolveEffectResult(reference, effectResults, expectedType) {
 
 export function cardMatchesSearchFilter(card, filter) {
   validateFilter(filter);
-  return card.cardType === filter.cardType && filter.traits.anyOf.some((trait) => card.traits.includes(trait));
+  return card.cardType === filter.cardType &&
+    (filter.maxLevel === undefined || card.level <= filter.maxLevel) &&
+    (filter.traits === undefined || filter.traits.anyOf.some((trait) => card.traits.includes(trait)));
 }

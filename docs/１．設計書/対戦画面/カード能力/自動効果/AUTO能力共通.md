@@ -120,4 +120,8 @@ Effectの`ENCORE_RETURN`は共通Stage配置へ委譲する。占有CardのStage
 
 AUTO①は相手Stock配列の末尾（最後に置かれたtop）を共通`moveCard()`でWaiting Roomへ移動する。移動成功後、`SELECT_ZONE_CARD / WAITING_INPUT`子Processと既存`CardSelectionView`を使い、その時点の相手Waiting Room全体からexactly 1枚を選択して共通`moveCard()`で相手Stockへ置く。したがって前半で移動したカード自身も候補であり、Effect開始前のWaiting Room枚数は使用条件にしない。両移動は通常の`CARD_MOVED`を発行する。選択確定後は子Processをpopし、AUTO完了、Rule Check、Check Timing、残Pending、親Process resumeの共通出口へ進む。
 
-AUTO②のF-5D-2範囲はCardMaster定義、Trigger、独立Pending、現在StateによるStock可否判定までである。PAY_STOCK、Deck top→Clock、複合Cost、検索（Level 1以下Characterを0～1枚）、公開、Hand追加、shuffle、Refresh詳細は未実装であり、推測したEffectを置かない。
+AUTO②は `PAY_STOCK(1) → MOVE_DECK_TOP_TO_CLOCK(1)` を記載順に支払い、`CHECK_POINT_AFTER_COST` で共通 `resolveCheckPoint()` へ接続する。Costは全件を現在Stateで事前検証してからmutationし、保存済みstepを先に `RESOLVE_EFFECT` へ進めるため、Refresh / Level Up / penaltyから復帰しても二重支払いしない。Deck 0とClock 7枚が同時成立した場合は共通`pendingInterrupts`と`selectPendingInterrupt()`による順序選択を使用し、AUTO固有のRule処理は持たない。
+
+Effectは既存 `SEARCH_DECK` 子ProcessをAUTOからも利用し、`cardType: CHARACTER, maxLevel: 1, minSelect: 0, maxSelect: 1`で0～1枚を選ぶ。子Processは選択IDを親AUTOの`effectResults`へ保存し、親を`CHECK_POINT_AFTER_EFFECT`から再開する。`ADD_TO_HAND`は選択Cardを公開した旨をゲームログへ残してHandへ移し、直後に共通Rule Checkを行う。したがって最後の1枚を選んだ場合もRefresh、penalty、必要なLevel Upが安定するまで割り込み、その後だけ`SHUFFLE_DECK`を実行する。0枚選択でもshuffleを省略しない。各Effectはindexを進めてからCheck Pointへ入るため、interrupt/resume後のHand追加・shuffleを二重実行しない。AUTO完了後は共通`completeCurrentProcess()`から最終Rule Check、残Pending提示、親Process復帰へ進む。
+
+「相手に見せる」は現時点で汎用Reveal zoneを新設せず、公開Card名をゲームログへ記録する最小実装とした。Deck検索画面は既存の非公開情報選択UIを共有し、選択確定後のCardだけが公開されたことをログで区別する。将来、対戦相手別クライアントを導入するときは、このログ境界を汎用公開Eventへ置き換える技術的負債が残る。

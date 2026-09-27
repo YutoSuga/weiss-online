@@ -645,9 +645,30 @@
           {
             "type": "PAY_STOCK",
             "amount": 1
+          },
+          {
+            "type": "MOVE_DECK_TOP_TO_CLOCK",
+            "amount": 1
           }
         ],
-        "effects": []
+        "effects": [
+          {
+            "id": "search-level-1-character",
+            "type": "SEARCH_DECK",
+            "minSelect": 0,
+            "maxSelect": 1,
+            "filter": { "cardType": "CHARACTER", "maxLevel": 1 }
+          },
+          {
+            "id": "add-searched-card-to-hand",
+            "type": "ADD_TO_HAND",
+            "cards": { "source": "EFFECT_RESULT", "effectId": "search-level-1-character", "field": "selectedCardInstanceIds" }
+          },
+          {
+            "id": "shuffle-after-search",
+            "type": "SHUFFLE_DECK"
+          }
+        ]
       }
     ],
     "imageUrl": "https://ws-tcg.com/wordpress/wp-content/images/cardlist/c/cha_w40/cha_w40_026sp.png"
