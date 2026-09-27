@@ -73,6 +73,18 @@ test('CX=1でSEARCH_DECKを子Processにしeligibleだけ選択して同一insta
  assert.equal(engine.processManager.getCurrentProcess().type,PROCESS_TYPE.MAIN_PHASE);
 });
 
+test('Deck 5枚から4枚公開後、残り1枚を検索するとRefresh・penalty後に集中を完了する',()=>{
+ const x=fixture(['cx','dummy','dummy','dummy','eligible']);
+ const process=x.engine.useActAbility(x.source,x.ability,'self'); x.engine.confirmBrainstormReveal();
+ const target=x.engine.getSearchDeckState().cards[0]; x.engine.toggleSearchDeckSelection(target.instanceId);
+ x.engine.confirmSearchDeckSelection();
+ assert.ok(x.self.hand.includes(target));
+ assert.ok(x.state.log.some(({message})=>message.includes('リフレッシュが完了')));
+ assert.ok(x.state.log.some(({message})=>message.includes('リフレッシュペナルティが完了')));
+ assert.deepEqual(process.context.effectResults.shuffleDeck,{shuffled:true});
+ assert.equal(x.engine.processManager.getCurrentProcess().type,PROCESS_TYPE.MAIN_PHASE);
+});
+
 test('CX=2は0～2枚を一括選択でき、超過を拒否してshuffle Effectを1回解決する',()=>{
  const {engine,self,source,ability}=fixture(['cx','cx','dummy','dummy','eligible','ability','eligible']);
  const process=engine.useActAbility(source,ability,'self'); engine.confirmBrainstormReveal(); const state=engine.getSearchDeckState(); assert.equal(state.maxSelect,2);

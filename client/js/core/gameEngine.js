@@ -2111,10 +2111,15 @@ export class GameEngine {
   resolveCheckPoint() {
     const ruleResult = this.resolveRuleCheck();
     if (ruleResult !== RULE_CHECK_RESULT.CONTINUE) return ruleResult;
-    const current = this.processManager.getCurrentProcess();
-    if (current?.type === PROCESS_TYPE.AUTO_ABILITY || current?.type === PROCESS_TYPE.PENDING_AUTO) {
+    // A Rule Process is only an interrupt.  Its own Check Point must not turn
+    // into Check Timing while the ACT/AUTO below it is still being resolved.
+    // Pending AUTOs remain collected and are offered after the parent ability
+    // itself reaches COMPLETE.
+    if (this.#hasResolvingAbilityProcess()) {
       return RULE_CHECK_RESULT.CONTINUE;
     }
+    const current = this.processManager.getCurrentProcess();
+    if (current?.type === PROCESS_TYPE.PENDING_AUTO) return RULE_CHECK_RESULT.CONTINUE;
     const turnPlayer = this.gameState.turn.player;
     const nonTurnPlayer = PLAYER_IDS.find((id) => id !== turnPlayer);
     const playerId = [turnPlayer, nonTurnPlayer].find((id) =>
@@ -2129,6 +2134,12 @@ export class GameEngine {
     });
     this.render();
     return RULE_CHECK_RESULT.INTERRUPTED;
+  }
+
+  /** Rule Process/selection childより下に中断中の能力Processがあるか。 */
+  #hasResolvingAbilityProcess() {
+    return this.gameState.ruleState.processStack.some(({ type }) =>
+      type === PROCESS_TYPE.ACT_ABILITY || type === PROCESS_TYPE.AUTO_ABILITY);
   }
 
   /** 現在のCheck Timing対象Playerが自由に選べるPending一覧。配列順は強制解決順ではない。 */
