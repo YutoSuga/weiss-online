@@ -2,140 +2,67 @@
 
 ## 1. 目的と責務
 
-本書はACT Abilityに共通する実行基盤の正本である。カード能力全体の分類は[カード能力共通](../カード能力共通.md)、CardAbility schemaは[カードデータモデル](../../../システム共通/カードデータモデル.md)を参照する。
+本書は、プレイヤーが自らプレイする`ACT`（【起】）の使用可能タイミング、Query、`ACT_ABILITY` Process、UIの正本である。CardAbility schema、Cost / Condition / Effect TypeとHandler、Cost payment boundary、Effect単位のCheck Point、Process stack / interrupt / resumeは[カード能力共通](../カード能力共通.md)を正本とする。
 
-`CardAbility` はCardMaster内で不変な能力定義を保持する。表示原文だけでなく、Engineが解釈する条件・Cost・Effectの構造化データである。対戦中の能力は新しいglobal IDを作らず、`source Card.instanceId + CardAbility.id`で特定する（`id`は同一CardMaster内で一意）。実行判断とmutationはGameEngine、スタックはProcessManager、入力の中継はController、表示はRendererが担当する。
+AUTO固有のGame Event、Trigger Detection、Pending AUTO、Check Timingは[AUTO能力共通](../自動効果/AUTO能力共通.md)で扱う。
 
-```js
-CardAbility {
-  id,
-  type,
-  keywords,
-  text,
-  activationTrigger,
-  conditions,
-  costs,
-  effects
-}
-```
+## 2. 使用可能性とQuery
 
-| field | 役割 |
-| --- | --- |
-| `type` | `CONTINUOUS`（【永】）、`AUTO`（【自】）、`ACT`（【起】）の分類 |
-| `activationTrigger` | AUTO等が将来参照する誘発契機。ACT共通プレイタイミングではない |
-| `conditions[]` | カード固有の使用・適用条件。自ターン・MAIN等の共通タイミングを入れない |
-| `costs[]` | 支払うCostを記載順で保持する |
-| `effects[]` | 解決するEffectを記載順で保持する |
-
-F-4AはACTだけを実行する。AUTO/CONTINUOUSの検出・待機・解決は追加せず、`effectQueue`もACT実行キューには使わない。
-
-## 2. ACTのQueryと実行フロー
-
-GameEngineは所持と使用可能性を分離する。
+GameEngineは能力の所有と現在の使用可能性を分離する。
 
 - `getActAbilities(card, playerId)`: `type === ACT`の定義を複数返す。
 - `getActAbilityDisabledReason(card, ability, playerId)`: 最初の不可理由、使用可能なら`null`。
 - `canUseActAbility(...)`: 上記結果のboolean Query。
 - `useActAbility(...)`: 直前再検証を行う`ACT_ABILITY`をpushする。
 
-現在サポートするタイミングは、自分のターン、自分が操作する`phase === MAIN`、親`MAIN_PHASE`が`WAITING_INPUT / waiting_input`、sourceが自分のStageに存在する場合である。加えてCard固有conditionsと全Costが支払可能でなければならない。これはF-4Aの対応範囲であり、ACTを恒久的にMAIN専用と定義するものではない。
+現行実装の共通使用条件は以下のすべてである。
+
+1. 自分のターンかつ`phase === MAIN`。
+2. 自分の親`MAIN_PHASE`が`WAITING_INPUT / waiting_input`。
+3. sourceが自分のStageに存在。
+4. Ability IDで引いた定義が`ACT`。
+5. `conditions[]`が空（現行は非空Condition未対応）。
+6. 全Costが支払可能で、全Effect schemaが対応範囲。
+
+これは現行実装の対応範囲であり、ACTを永久にMAIN専用と定義するものではない。
+
+## 3. ACT_ABILITY Process
 
 ```text
-MAIN WAITING_INPUT → Stage Card詳細 → Abilityごとの「使用する」
+MAIN / WAITING_INPUT
   → ACT_ABILITY
      VALIDATE → PREPARE → PAY_COST → CHECK_POINT_AFTER_COST
      → RESOLVE_EFFECT ↔ CHECK_POINT_AFTER_EFFECT → COMPLETE
-  → MAIN WAITING_INPUT
+  → MAIN / WAITING_INPUT
 ```
 
-### Step責務とcontext
+### 3.1 stepとACT固有context
 
-`VALIDATE`はplayer/turn/phase/親MAIN/source zone/Ability ID・type/conditions/全Cost/Effect typeを再確認し、失敗時はmutation前にACTをpopして例外とする。`PREPARE`はindexを初期化する。`PAY_COST`は全件を先に検証してから記載順に一括支払いする。`RESOLVE_EFFECT`はindexのEffectをHandlerへ委譲する。`COMPLETE`は共通出口でpopし、Rule Check後に親MAINへ戻る。
+| step | ACT固有責務 |
+| --- | --- |
+| `VALIDATE` | turn / MAIN / 親MAIN / Stage source / Ability type / conditions / Cost / Effectを再検証。失敗はmutation前にpopして例外 |
+| `PREPARE` | index、`effectResults`、集中作業状態を初期化し、使用ログを追加 |
+| `PAY_COST` | 共通`payCosts()`で全Costを記載順に支払。position変更Eventを発行 |
+| `CHECK_POINT_AFTER_COST` | 次stepを保存し、共通Check Pointへ接続 |
+| `RESOLVE_EFFECT` | `effectIndex`のEffectを解決。入力/childが必要なら停止 |
+| `WAIT_FOR_BRAINSTORM_CONFIRMATION` | 集中のResolution確認待ち |
+| `CHECK_POINT_AFTER_EFFECT` | 次Effect位置から共通Check Pointへ接続 |
+| `COMPLETE` | `completeCurrentProcess()`でpopし、最終Check Point後に親MAINへ復帰 |
 
-```js
-context: {
-  sourceCardInstanceId,
-  abilityId,
-  costIndex,
-  effectIndex
-}
-```
+ACT contextは`sourceCardInstanceId / abilityId / costIndex / effectIndex / effectResults`に加え、集中用の`groupEffectIndex / brainstorm`を持つ。共通のindex保存契約は[カード能力共通](../カード能力共通.md#5-ability-process--rule-check共通原則)に従う。ACTは同期的な`payCosts()`でpayment boundaryを実現し、AUTO固有の`costPaymentInProgress`は持たない。
 
-contextは中断・再開に必要なProcess固有作業メモリである。Card object自体を複製せず識別子と処理済みindexを保存するため、将来Effect途中でREFRESH等がpushされても保存済みstepから再開できる。
+## 4. 集中とACT固有Effect
 
-## 3. Resolver / Handler
+`BRAINSTORM`はAbility TypeではなくACT keywordである。`BRAINSTORM_REVEAL`はDeckからResolutionへ小刻みに公開し、必要なRule ProcessからACTへresumeし、CX数を`effectResults`に保存する。Resolution確認後に対象だけをWaiting Roomへ移す。`EFFECT_GROUP`によるCX数条件付きの`SEARCH_DECK → ADD_TO_HAND → SHUFFLE_DECK`を使う。
 
-GameEngineにtype別の巨大switchを置かない。Cost Resolverはtypeから小さなHandlerを得て`getDisabledReason`（非mutation）と`pay`（mutation）を分離する。Effect Resolverもtype検証と`resolve`をHandlerへ委譲する。Conditionは将来同じDispatcher方式を追加できる境界を`conditions[]`に残すが、F-4Aの正式対応Typeは**現在なし**であり、空配列だけを受理する。
+詳細は[集中（BRAINSTORM）](キーワード能力/集中.md)を正本とする。`SEARCH_DECK`、`CardSelectionView`、Rule Check接続はAUTOからも使う共通基盤だが、Reveal、Resolution、CX集計、集中確認UI、MAINへの復帰はACT集中固有である。
 
-> **F-4C-1実装レビュー注記：** 上記はEffect type増加時にも維持する設計方向である。現行実装では、`TEST_LOG`等を除く正式Effect executionの一部が`GameEngine.#resolveActEffect()`のtype別分岐に残る。現時点では機能不具合でもF-4未完了事項でもないため、Effect typeがさらに2〜3種類以上増えて分岐が肥大化した段階で、validationとexecutionの登録・責務配置を再評価する。詳細は[Phase F-4C-1レビュー](../../../../PhaseF-4C-1_ACT_Ability基盤_実装レビュー.md)を参照する。
+## 5. UI責務
 
-### 対応Cost Type
+Stage Card選択時、右上詳細はACTごとに本文、使用/使用不可ボタン、不可理由を表示する。ControllerはAbility IDをEngineへ渡すだけでCost / Effectを変更しない。完了後のrenderでZone、position、再評価したdisabled状態を反映する。
 
-| Cost Type | 意味 | Parameters | Handler | Status |
-| --- | --- | --- | --- | --- |
-| `PAY_STOCK` | 自分のStock TOP（配列末尾）から指定枚数を順次Waiting Room TOP（配列末尾）へ移動 | `amount: positive integer` | `payStockCostHandler` | Supported |
-| `REST_SELF` | source Card自身をSTANDからRESTにする | なし | `restSelfCostHandler` | Supported |
+## 6. 現行の制約
 
-複数Costは全Handlerの支払可能性をmutation前に確認する。1件でも不可なら1枚も移動・RESTせず、可能なら`costs[]`先頭から順番に支払う。
-
-### 対応Effect Type
-
-| Effect Type | 意味 | Parameters | Handler | Status |
-| --- | --- | --- | --- | --- |
-| `TEST_LOG` | GameStateの既存ログへmessageを記録 | `message: non-empty string` | `testLogEffectHandler` | **Development / Test only** |
-
-`TEST_LOG`は基盤の縦方向テスト専用で、実カード登録用の正式Effect Typeではない。
-
-### 対応Condition Type
-
-現在正式対応なし。F-4Aでは`conditions: []`のみを受理し、カード要件に合わせて将来Handler、validation、testとともに追加する。
-
-## 4. 未対応TypeとCardMaster登録規則
-
-CardAbilityモデルは将来データをimmutableに保持できる汎用Data Objectの責務を維持する。一方、CardMasterLoaderがJSON内のACTについてCost/Effect schemaを対応Handlerで検証する。未知Type、不正な`PAY_STOCK.amount`、不正な`TEST_LOG.message`、非空の未対応conditionsは読込境界で例外としてfail-fastする。テスト等でモデルを直接組み立てた場合もruntime Resolverが未知Typeを黙って無視さず、使用不可理由または例外にする。
-
-CardMasterへAbilityを登録するときは、`conditions[]`、`costs[]`、`effects[]`の全Typeが本書の対応表とコード定数に存在することを確認する。未対応Typeが必要ならデータだけを先行追加してはならない。先に次を追加する。
-
-1. Type定義
-2. Handler
-3. schema/runtime validation
-4. tests
-5. 本書の対応Type一覧
-6. その後にCardMasterデータ
-
-これにより「登録できたがEngineが解釈できない」状態を防止する。
-
-## 5. Rule Check / Check Timing
-
-### 公式ルールとの照合方針
-
-実装時点の公式総合ルール Ver.1.112（2026-08-24更新）について、起動能力のプレイ、コスト支払い、ルール処理、チェックタイミングの関係を基準とする。Costは記載順に実行する一方、Cost支払い開始から完了まではリフレッシュやレベルアップ等を割り込ませず、一部だけ支払えないCost全体は支払えない、という境界を実装へ反映する。既存Processの慣例だけから位置を推測しない。
-
-### 採用境界
-
-1. `PAY_COST`前に全Costを検証し、Costごとの`resolveRuleCheck()`は呼ばない。
-2. 全Cost支払い完了後、次stepを`RESOLVE_EFFECT`へ保存して`resolveRuleCheck()`する。REFRESH/LEVEL_UP/defeatがあればACTをスタック下に残して割り込む。
-3. Effectは1件解決するたび、次の`effectIndex`と再開stepを保存してRule Checkする。F-4BでDeck操作Effectが追加された場合、ここからREFRESH→REFRESH_PENALTYへ割り込み、ACTへresumeできる。
-4. 全Effect終了後の`COMPLETE`は`completeCurrentProcess()`を使い、pop直後に最終Rule Checkする。CONTINUEなら親MAINは元の`WAITING_INPUT`のまま再描画される。
-
-したがって、Cost支払い**中**はRefresh/Level Upを抑止し、Cost支払い**後**、Effectの各解決単位**後**、Ability解決完了**後**を明示境界とする。`resolveRuleCheck()`は既存どおりdefeatを先に確定し、候補があればREFRESH / LEVEL_UP / REFRESH_PENALTY Processをpushする。`effectQueue`は変更しない。
-
-### F-4Bで検証する項目
-
-F-4Aの唯一のEffectはDeckを変更しないため、集中Effectの「山札上4枚を順次操作する単位」、操作途中で山札0枚になった際のREFRESH開始、REFRESH_PENALTY完了、元のEffect indexへのresume、残り枚数処理はF-4Bで実カードEffect Handlerとともに専用テストする。
-
-## 6. UIと将来
-
-Stage Card選択時、右上詳細はACTごとに本文、使用/使用不可ボタン、不可理由を表示する。ボタンはControllerがAbility IDをEngineへ渡すだけで、Cost/Effectを変更しない。従来の同じ選択からMove/Swap destinationも維持する。完了後のrenderでStock、Waiting Room、positionと再評価されたdisabled状態を反映する。
-
-AUTOの待機・解決はF-5、CONTINUOUS評価はF-6で設計する。共通性が明確になるまでは巨大なAbilityEngineへ抽象化しない。
-
-## AUTO Abilityとの境界
-
-AUTO固有のGame Event、Trigger Detection、Pending AUTO、Check Timing、AUTO Processは本書で定義せず、[AUTO能力共通設計](../自動効果/AUTO能力共通.md)を正本とする。Cost definition / handlerなどACTとAUTOが共有する境界だけを、実在要件が生じた時点で共通化する。
-
-## Phase F-4B: BRAINSTORMと結果参照
-
-Keyword一覧は`BRAINSTORM`（集中）のみを追加した。Ability Typeは`ACT`でありkeywordとは別概念である。EffectはAbility-localで一意な`id`を持ち、Process進行用`effectIndex`とは分離する。ACT contextのフラットな`effectResults[effectId]`へ結果を置き、`{ source: "EFFECT_RESULT", effectId, field }`だけを明示参照として解決する。
-
-対応Effect Typeは`TEST_LOG`、`BRAINSTORM_REVEAL`、`EFFECT_GROUP`、`SEARCH_DECK`、`ADD_TO_HAND`、`SHUFFLE_DECK`。対応Costは`PAY_STOCK`と`REST_SELF`。Group条件は数値結果の`>= min`だけ、検索filterは`cardType: CHARACTER`と`traits.anyOf`だけを対応する。未知type、重複ID、欠落field、型不一致、未対応condition/filterはLoaderとruntimeでfail-fastし、AND/OR/NOT、任意式、allOf等は解釈しない。詳細は[集中](キーワード能力/集中.md)を参照する。
+- 正式対応Cost / Effectの最新一覧は[カード能力共通](../カード能力共通.md#3-cost共通設計)のみを正本とし、本書に複製しない。
+- 非空`conditions[]`は未対応である。
+- Effect validationはResolverに共通化済みだが、入力待ちや複数stepを持つACT Effectのexecutionは`GameEngine`のACT分岐に残る。Type増加時に登録型への再分離を検討する。

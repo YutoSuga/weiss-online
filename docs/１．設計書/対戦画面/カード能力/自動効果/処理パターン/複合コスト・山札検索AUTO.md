@@ -2,7 +2,9 @@
 
 ## 1. 目的と責務
 
-本書は個別カード説明ではなく、登場時等の任意AUTOが複数Costを払い、Rule処理後に山札を0～N枚検索し、移動後のRule処理を挟んで残処理へ復帰する再利用可能な処理パターンの正本である。Game Event、Trigger Detection、Pending AUTO、masterPlayer、使用/不使用は[「AUTO能力共通」](../AUTO能力共通.md)を正本とし、本書はCost boundary、Effect途中のCheck Point、SEARCH_DECK、interrupt/resumeだけを扱う。
+本書は、登場時等の任意AUTOが複数Costを払い、Rule Processの割り込み後に山札を0～N枚検索し、移動後のRule Processを挟んで残処理へ復帰する**具体的な処理パターン**である。カード能力全般の正本ではない。
+
+CardAbility / Cost / Effect / Ability Process / Check Pointの共通契約は[カード能力共通](../../カード能力共通.md)、Game Event / Trigger Detection / Pending AUTO / masterPlayer / 使用・不使用は[「AUTO能力共通」](../AUTO能力共通.md)、Rule Process自体は[Rule Check設計](../../../../システム共通/ルールチェック.md)を正本とする。本書はそれらを組み合わせた時系列と実装例だけを扱う。
 
 採用ルールは **ver.1.112**。根拠は8.4（Cost）および9章のRule処理・Check Timingであり、要旨は[ルール参照メモ](../../../../../ルール参照/ヴァイスシュヴァルツ総合ルール_ver1.112.md)を参照する。
 
@@ -18,7 +20,7 @@
 
 ## 3. Cost payment boundary
 
-全項目を現在Stateで先に支払えるか検証する。Deck 1 / Waiting Room 0は、Stockを先にWaiting Roomへ移すので使用不能理由ではない。commit後は次の不可分な境界とする。
+[共通Cost payment boundary](../../カード能力共通.md#32-複数costとpayment-boundary)を本パターンへ次のように適用する。全項目を現在Stateで先に支払えるか検証する。Deck 1 / Waiting Room 0は、Stockを先にWaiting Roomへ移すので使用不能理由ではない。commit後は次の不可分な境界とする。
 
 ```text
 Cost item 1 → Cost item 2 → … → Cost全体完了 → Check Point / Rule Check
@@ -62,26 +64,12 @@ Effect mutation → Check Point → Rule Process → 再Rule Check → AUTO resu
 
 ### 6.1 Rule ProcessとCheck Timingの境界
 
-`resolveCheckPoint()`はRule Checkの入口でもあるが、Ruleが安定したという事実だけでPending AUTOを提示してはならない。Process stackのどの深さであっても`ACT_ABILITY`または`AUTO_ABILITY`が残っていれば、その能力は解決途中である。
+「Rule Process完了 ≠ Ability完了」、stack内に能力が残る間はPending AUTOを提示せず親能力へresumeする、という不変条件は[カード能力共通](../../カード能力共通.md#52-check-pointとinterrupt--resume)を正本とする。本パターンでも、AUTO②用フラグを設けずこの共通判定を使用する。
 
-1. Abilityが次の`costIndex` / `effectIndex` / `step`を保存する。
-2. Check PointがRule ProcessをAbilityの上へpushする。
-3. Rule Process内のCheck Pointと完了出口は、Rule候補がなくなるまでRule Checkを反復する。
-4. Rule状態が安定したら、Pending AUTOをcollectionに保持したまま親Abilityをresumeする。
-5. 親Abilityが`COMPLETE`になりpopされた後、初めて通常Check TimingとしてPending AUTOを提示する。
-
-つまり **「Rule Processが終わった」≠「解決中の能力が終わった」** である。Pendingの生成・保持は能力解決中も許可する一方、提示と次のAUTO開始だけを能力完了後まで遅延する。これはAUTO②用フラグではなく、ACT/AUTO共通のProcess stack不変条件である。
-
-```mermaid
-flowchart TD
-  A[Ability mutation] --> B[resume位置を保存]
-  B --> C[Rule Check]
-  C -->|候補あり| D[Rule Processをpush/解決]
-  D --> C
-  C -->|安定・stackにAbilityあり| E[親Abilityへresume]
-  E -->|残Effect| A
-  E -->|Ability COMPLETE/pop| F[Check Timing]
-  F --> G[Pending AUTOを提示]
+```text
+AUTO mutation → resume位置を保存 → Rule Processをpush/解決
+→ Rule安定（Pendingは保持したまま）→ AUTO resume → 残Effect
+→ AUTO COMPLETE/pop → 通常Check Timing → Pendingを提示
 ```
 
 ## 7. SEARCH_DECK責務
@@ -96,4 +84,4 @@ UIはスマホでカード領域だけをスクロールし、選択数と44px�
 
 ## 8. ACT集中との共通性と相違
 
-Cost handler、`payCosts()`、Rule Check、Refresh/penalty、Level Up、Process stack、SEARCH_DECK child、CardSelectionViewは共通である。ACTは`ACT_ABILITY_STEP`と集中固有のReveal/Resolution確認を、AUTOはPending移管、`AUTO_ABILITY_STEP`、任意使用を所有する。相互のstepやcontextを流用して混同せず、共通処理だけをEngine/Resolverへ置く。
+Cost Handler、`payCosts()`、Rule Checkへの接続、Process stack、interrupt / resume、`SEARCH_DECK` child、`CardSelectionView`は共通である。Refresh / penalty / Level Up自体は[Rule Check設計](../../../../システム共通/ルールチェック.md)の責務であり、カード能力側はその開始点とresume位置だけを持つ。ACTは`ACT_ABILITY_STEP`と集中固有のReveal / Resolution確認・MAIN復帰を、AUTOはTrigger / Pending移管・`AUTO_ABILITY_STEP`・任意使用を所有する。相互のstepやcontextを流用して混同しない。
