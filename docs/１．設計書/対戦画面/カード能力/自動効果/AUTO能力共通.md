@@ -1,6 +1,8 @@
 # AUTO能力共通設計
 
-## 1. Phase F-5B / F-5Cの責務
+## 1. 目的と責務
+
+本書はAUTO（【自】）固有のGame Event、Trigger Detection、Pending AUTOの生成・保持・提示、Check Timing、使用/不使用、`AUTO_ABILITY` Processの正本である。CardAbility schema、Cost / Condition / Effect、Cost payment boundary、Ability ProcessとRule Processのinterrupt / resumeは[カード能力共通](../カード能力共通.md)を正本とする。
 
 ```text
 Game State mutation
@@ -30,7 +32,7 @@ Event発生、AUTO使用可能、AUTO解決は別概念である。
 Trigger成立 ≠ Abilityが現在使用可能 ≠ Ability Effectが解決済み
 ```
 
-F-5Cはこの移管境界と空Effectの最小Processまでを実装する。標準アンコールのStage復帰、選択対象を持つ実Cost、実カードAUTO Effectの拡張はF-5D以降である。
+この流れは現行実装のF-5B～F-5Dによる基盤を表す。標準3コストアンコールとPRINTED AUTOの実Effectもこの共通経路へ接続済みである。
 
 ## 2. 公式ルール根拠
 
@@ -68,9 +70,9 @@ Pendingは誘発1回の事実であり、`id / sequence / masterPlayerId / owner
 
 `gameState.ruleState.pendingAutos`はPlayer別ではない単一`PendingAutoCollection`（array）で、`pendingChecks`と分離する。これはQueueではない。追加時は末尾へ保存するが、選択はID指定であり`sequence`順を強制しない。Check Timingは`masterPlayerId`で候補を抽出する。PendingはAUTO Processへの移管時、またはプレイヤーがその1件を「使用しない」とした時にconsumeし、単なるsource移動では削除しない。
 
-## 6. Check Timing / Process
+## 6. Check Timing / AUTO Process
 
-`resolveCheckPoint()`は既存`resolveRuleCheck()`を呼ぶcoordinatorであり、Rule処理を複製しない。Ruleが安定した後、Turn Player、Non-Turn Playerの順に候補の有無を毎回最新Stateから判定し、`PENDING_AUTO / WAITING_INPUT`をpushする。1件でも必ず選択UIを表示する。
+`resolveCheckPoint()`は既存`resolveRuleCheck()`を呼ぶcoordinatorであり、Rule処理を複製しない。Ruleが安定した後、Turn Player、Non-Turn Playerの順に候補の有無を毎回最新Stateから判定し、`PENDING_AUTO / WAITING_INPUT`をpushする。1件でも必ず選択UIを表示する。ただしProcess stack内に`ACT_ABILITY / AUTO_ABILITY`が1件でも残る場合は、Rule安定後もPendingを提示せず親Abilityへresumeする。このAbility Process不変条件の正本は[カード能力共通](../カード能力共通.md#52-check-pointとinterrupt--resume)である。
 
 選択後は、選択対象が必要なCostだけ`SELECT_COST`へ進む。戻る場合は`preparedCosts`を破棄し、mutationせず、Pendingも消費しない。選択不要なら空Modalを出さず最終再検証へ進む。
 
@@ -82,13 +84,13 @@ PendingをconsumeしてAUTO_ABILITYへ移管
 AUTO_ABILITY: PAY_COST → RESOLVE_EFFECT → COMPLETE → Check Timing
 ```
 
-AUTO解決中のEvent dispatcherは停止しない。追加Pendingは単一Collectionへ入る一方、`resolveCheckPoint()`は現在の`AUTO_ABILITY`へ別AUTOを割り込ませない。完了後にB/C/D全体を再提示する。
+AUTO解決中のEvent dispatcherは停止しない。追加Pendingは即時生成して単一Collectionへ保持する一方、`resolveCheckPoint()`は現在のAbilityへ別AUTOを割り込ませない。親Abilityが完了してstackからpopされた後、通常Check Timingとして最新Stateの候補全体を提示する。すなわち、**生成はEvent dispatcher、保持/consumeは`PendingAutoCollection`、提示可否はCheck Timing coordinator**の責務である。
 
 「使用しない」はUIを閉じる操作ではない。指定Pendingだけをconsumeし、Costを支払わず、`AUTO_ABILITY`を開始せず、Effectも実行しない。その後は共通Check Timingを再開し、残PendingがあればPlayer優先順を再評価して選択UIを表示する。全PendingがなくなればCheck Timingを終了し、保存済みstep/statusの親Processを共通Process出口から再開する。
 
-## 7. 共通Cost Selection / Prepared Cost
+## 7. AUTOでのCost Selection / Prepared Cost接続
 
-`prepareCostSelections()`と`getPreparedCostsDisabledReason()`はACT/AUTO共通のCost Resolverに置く。Prepared項目は最低限`costIndex / costType`とhandler固有の選択値（将来の`selectedCardInstanceIds`等）を持つ。選択はStateを変更しない。確定時と`payCosts()`直前に現在Stateで再検証し、全Cost検証後だけ記載順にmutationする。現行ACT Costは`PAY_STOCK / REST_SELF`だけで、Engineが対象を一意に決められ、ユーザー対象選択はまだない。
+Cost Resolver、Prepared Cost、対応Cost Type、複数Costのpayment boundaryは[カード能力共通](../カード能力共通.md#3-cost共通設計)を正本とする。AUTOは`PENDING_AUTO`上で必要な選択をmutationなしで準備し、commit直前に再検証する。Pendingをconsumeして`AUTO_ABILITY`へ移管した後が不可逆境界である。
 
 ## 8. UI責務
 
@@ -98,9 +100,9 @@ Pendingのカード画像は、画像URLをPendingへ複製せず、`source.card
 
 PCのPending一覧は2列Gridとし、1件は1列分、2件は同一行、3件以上は2列のまま折り返す。モーダルを画面高以内に制限し、5件以上など一覧が収まらない場合はタイトルと説明を上部に維持したまま一覧部分を縦スクロールする。狭幅画面では最低限1列へ戻す。
 
-## 9. 標準アンコール / 将来範囲
+## 9. 標準アンコールの位置付け
 
-`STANDARD_ENCORE_3`はRULE sourceであり、全CardMasterへコピーしない。CharacterのStage → Waiting RoomだけでPendingを生成する。元Stage row/indexはEvent LKIに残す。3 StockとStageへのREST復帰を一体として扱う完全解決はF-5D以降で実装する。GRANTED source、選択Cost handler、大量のAUTO Effect DSLもF-5Cの対象外である。
+`STANDARD_ENCORE_3`はRULE sourceであり、全CardMasterへコピーしない。CharacterのStage → Waiting RoomだけでPendingを生成する。元Stage row/indexはEvent LKIに残す。3 StockとStageへのREST復帰はF-5D-1で実装済みである。GRANTED source、選択対象を持つCost handler、汎用的なAUTO Effect DSLは未実装である。
 
 ## 10. Phase F-5D-1 RULE AUTO / 標準3コストアンコール
 
@@ -112,20 +114,11 @@ PCのPending一覧は2列Gridとし、1件は1列分、2件は同一行、3件�
 
 Effectの`ENCORE_RETURN`は共通Stage配置へ委譲する。占有CardのStage → Waiting Room、対象CardのWaiting Room → Stageはそれぞれ通常の`CARD_MOVED`を発行し、その場でTrigger DetectionとPending追加まで行う。現在のAUTO解決には割り込まず、`AUTO_ABILITY COMPLETE → Rule Check → Check Timing`後に新Pendingを提示する。詳細は[アンコール](キーワード能力/アンコール.md)を正本とする。
 
-## 11. Phase F-5D-2 PRINTED AUTO代表実装
+## 11. PRINTED AUTO代表実装と処理パターン
 
-`CHA/W40-026SP`「“大切な何か”乙坂 歩未」の2能力をCardMasterの構造化`CardAbility`として保持する。Card instanceへ定義を複製せず、SELFの`CARD_MOVED (HAND → STAGE)`では移動後instanceからCardMasterの全能力を列挙する。同じEventに一致するAUTO①・AUTO②は、カード単位で重複排除せず、同じEvent snapshotを参照する別IDのPRINTED Pendingとして共通`pendingAutos`へ登録する。RULE/PRINTEDは候補供給元だけが異なり、Pending UI、使用/不使用、`AUTO_ABILITY`、Check Timing、親Process復帰を共有する。
+`CHA/W40-026SP`「“大切な何か”乙坂 歩未」の2能力は、同じ`CARD_MOVED (HAND → STAGE)` Eventから別々のPRINTED Pendingを生成する代表実装である。使用可否はPending作成時に固定せず、表示時とcommit直前の現在Stateで再評価する。
 
-使用可否はPending作成時に保存しない。選択表示時とcommit直前の現在Stateで、AUTO①は相手Stock 1枚以上、AUTO②は自分Stock 1枚以上を判定する。使用不能でも誘発/Pendingを維持し、理由とdisabledの「使用」を表示して「使用しない」を許す。
+- AUTO①の`REPLACE_OPPONENT_STOCK_TOP`は相手Stock topをWaiting Roomへ移し、`SELECT_ZONE_CARD`子Processと`CardSelectionView`で相手Waiting Roomから1枚をStockへ置く。Trigger / Pending / 使用選択は本書、Effect Typeの一覧は[カード能力共通](../カード能力共通.md#42-effect-resolver--handlerと対応type)を正本とする。
+- AUTO②は複合Cost、Cost後Rule Check、Lv条件付き0～1枚の`SEARCH_DECK`、`ADD_TO_HAND`後のRule Check、shuffle、AUTOへのresumeを組み合わせる。その具体的な時系列は[複合コスト・山札検索AUTO](処理パターン/複合コスト・山札検索AUTO.md)を処理パターンとして参照する。
 
-AUTO①は相手Stock配列の末尾（最後に置かれたtop）を共通`moveCard()`でWaiting Roomへ移動する。移動成功後、`SELECT_ZONE_CARD / WAITING_INPUT`子Processと既存`CardSelectionView`を使い、その時点の相手Waiting Room全体からexactly 1枚を選択して共通`moveCard()`で相手Stockへ置く。したがって前半で移動したカード自身も候補であり、Effect開始前のWaiting Room枚数は使用条件にしない。両移動は通常の`CARD_MOVED`を発行する。選択確定後は子Processをpopし、AUTO完了、Rule Check、Check Timing、残Pending、親Process resumeの共通出口へ進む。
-
-AUTO②は `PAY_STOCK(1) → MOVE_DECK_TOP_TO_CLOCK(1)` を記載順に支払い、`CHECK_POINT_AFTER_COST` で共通 `resolveCheckPoint()` へ接続する。Costは全件を現在Stateで事前検証してからmutationし、保存済みstepを先に `RESOLVE_EFFECT` へ進めるため、Refresh / Level Up / penaltyから復帰しても二重支払いしない。Deck 0とClock 7枚が同時成立した場合は共通`pendingInterrupts`と`selectPendingInterrupt()`による順序選択を使用し、AUTO固有のRule処理は持たない。
-
-Effectは既存 `SEARCH_DECK` 子ProcessをAUTOからも利用し、`cardType: CHARACTER, maxLevel: 1, minSelect: 0, maxSelect: 1`で0～1枚を選ぶ。子Processは選択IDを親AUTOの`effectResults`へ保存し、親を`CHECK_POINT_AFTER_EFFECT`から再開する。`ADD_TO_HAND`は選択Cardを公開した旨をゲームログへ残してHandへ移し、直後に共通Rule Checkを行う。したがって最後の1枚を選んだ場合もRefresh、penalty、必要なLevel Upが安定するまで割り込み、その後だけ`SHUFFLE_DECK`を実行する。0枚選択でもshuffleを省略しない。各Effectはindexを進めてからCheck Pointへ入るため、interrupt/resume後のHand追加・shuffleを二重実行しない。AUTO完了後は共通`completeCurrentProcess()`から最終Rule Check、残Pending提示、親Process復帰へ進む。
-
-「相手に見せる」は現時点で汎用Reveal zoneを新設せず、公開Card名をゲームログへ記録する最小実装とした。Deck検索画面は既存の非公開情報選択UIを共有し、選択確定後のCardだけが公開されたことをログで区別する。将来、対戦相手別クライアントを導入するときは、このログ境界を汎用公開Eventへ置き換える技術的負債が残る。
-
-## 13. 複合Cost・山札検索パターン
-
-複数Cost全体の支払い境界、Cost/Effect後のRule Check、SEARCH_DECK childとresumeの具体仕様は[複合コスト・山札検索AUTO](処理パターン/複合コスト・山札検索AUTO.md)を正本とする。本書はTrigger/Pending/使用選択というAUTO共通基盤に限定し、詳細を重複させない。
+「相手に見せる」は現時点で汎用Reveal zoneを新設せず、公開Card名をゲームログへ記録する。将来、対戦相手別クライアントを導入するときは汎用公開Eventへ置き換える技術的負債が残る。
