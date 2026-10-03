@@ -19,17 +19,22 @@ Pending AUTO生成
   ↓ F-5C
 Check Timing（Rule Check安定化）
   ↓ Turn Player / Non-Turn Player
-Pending AUTOを1件選択
+Pending AUTOを表示対象にする
+  ↓ 現在のGame Stateで使用可否評価
+Condition / Cost availability / Effect availability
+  ↓
+AUTO選択UI（使用可 / 使用不可）
+  ↓ Pending AUTOを1件選択
   ↓ 必要な場合だけ共通Cost Selection
 Prepared Cost最終検証
   ↓ 不可逆境界
 AUTO_ABILITY Process（Cost mutation → Effect）
 ```
 
-Event発生、AUTO使用可能、AUTO解決は別概念である。
+Event発生、Pending生成、Pending表示、AUTO使用可能、AUTO解決は別概念である。
 
 ```text
-Trigger成立 ≠ Abilityが現在使用可能 ≠ Ability Effectが解決済み
+Trigger成立 ≠ Pendingが表示対象 ≠ Abilityが現在使用可能 ≠ Ability Effectが解決済み
 ```
 
 この流れは現行実装のF-5B～F-5Dによる基盤を表す。標準3コストアンコールとPRINTED AUTOの実Effectもこの共通経路へ接続済みである。
@@ -64,6 +69,15 @@ PRINTEDはSELF CARD eventならEvent対象instanceのCardMasterから直接取�
 
 `SELF`はinstance一致、`OTHER_YOUR_CHARACTER`はsource以外、Event対象ownerとsourceのmaster player一致、Characterであることを要求する。Phaseはphase値を照合する。本文解析、カードID・カード名分岐、任意Condition式は行わない。
 
+`activationTrigger`はEventが「いつ誘発したか」だけを表し、`conditions[]`をTrigger照合へ合成しない。代表例「相手のアタックフェイズの始めに、前列にこのカードがいるなら、あなたはコストを払ってよい。」は次のように分解する。
+
+- `activationTrigger`: 相手のAttack Phase開始。成立すればPendingを生成する。
+- `conditions[]`: このカードが前列にいる。使用可否評価時の現在Stateで判定する。
+- `costs[]`: 記載Cost。支払可能性はCost availabilityで判定する。
+- `effects[]`: 山札検索等の後続処理。必要対象はEffect availabilityで判定する。
+
+よって「前列にいない」はPendingを生成しない理由ではなく、生成されたPendingを使用不可にするCondition NGである。同様にEffect対象がないこともTrigger不成立にしない。
+
 ## 5. Pending AUTO / Collection
 
 Pendingは誘発1回の事実であり、`id / sequence / masterPlayerId / ownerId / controllerId / source / trigger`を持つ。`source`は`kind (PRINTED | RULE)`、Card instance/master、Ability IDだけを保持する。`trigger`はEvent ID/type/actorと限定payloadを含むimmutable snapshotである。同じAbilityが異なるEventで誘発すれば別Pendingとなる。生成後にsourceが移動しても残る。
@@ -71,6 +85,18 @@ Pendingは誘発1回の事実であり、`id / sequence / masterPlayerId / owner
 `gameState.ruleState.pendingAutos`はPlayer別ではない単一`PendingAutoCollection`（array）で、`pendingChecks`と分離する。これはQueueではない。追加時は末尾へ保存するが、選択はID指定であり`sequence`順を強制しない。Check Timingは`masterPlayerId`で候補を抽出する。PendingはAUTO Processへの移管時、またはプレイヤーがその1件を「使用しない」とした時にconsumeし、単なるsource移動では削除しない。
 
 ## 6. Check Timing / AUTO Process
+
+### 6.1 Pending生成・表示・使用可否の三段階
+
+| 段階 | 責務 | Condition / availabilityとの関係 |
+| --- | --- | --- |
+| Pending生成 | Eventと`activationTrigger`の照合が成立した誘発事実をCollectionへ保存 | Condition / Cost / Effect availabilityで生成を抑止しない |
+| Pending表示 | Rule Check安定化後、Ability解決中でないCheck TimingでPlayer優先順により提示対象を決定 | 使用不可でもPendingを理由付きで提示 |
+| 使用可否 | 提示時とAUTOへのcommit直前に現在Stateを再評価 | Condition / Cost / Effectを別の理由区分として統合 |
+
+Pending生成時のsnapshotは誘発事実とLKIの証拠であり、後の使用可否を永久に保証しない。誘発から選択までにRule Processや別AUTOが入るため、表示時とcommit直前はそれぞれ最新Stateから判定する。
+
+### 6.2 Check TimingとAUTO Process
 
 `resolveCheckPoint()`は既存`resolveRuleCheck()`を呼ぶcoordinatorであり、Rule処理を複製しない。Ruleが安定した後、Turn Player、Non-Turn Playerの順に候補の有無を毎回最新Stateから判定し、`PENDING_AUTO / WAITING_INPUT`をpushする。1件でも必ず選択UIを表示する。ただしProcess stack内に`ACT_ABILITY / AUTO_ABILITY`が1件でも残る場合は、Rule安定後もPendingを提示せず親Abilityへresumeする。このAbility Process不変条件の正本は[カード能力共通](../カード能力共通.md#52-check-pointとinterrupt--resume)である。
 
@@ -95,6 +121,8 @@ Cost Resolver、Prepared Cost、対応Cost Type、複数Costのpayment boundary�
 ## 8. UI責務
 
 RendererはProcessと単一Collectionからカード名、能力本文、Cost、選択状態を表示するだけで、ControllerはPending ID / Prepared CostをEngineへ渡す。正本はDOMに置かない。各Pendingに「使用」「使用しない」を置き、使用不能理由がある場合は「使用」だけをdisabledにする。「使用しない」は常に選択可能とし、モーダル全体の「閉じる」は置かない。Cost選択では「効果選択に戻る」を提供する。
+
+内部の使用可否結果は将来`available` booleanに加え、少なくとも`CONDITION / COST / EFFECT`の理由区分と表示可能な理由を保持できる構造とする。現行UIは`disabledReason`のみを受け取るため区分は未実装だが、Cost NGやAUTO①のEffect NGでもPendingを表示し、理由表示と「使用」disabledを行う経路は実装済みである。
 
 Pendingのカード画像は、画像URLをPendingへ複製せず、`source.cardInstanceId`で全Zoneから現在のCard instanceを特定し、Card → CardMasterの`imageUrl`を表示時に参照する。Pendingはsource移動後も残り、Card instanceも移動先Zoneから特定できる。RULE / PRINTEDで同じ表示経路を使い、URL未設定または画像ロード失敗時は「画像なし」を表示してAUTO選択操作を維持する。キーワード専用表示名は設けず、能力本文を正とする。
 
@@ -122,3 +150,26 @@ Effectの`ENCORE_RETURN`は共通Stage配置へ委譲する。占有CardのStage
 - AUTO②は複合Cost、Cost後Rule Check、Lv条件付き0～1枚の`SEARCH_DECK`、`ADD_TO_HAND`後のRule Check、shuffle、AUTOへのresumeを組み合わせる。その具体的な時系列は[複合コスト・山札検索AUTO](処理パターン/複合コスト・山札検索AUTO.md)を処理パターンとして参照する。
 
 「相手に見せる」は現時点で汎用Reveal zoneを新設せず、公開Card名をゲームログへ記録する。将来、対戦相手別クライアントを導入するときは汎用公開Eventへ置き換える技術的負債が残る。
+
+## 12. Condition基盤の導入候補と現行差分
+
+### 12.1 現行実装と未実装
+
+| 区分 | 状態 |
+| --- | --- |
+| 実装済み | Game Event / Trigger Detection / Pending生成・単一Collection保持 / Rule安定化後のCheck Timing / Player優先順 / Pending表示 / 使用・使用しない / CostとEffectの`disabledReason` / 表示時とcommit直前の再評価 |
+| 設計確定・未実装 | Condition Resolver、Condition availabilityの評価、三availabilityの構造化された理由区分 |
+| 技術的負債 | AUTOの非空`conditions[]`をLoaderが受理する一方でruntimeは評価しない。Condition基盤まではfail-fast、導入後は対応Typeのallow-listと未対応Type rejectにする |
+| 今後の候補 | 本書4節のAttack Phase開始 + 前列Condition + Cost + 山札検索を持つ実カード |
+
+現行の`getPendingAutoOptions()`は表示時、`selectPendingAuto()` / commitは移管直前に共通のdisabled reason経路を呼び、Cost HandlerとEffect Handlerのavailabilityを連結している。AUTO①は相手StockがなくてもPendingが残り、Effect availability NG理由で「使用」だけがdisabledになる。したがってCondition availabilityも将来この「AUTO使用可否評価」へ統合できる。ただし現行は最初の文字列理由を返すだけで理由区分はなく、Conditionも呼ばないため、その差分を実装済みと誤認しない。
+
+### 12.2 推奨実装順
+
+1. AUTOの非空`conditions[]`を一時的にLoaderでfail-fastし、silent ignoreを先に塞ぐ。
+2. 代表カードに必要な「このカードが前列にいる」1 Typeだけのschema / Handler / Loader検証を導入する。
+3. 使用可否結果をCondition / Cost / Effectの区分付きにし、表示時とcommit直前の両方で現在Stateから再評価する。
+4. 代表カードを実装し、`activationTrigger → Pending生成 → Check Timing / 表示 → Condition / Cost / Effect availability → 使用選択 → AUTO解決`を結合testする。
+5. 次の実カードが要求したCondition Typeだけを追加する。
+
+この代表カードはTriggerとConditionの分離が明確で、Pending / 使用可否とCostの結合も検証できるため、Condition基盤実装時の**優先度の高い代表ケース**とする。本整理ではカード、Condition Type、Resolver、UI、Pending / Cost / Effect基盤は実装しない。
