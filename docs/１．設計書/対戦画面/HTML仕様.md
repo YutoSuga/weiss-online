@@ -6,9 +6,9 @@
 
 本ドキュメントは、`client/index.html` におけるHTML構造および `data-*` 属性の仕様を定義する。
 
-HTMLは単なる画面レイアウトではなく、**ゲーム盤面の初期状態を表現する定義書**として扱う。
+HTMLは盤面枠と表示用metadataを定義する。**ゲーム状態の正本はGameState / Player / Card**であり、カードデータと初期DeckはLoader / DeckDefinitionから生成する。DOMを初期ゲーム状態の正本にしない。
 
-CSSは見た目を担当し、JavaScript・Node.jsは本仕様で定義した `data-*` 属性を参照してゲームロジックを制御する。
+CSSは見た目を担当し、Rendererは状態を本仕様の`data-*`属性へ反映する。Controllerは属性から入力対象を特定してGameEngineへ渡し、ゲームルールをDOMから決定しない。
 
 ---
 
@@ -18,7 +18,7 @@ HTMLは以下の役割のみを持つ。
 
 * 画面構造
 * ゲーム盤面の定義
-* ゲーム状態の初期値
+* 表示枠の初期metadata
 
 以下はHTMLでは管理しない。
 
@@ -201,6 +201,8 @@ card.dataset.position = "reverse";
 
 ## data-card-id
 
+Cardの`instanceId`（互換getter `card.id`）を設定する。印刷カード番号や`masterId`ではなく、対戦中の物理的な1枚を識別する。
+
 カードIDを保持する。
 
 初期状態では空文字とする。
@@ -216,7 +218,7 @@ data-card-id=""
 例
 
 ```html
-data-card-id="HOL-W104-001"
+data-card-id="self-card-1"
 ```
 
 ---
@@ -258,7 +260,7 @@ document.querySelector(
 }
 
 [data-position="rest"] {
-    transform: rotate(90deg);
+    transform: rotate(-90deg);
 }
 ```
 

@@ -15,7 +15,7 @@
 - カード効果を追加しやすい構造にすること
 - UIとゲームルールを分離し、保守しやすくすること
 
-オンライン通信とデッキ管理は未実装です。実カード能力は最初のACT集中まで対応しています。
+オンライン通信とデッキ管理は未実装です。実カード能力はACT集中とCHA/W40-026SPのAUTO①・②まで対応しています。
 
 ## 現在のアーキテクチャ
 
@@ -55,7 +55,7 @@ HTML / CSS
 - 開発用のProcess Stack確認UI
 - DEVパネルから指定した自分の山札のCardを手札へ直接移動する確認操作
 
-カードの通常プレイ、Replacement、舞台内Move / Swapに加え、CardMasterと対戦中Card instanceの分離、immutableなCardAbilityデータ構造、ACT Ability v1基盤、Pending AUTOの選択・AUTO Process移管基盤まで実装済みです。標準3コストアンコールと最初のPRINTED AUTO（CHA/W40-026SP AUTO①）のEffectを実装済みです。CONTINUOUS能力、オンライン対戦は未実装です。
+カードの通常プレイ、Replacement、舞台内Move / Swapに加え、CardMasterと対戦中Card instanceの分離、immutableなCardAbilityデータ構造、ACT Ability v1基盤、Pending AUTOの選択・AUTO Process移管基盤まで実装済みです。標準3コストアンコールとCHA/W40-026SP AUTO①・②のCost / Effectを実装済みです。汎用Condition評価、CONTINUOUS能力、オンライン対戦は未実装です。
 
 ## Process / Rule Interrupt
 
@@ -71,13 +71,15 @@ Interrupt Process
 元Processを保存済みstepから再開
 ```
 
-現在の `PROCESS_TYPE` には、`DRAW_PHASE`、`CLOCK_PHASE`、`MAIN_PHASE`、`PLAY_CHARACTER`、`MOVE_STAGE`、`SWAP_STAGE`、`ACT_ABILITY`、`PENDING_AUTO`、`AUTO_ABILITY`、`REFRESH`、`REFRESH_PENALTY`、`LEVEL_UP` があります。`CLOCK_ACTION` は定数として存在しますが、独立したProcessとしては未実装です。
+現在の `PROCESS_TYPE` には、`DRAW_PHASE`、`CLOCK_PHASE`、`MAIN_PHASE`、`PLAY_CHARACTER`、`MOVE_STAGE`、`SWAP_STAGE`、`ACT_ABILITY`、`PENDING_AUTO`、`AUTO_ABILITY`、`SEARCH_DECK`、`SELECT_ZONE_CARD`、`REFRESH`、`REFRESH_PENALTY`、`LEVEL_UP` があります。`CLOCK_ACTION` は定数として存在しますが、独立したProcessとしては未実装です。
 
 ## 現在地点
 
-**Phase F-5D-2：最初のPRINTED AUTO代表実装 COMPLETE**
+**Phase F-5D-3：CHA/W40-026SP AUTO②とFollow-up修正まで COMPLETE**
 
-F-5BのGame Event / Trigger Detection / Pending生成に続き、F-5Cで単一PendingAutoCollection、Check Timing、Turn / Non-Turn順、1件ずつのAUTO選択、共通Prepared Cost境界、AUTO Processへの移管と選択UIまで完了しました。次の主要実装対象は **Phase F-5D：具体的なAUTO Cost / Effect解決の拡張** です。F-5全体は未完了です。
+F-5BのGame Event / Trigger Detection / Pending生成に続き、F-5Cで単一PendingAutoCollection、Check Timing、Turn / Non-Turn順、1件ずつのAUTO選択、共通Prepared Cost境界、AUTO Processへの移管と選択UIまで完了しました。F-5D-1で標準アンコール、F-5D-2でAUTO①、F-5D-3でAUTO②の複合Cost・山札検索を実装し、Follow-upでCost境界、Rule割り込み後のresume、Pending AUTO提示タイミングを修正しました。F-5全体は未完了です。
+
+**NEXT（推奨）**：Pending AUTOの使用可否判定とRendererの表示責務を整理してから、汎用Condition基盤へ進みます。現在はRendererにもCost / Effect・アンコール対象判定が残り、AUTOの非空`conditions[]`はLoaderで受理されても評価されません。設計上の責務を実装済みと混同しないでください。詳細は[今回の整合確認結果](docs/８．修正方針_テスト方針/現行実装ドキュメント整合_修正結果.md)と[AUTO能力共通](docs/１．設計書/対戦画面/カード能力/自動効果/AUTO能力共通.md)を参照してください。
 
 現在、CLOCKフェイズの完了後には以下の流れが成立します。
 
@@ -122,7 +124,10 @@ CLIMAX
 - [x] **Phase F-5B Game Event / AUTO Trigger Detection / Pending生成（COMPLETE）**
 - [x] **Phase F-5C Pending AUTO / AUTO選択基盤（COMPLETE）**
 - [x] **Phase F-5D-1 RULE AUTO / 標準3コストアンコール（COMPLETE）**
-- [x] **Phase F-5D-2 PRINTED AUTO代表実装（COMPLETE、AUTO②解決は後続）**
+- [x] **Phase F-5D-2 PRINTED AUTO①代表実装（COMPLETE）**
+- [x] **Phase F-5D-3 PRINTED AUTO②・複合Cost・山札検索とFollow-up（COMPLETE）**
+- [ ] Pending AUTO availability / Renderer責務整理
+- [ ] 汎用Condition基盤
 - [ ] Phase F-6 CONTINUOUS Ability基盤
 
 ### Phase F-2A：MAINカード選択 / Destination UI
@@ -150,10 +155,10 @@ CLIMAX
 - 使用中Stage slotへのReplacement
 - すべての検証後に行うPlay Cost支払い
 
-基本Play Costは、将来の `CardMaster.cost` に相当するカード固有のコストです。Ability Costとは別概念です。
+基本Play Costは、`CardMaster.cost` をCardのgetterで参照するカード固有のコストです。Ability Costとは別概念です。
 
 開発用の初期Deckは `card-masters.json` を `CardMasterLoader` でRegistryへ登録し、`test-decks.json` のimmutableな `DeckDefinition`（`masterId + count`）を各プレイヤー固有のCard instanceへ展開して生成します。
-現在のブラウザ確認用DefinitionはCharlotteの実在カード17種類（CHARACTER 40枚・EVENT 2枚・CLIMAX 8枚、計50枚）で構成し、「人気アイドル 西森 柚咲」の【起】集中を実データ構成で確認できます。その他16種類の能力は未実装です。
+現在のブラウザ確認用DefinitionはCharlotteの実在カード17種類（CHARACTER 40枚・EVENT 2枚・CLIMAX 8枚、計50枚）で構成し、「人気アイドル 西森 柚咲」の【起】集中と「“大切な何か”乙坂 歩未」のAUTO①・②を実データ構成で確認できます。残る15種類のカード能力は未実装です。
 
 ### Phase F-2C：Stage → Stage
 
@@ -167,12 +172,12 @@ MAIN_PHASE / WAITING_INPUT中に自分のStage Characterを選択し、現在位
 
 ### Phase F-3B：CardAbilityデータ構造（完了）
 
-`CardMaster` がimmutableな `CardAbility[]` を直接包含し、Cardから `card.abilities` で参照できます。能力は `id`、`type`、`keywords`、表示原文の`text`、構造化データの`activationTrigger` / `conditions` / `costs` / `effects`を保持します。能力実行エンジンはまだ実装しません。
+`CardMaster` がimmutableな `CardAbility[]` を直接包含し、Cardから `card.abilities` で参照できます。能力は `id`、`type`、`keywords`、表示原文の`text`、構造化データの`activationTrigger` / `conditions` / `costs` / `effects`を保持します。F-3Bではデータ構造だけを導入し、現在は対応するACT / AUTOを能力実行基盤へ接続しています。
 
 ### Phase F-3C：CardMaster正式データ化 + DeckDefinition基盤（完了）
 
 - **F-3A**：CardMasterを導入し、固定情報とCard instance状態を分離する。Cardのgetterにより既存の`card.name`、`card.level`、`card.cost`等を維持する。
-- **F-3B**：CardAbilityのデータ構造を導入する。Ability Engineはまだ実装しない。
+- **F-3B**：CardAbilityのデータ構造を導入する。F-3B時点ではAbility Engineを実装しない（現在はF-4 / F-5の基盤へ接続済み）。
 - **F-3C**：正式schemaのCardMaster JSONをLoader経由でRegistryへ登録し、DeckDefinitionを独立したCard instanceへ展開する。
 - **F-3D（COMPLETE）**：Cardを入口に、画像・現在Power/Soul・CardAbility textを右上詳細へ表示する。
 
@@ -181,7 +186,7 @@ MAIN_PHASE / WAITING_INPUT中に自分のStage Characterを選択し、現在位
 代表ケースは、`Kch/W78-001S`「人気アイドル 西森 柚咲」の【起】集中です。
 
 - Ability Cost v1：`PAY_STOCK`、`REST_SELF`
-- 使用可能なACTは有効ボタン、使用不可ならdisabled / gray表示を想定
+- 使用可能なACTは有効ボタン、使用不可なら理由付きdisabled表示
 - 集中のResolution確認、山札検索、手札追加、Shuffle、およびRule Check割り込み後のresume
 
 F-4AでStage上のACT検出、使用可能判定、`ACT_ABILITY` Process、Cost / Effect基盤を実装し、F-4Bで実カードの集中とUI/UX Follow-upを追加した。F-4C-1レビューでは汎用基盤、Effect Result、`WAITING_INPUT`、child Process、Refresh後のresumeを確認し、F-4完了またはF-5着手を妨げる問題なしと判定した。レビュー結果と、F-4未完了項目にはしない将来改善候補は[Phase F-4C-1 ACT Ability基盤 実装レビュー](docs/PhaseF-4C-1_ACT_Ability基盤_実装レビュー.md)を参照する。
@@ -191,7 +196,8 @@ F-4AでStage上のACT検出、使用可能判定、`ACT_ABILITY` Process、Cost 
 - **F-5A（COMPLETE）**：AUTO Ability基盤の実装前設計レビュー
 - **F-5B（COMPLETE）**：5種類のGame EventからTriggerを検出し、PRINTED / RULE由来のPending AUTOを生成する基盤
 - **F-5C（COMPLETE）**：Rule Check安定化後のPending AUTO提示、Turn / Non-Turn順、AUTO選択、Prepared CostとAUTO Process移管
-- **F-5D（NEXT）**：標準アンコール復帰、選択Cost handler、具体的なAUTO Cost / Effect解決の拡張
+- **F-5D-1 / F-5D-2 / F-5D-3（COMPLETE）**：標準アンコール、AUTO①、AUTO②とFollow-up
+- **次の課題**：Pending AUTO availability / Renderer責務整理、汎用Condition基盤。選択対象を持つCost handlerやGRANTED source等も未実装
 - **F-6 CONTINUOUS Ability基盤**：GameStateや盤面状態に応じて継続的に状態を評価する基盤
 
 ## プレイ画面 / Zone
@@ -238,7 +244,7 @@ READMEは現在地点と概要を扱い、詳細な仕様は `docs/` を参照�
 実装順は未確定です。
 
 - EVENTカード、CLIMAXカード
-- ATTACK Phase、Damage、Trigger、Encore
+- ATTACK Phase（Encore Stepを含む）、Attack由来のDamage / Trigger
 - Global Card Inspection
 - より多くの実カードAbility
 - オンライン対戦、ルーム招待、チャット
