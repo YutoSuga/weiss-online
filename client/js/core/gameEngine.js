@@ -22,7 +22,8 @@ import {
   SWAP_STAGE_STEP,
   PENDING_AUTO_STEP,
 } from "../constants/process.js";
-import { ABILITY_SOURCE, ABILITY_TYPE, EFFECT_TYPE } from "../constants/ability.js";
+import { ABILITY_SOURCE, ABILITY_TYPE, AVAILABILITY_REASON_CATEGORY, EFFECT_TYPE } from "../constants/ability.js";
+import { getConditionsDisabledReason } from "../abilities/conditionResolver.js";
 import { getCostsDisabledReason, getPreparedCostsDisabledReason, payCosts, prepareCostSelections } from "../abilities/costResolver.js";
 import {
   cardMatchesSearchFilter,
@@ -2150,8 +2151,8 @@ export class GameEngine {
       .filter(({ masterPlayerId }) => masterPlayerId === process.playerId)
       .map((pending) => {
         const { card, ability } = this.#resolvePendingAuto(pending);
-        const disabledReason = this.#getPendingAutoDisabledReason(pending, card, ability);
-        return { pending, card, ability, usable: disabledReason === null, disabledReason };
+        const availability = this.#evaluatePendingAutoAvailability(pending, card, ability);
+        return { pending, card, ability, ...availability };
       });
   }
 
@@ -2165,7 +2166,7 @@ export class GameEngine {
     if (!pending || pending.masterPlayerId !== process.playerId) throw new Error("選択できる自動能力ではありません。");
     const { card, ability } = this.#resolvePendingAuto(pending);
     if (!ability) throw new Error("自動能力の定義が見つかりません。");
-    const disabledReason = this.#getPendingAutoDisabledReason(pending, card, ability);
+    const { disabledReason } = this.#evaluatePendingAutoAvailability(pending, card, ability);
     if (disabledReason) throw new Error(disabledReason);
     const player = this.gameState.players[process.playerId];
     const preparedCosts = prepareCostSelections(ability.costs, { player, sourceCard: card });
@@ -2205,7 +2206,7 @@ export class GameEngine {
   #commitPendingAuto(process, pending, card, ability) {
     if (!pending || !ability) throw new Error("自動能力が見つかりません。");
     const player = this.gameState.players[process.playerId];
-    const reason = this.#getPendingAutoDisabledReason(pending, card, ability) ??
+    const reason = this.#evaluatePendingAutoAvailability(pending, card, ability).disabledReason ??
       getPreparedCostsDisabledReason(ability.costs, process.context.preparedCosts, { player, sourceCard: card });
     if (reason) throw new Error(reason);
     const payCost = true;
@@ -2321,22 +2322,29 @@ export class GameEngine {
     return { card, ability };
   }
 
-  #getPendingAutoDisabledReason(pending, card, ability) {
-    if (!ability) return "能力定義が見つかりません。";
-    // Loaderを通さず生成された定義も、未実装Conditionを無視して実行しない。
-    if (ability.conditions?.length > 0) return "未対応の使用条件があります。";
+  #evaluatePendingAutoAvailability(pending, card, ability) {
+    const unavailable = (reasonCategory, disabledReason) => ({ usable: false, disabledReason, reasonCategory });
+    if (!ability) return unavailable(AVAILABILITY_REASON_CATEGORY.DEFINITION, "能力定義が見つかりません。");
     if (pending.source.kind === ABILITY_SOURCE.RULE && pending.source.abilityId === "STANDARD_ENCORE_3") {
-      if (!card) return "アンコール対象が見つかりません。";
+      if (!card) return unavailable(AVAILABILITY_REASON_CATEGORY.SOURCE, "アンコール対象が見つかりません。");
       const located = this.locateCard(card.instanceId);
       if (located.playerId !== pending.masterPlayerId || located.location.zone !== ZONE.WAITING_ROOM) {
-        return "アンコール対象が控室にありません。";
+        return unavailable(AVAILABILITY_REASON_CATEGORY.SOURCE, "アンコール対象が控室にありません。");
       }
     }
-    return getCostsDisabledReason(ability.costs, {
+    const conditionReason = getConditionsDisabledReason(ability.conditions === undefined ? [] : ability.conditions, {
+      sourceCard: card, locateCard: (instanceId) => this.locateCard(instanceId),
+    });
+    if (conditionReason) return unavailable(AVAILABILITY_REASON_CATEGORY.CONDITION, conditionReason);
+    const costReason = getCostsDisabledReason(ability.costs, {
       player: this.gameState.players[pending.masterPlayerId], sourceCard: card,
-    }) ?? getEffectsDisabledReason(ability.effects, {
+    });
+    if (costReason) return unavailable(AVAILABILITY_REASON_CATEGORY.COST, costReason);
+    const effectReason = getEffectsDisabledReason(ability.effects, {
       gameState: this.gameState, playerId: pending.masterPlayerId, sourceCard: card,
     });
+    if (effectReason) return unavailable(AVAILABILITY_REASON_CATEGORY.EFFECT, effectReason);
+    return { usable: true, disabledReason: null, reasonCategory: null };
   }
 
   #opponentOf(playerId) { return PLAYER_IDS.find((id) => id !== playerId); }

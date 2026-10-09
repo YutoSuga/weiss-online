@@ -126,16 +126,16 @@ test("支払い直前に全Costを再検証し、後続Cost不可でも部分支
   assert.equal(f.engine.processManager.getCurrentProcess().context.costIndex, 0);
 });
 
-test("Loaderを通さない非空AUTO ConditionもQuery/selectで使用不可になる", () => {
+test("Loaderを通さない未対応AUTO ConditionもQuery/selectで使用不可になる", () => {
   const f = fixture(auto([], [], [{ type: "UNSUPPORTED" }])); f.trigger();
   const [option] = f.engine.getPendingAutoOptions();
-  assert.equal(option.usable, false); assert.match(option.disabledReason, /未対応の使用条件/);
-  assert.throws(() => f.engine.selectPendingAuto(option.pending.id), /未対応の使用条件/);
+  assert.equal(option.usable, false); assert.match(option.disabledReason, /使用条件の定義が不正/);
+  assert.throws(() => f.engine.selectPendingAuto(option.pending.id), /使用条件の定義が不正/);
   f.engine.declinePendingAuto(option.pending.id);
   assert.equal(f.state.ruleState.pendingAutos.length, 0);
 });
 
-test("AUTO Loaderは非空・不正Conditionをtrigger有無によらず拒否し正式データを読み込む", async () => {
+test("AUTO Loaderは未対応・不正Conditionをtrigger有無によらず拒否し正式データを読み込む", async () => {
   const definitions = JSON.parse(await readFile(new URL("../data/card-masters.json", import.meta.url), "utf8"));
   assert.doesNotThrow(() => createCardMasterRegistry(definitions));
   const source = definitions.find(({ cardNumber }) => cardNumber === "CHA/W40-026SP");
@@ -143,7 +143,7 @@ test("AUTO Loaderは非空・不正Conditionをtrigger有無によらず拒否�
     for (const conditions of [[{ type: "UNSUPPORTED" }], [{ type: "SELF_IS_FRONT" }], null, {}]) {
       const definition = structuredClone(source); definition.abilities = [definition.abilities[0]];
       Object.assign(definition.abilities[0], { activationTrigger: trigger, conditions });
-      assert.throws(() => createCardMasterRegistry([definition]), /AUTO conditions must be an empty array/);
+      assert.throws(() => createCardMasterRegistry([definition]), /invalid AUTO conditions/);
     }
     for (const omitted of [false, true]) {
       const definition = structuredClone(source); definition.abilities = [definition.abilities[0]];

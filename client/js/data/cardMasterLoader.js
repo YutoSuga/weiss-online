@@ -2,6 +2,7 @@ import { CardMaster } from "../models/cardMaster.js";
 import { CardMasterRegistry } from "../models/cardMasterRegistry.js";
 import { ABILITY_KEYWORD, ABILITY_TYPE } from "../constants/ability.js";
 import { getCostHandler } from "../abilities/costResolver.js";
+import { validateConditions } from "../abilities/conditionResolver.js";
 import { validateEffects } from "../abilities/effectResolver.js";
 import { AUTO_TRIGGER_SUBJECT, GAME_EVENT_TYPE } from "../constants/gameEvent.js";
 import { PHASE_VALUES } from "../constants/phase.js";
@@ -40,9 +41,12 @@ export function validateCardMasterDefinitions(value) {
     definition.abilities.forEach((ability, abilityIndex) => {
       if (ability?.type === ABILITY_TYPE.AUTO) {
         const conditions = ability.conditions === undefined ? [] : ability.conditions;
-        if (!Array.isArray(conditions) || conditions.length > 0) {
+        try {
+          validateConditions(conditions);
+        } catch (error) {
           throw new TypeError(
-            `CardMaster data[${index}].abilities[${abilityIndex}] AUTO conditions must be an empty array until Condition evaluation is supported.`,
+            `CardMaster data[${index}].abilities[${abilityIndex}] has invalid AUTO conditions: ${error.message}`,
+            { cause: error },
           );
         }
       }

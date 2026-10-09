@@ -55,7 +55,7 @@ HTML / CSS
 - 開発用のProcess Stack確認UI
 - DEVパネルから指定した自分の山札のCardを手札へ直接移動する確認操作
 
-カードの通常プレイ、Replacement、舞台内Move / Swapに加え、CardMasterと対戦中Card instanceの分離、immutableなCardAbilityデータ構造、ACT Ability v1基盤、Pending AUTOの選択・AUTO Process移管基盤まで実装済みです。標準3コストアンコールとCHA/W40-026SP AUTO①・②のCost / Effectを実装済みです。汎用Condition評価、CONTINUOUS能力、オンライン対戦は未実装です。
+カードの通常プレイ、Replacement、舞台内Move / Swapに加え、CardMasterと対戦中Card instanceの分離、immutableなCardAbilityデータ構造、ACT Ability v1基盤、Pending AUTOの選択・AUTO Process移管基盤まで実装済みです。標準3コストアンコールとCHA/W40-026SP AUTO①・②のCost / Effectを実装済みです。Condition共通基盤と最初の前列TypeはAUTOへ接続済みです。ACTの非空Condition、CONTINUOUS能力、オンライン対戦は未実装です。
 
 ## Process / Rule Interrupt
 
@@ -79,7 +79,9 @@ Interrupt Process
 
 F-5BのGame Event / Trigger Detection / Pending生成に続き、F-5Cで単一PendingAutoCollection、Check Timing、Turn / Non-Turn順、1件ずつのAUTO選択、共通Prepared Cost境界、AUTO Processへの移管と選択UIまで完了しました。F-5D-1で標準アンコール、F-5D-2でAUTO①、F-5D-3でAUTO②の複合Cost・山札検索を実装し、Follow-upでCost境界、Rule割り込み後のresume、Pending AUTO提示タイミングを修正しました。F-5全体は未完了です。
 
-**NEXT（推奨）**：汎用Condition基盤へ進みます。Pending AUTOの使用可否はEngineへ集約し、Rendererは評価済み候補の表示のみを担当します。AUTOの非空`conditions[]`は暫定fail-fastで未対応データのsilent ignoreを防ぎますが、Condition評価自体は未実装です。詳細は[責務整理の修正結果](docs/８．修正方針_テスト方針/PendingAUTO_availability責務整理_修正結果.md)と[AUTO能力共通](docs/１．設計書/対戦画面/カード能力/自動効果/AUTO能力共通.md)を参照してください。
+Condition共通Resolverと最初の`SOURCE_IS_FRONT_ROW`を実装しました。Pending AUTOはCondition → Cost → Effectを現在Stateで再評価し、Rendererは評価結果だけを表示します。ACTの非空Conditionと代表実カード能力全体は未実装です。
+
+**NEXT（推奨）**：代表実カードの公式本文を確認し、Condition以外に不足する相手Phase Trigger・指定カードCost・一時的能力付与等を分解して段階的に実装します。追加Condition Typeを先行して増やす必要はありません。詳細は[Condition基盤の修正結果](docs/８．修正方針_テスト方針/Condition基盤_前列Condition_修正結果.md)と[AUTO能力共通](docs/１．設計書/対戦画面/カード能力/自動効果/AUTO能力共通.md)を参照してください。
 
 現在、CLOCKフェイズの完了後には以下の流れが成立します。
 
@@ -127,7 +129,8 @@ CLIMAX
 - [x] **Phase F-5D-2 PRINTED AUTO①代表実装（COMPLETE）**
 - [x] **Phase F-5D-3 PRINTED AUTO②・複合Cost・山札検索とFollow-up（COMPLETE）**
 - [x] Pending AUTO availability / Renderer責務整理
-- [ ] 汎用Condition基盤
+- [x] Condition共通基盤 / 前列Condition（AUTO接続）
+- [ ] ACTの非空Condition対応
 - [ ] Phase F-6 CONTINUOUS Ability基盤
 
 ### Phase F-2A：MAINカード選択 / Destination UI
@@ -197,7 +200,7 @@ F-4AでStage上のACT検出、使用可能判定、`ACT_ABILITY` Process、Cost 
 - **F-5B（COMPLETE）**：5種類のGame EventからTriggerを検出し、PRINTED / RULE由来のPending AUTOを生成する基盤
 - **F-5C（COMPLETE）**：Rule Check安定化後のPending AUTO提示、Turn / Non-Turn順、AUTO選択、Prepared CostとAUTO Process移管
 - **F-5D-1 / F-5D-2 / F-5D-3（COMPLETE）**：標準アンコール、AUTO①、AUTO②とFollow-up
-- **次の課題**：汎用Condition基盤。選択対象を持つCost handlerやGRANTED source等も未実装
+- **次の課題**：代表実カードに必要なTrigger / Cost / Effect基盤の分解、ACTの非空Condition対応。選択対象を持つCost handlerやGRANTED source等も未実装
 - **F-6 CONTINUOUS Ability基盤**：GameStateや盤面状態に応じて継続的に状態を評価する基盤
 
 ## プレイ画面 / Zone

@@ -120,9 +120,9 @@ Cost Resolver、Prepared Cost、対応Cost Type、複数Costのpayment boundary�
 
 ## 8. UI責務
 
-Engineの`getPendingAutoOptions()`が現在のSELECT_AUTO候補を評価し、`{ pending, card, ability, usable, disabledReason }`を返す。`GameEngine.render()`は毎回このQueryを実行し、`renderer.render(gameState, { pendingAutoOptions })`へ渡す。Rendererは評価済み候補からカード名、能力本文、Cost、選択状態を表示するだけで、Cost / Effect Resolver、RULE判定、source探索、collection所在判定を行わない。ControllerはPending ID / Prepared CostをEngineへ渡す。正本はDOMに置かない。各Pendingに「使用」「使用しない」を置き、使用不能理由がある場合は「使用」だけをdisabledにする。「使用しない」は常に選択可能とし、モーダル全体の「閉じる」は置かない。Cost選択では「効果選択に戻る」を提供する。
+Engineの`getPendingAutoOptions()`が現在のSELECT_AUTO候補を評価し、`{ pending, card, ability, usable, disabledReason, reasonCategory }`を返す。`GameEngine.render()`は毎回このQueryを実行し、`renderer.render(gameState, { pendingAutoOptions })`へ渡す。Rendererは評価済み候補からカード名、能力本文、Cost、選択状態を表示するだけで、Cost / Effect Resolver、RULE判定、source探索、collection所在判定を行わない。ControllerはPending ID / Prepared CostをEngineへ渡す。正本はDOMに置かない。各Pendingに「使用」「使用しない」を置き、使用不能理由がある場合は「使用」だけをdisabledにする。「使用しない」は常に選択可能とし、モーダル全体の「閉じる」は置かない。Cost選択では「効果選択に戻る」を提供する。
 
-内部の使用可否結果は将来`usable` booleanに加え、少なくとも`CONDITION / COST / EFFECT`の理由区分と表示可能な理由を保持できる構造とする。現行UIは`usable`と文字列`disabledReason`を受け取り、理由区分は未実装だが、Cost NGやAUTO①のEffect NGでもPendingを表示し、理由表示と「使用」disabledを行う経路は実装済みである。
+内部の使用可否結果は`usable`、文字列`disabledReason`、`reasonCategory`を返す。定義・Encore固有source検証後にCondition → Cost → Effectを現在Stateで評価し、最初の不成立理由を採用する。Condition NGでもPendingを削除せず、理由表示と「使用」disabled、「使用しない」可能を維持する。categoryとCondition Type / schemaの正本は[カード能力共通](../カード能力共通.md#41-condition)である。
 
 Pendingのカード画像は、画像URLをPendingへ複製せず、Engineが`source.cardInstanceId`で全Zoneから現在のCard instanceを特定してQuery結果へ渡し、Card → CardMasterの`imageUrl`を表示時に参照する。Pendingはsource移動後も残り、Card instanceも移動先Zoneから特定できる。RULE / PRINTEDで同じ表示経路を使い、URL未設定または画像ロード失敗時は「画像なし」を表示してAUTO選択操作を維持する。キーワード専用表示名は設けず、能力本文を正とする。
 
@@ -151,25 +151,20 @@ Effectの`ENCORE_RETURN`は共通Stage配置へ委譲する。占有CardのStage
 
 「相手に見せる」は現時点で汎用Reveal zoneを新設せず、公開Card名をゲームログへ記録する。将来、対戦相手別クライアントを導入するときは汎用公開Eventへ置き換える技術的負債が残る。
 
-## 12. Condition基盤の導入候補と現行差分
+## 12. Condition基盤の現行対応と次の拡張
 
-### 12.1 現行実装と未実装
+### 12.1 実装済み範囲
 
-| 区分 | 状態 |
-| --- | --- |
-| 実装済み | Game Event / Trigger Detection / Pending生成・単一Collection保持 / Rule安定化後のCheck Timing / Player優先順 / Pending表示 / 使用・使用しない / CostとEffectの`disabledReason` / 表示時とcommit直前の再評価 |
-| 設計確定・未実装 | Condition Resolver、Condition availabilityの評価、三availabilityの構造化された理由区分 |
-| 暫定ガード実装済み | AUTOの非空`conditions[]`・配列以外をLoaderでrejectする。未指定と空配列は許可し、Loaderを迂回した非空Conditionも使用不可にする。Condition評価は未実装 |
-| 今後の候補 | 本書4節のAttack Phase開始 + 前列Condition + Cost + 山札検索を持つ実カード |
+`SOURCE_IS_FRONT_ROW`をCondition共通Resolverで評価する。Pendingのsource instance本人を現在のcollection所属とStage slot座標から確認し、前列なら成立、後列・Stage外なら不成立となる。同じmasterの別instanceは代用しない。Trigger時の位置snapshotへ固定せず、後列で誘発しても使用時に前列なら現在Stateを正とする。
 
-現行の`getPendingAutoOptions()`は表示時、`selectPendingAuto()` / commitは移管直前に共通のdisabled reason経路を呼び、Cost HandlerとEffect Handlerのavailabilityを連結している。AUTO①は相手StockがなくてもPendingが残り、Effect availability NG理由で「使用」だけがdisabledになる。したがってCondition availabilityも将来この「AUTO使用可否評価」へ統合できる。評価結果はGameStateへ保存せず、選択時・commit直前にも同じEngine評価経路を再実行する。Cost支払境界の防御的検証は維持する。ただし現行は最初の文字列理由を返すだけで理由区分はなく、Condition Resolverも呼ばないため、その差分を実装済みと誤認しない。
+`getPendingAutoOptions()`、`selectPendingAuto()`、commitはEngineの同じ`evaluatePendingAutoAvailability`経路を利用する。表示結果をPendingやGameStateへ保存せず、表示後・Cost準備後の状態変化も再検証する。支払い開始後にCondition再評価を挟まず、Cost境界とRule child後のparent resumeは維持する。
 
-### 12.2 推奨実装順
+Loaderは対応Typeだけを許可し、runtimeでも未知/不正Conditionを使用不可にする。正式なカードデータに架空能力を追加せず、現行の実カードAUTO①②とRULE Encoreは空Conditionとして従来どおり動作する。RULE Providerのconditions省略も空配列として扱う。
 
-1. Rendererからの使用可否判定排除とAUTO非空Conditionの暫定fail-fastは完了済み。この共通Engine評価経路へConditionを接続する。
-2. 代表カードに必要な「このカードが前列にいる」1 Typeだけのschema / Handler / Loader検証を導入する。
-3. 使用可否結果をCondition / Cost / Effectの区分付きにし、表示時とcommit直前の両方で現在Stateから再評価する。
-4. 代表カードを実装し、`activationTrigger → Pending生成 → Check Timing / 表示 → Condition / Cost / Effect availability → 使用選択 → AUTO解決`を結合testする。
-5. 次の実カードが要求したCondition Typeだけを追加する。
+### 12.2 未実装範囲と推奨順
 
-この代表カードはTriggerとConditionの分離が明確で、Pending / 使用可否とCostの結合も検証できるため、Condition基盤実装時の**優先度の高い代表ケース**とする。代表カード、正式Condition Type / Resolverは未実装である。現在のPending / Cost / Effect基盤と評価済みQueryを維持して段階的に導入する。
+- ACTの非空Condition対応、追加Condition Type、代表実カード能力全体は未実装。
+- まず対象実カードの公式本文・採用ルール版を確認し、Condition以外の不足Trigger / Cost / Effect / Phaseを分解する。
+- 相手Attack開始を扱う場合、既存`PHASE_STARTED`とturnPlayerIdの利用・相手手番照合を設計する。現在のphase照合だけでは相手/自分を区別しない。Attack処理本体を今回追加したものと扱わない。
+- 指定カードDiscard Cost、正面キャラ選択、一時的能力付与・期限管理、攻撃制約は各基盤の独立タスクとする。山札検索は既存filter / selection / result経路の適用範囲を確認する。
+- 追加Condition Typeは次の実カードが要求したものだけを追加する。ACT対応も実際の対象能力とタイミングを確定して行う。

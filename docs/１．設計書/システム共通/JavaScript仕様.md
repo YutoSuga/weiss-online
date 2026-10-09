@@ -28,7 +28,7 @@ client/js/
 - `models`: 対戦データを表すクラス
 - `constants`: 複数のモデルやゲーム処理で共有する定数
 - `core`: GameEngine、ProcessManager、Rendererなど
-- `abilities`: Trigger Detection、Cost / Effectのvalidation・可否判定・解決
+- `abilities`: Trigger Detection、Condition / Cost / Effectのvalidation・可否判定・解決
 - `data`: CardMaster / DeckDefinitionの取得・検証・展開
 - `ui`: Controller、カード選択表示など
 
@@ -127,7 +127,7 @@ MAINのQueryは、選択可否とゲームActionの実行可否を分離する�
 
 ### CardAbility
 
-`ABILITY_TYPE`は`client/js/constants/ability.js`に`CONTINUOUS` / `AUTO` / `ACT`を定義し、未知値を拒否する。`CardAbility`は`id`, `type`, `keywords`, `text`, `activationTrigger`, `activeZones`, `conditions`, `costs`, `effects`を保持する。`text`は人間向けの表示原文で、構造化データは対応するACT / AUTOの実行基盤が参照する。現行のschema、対応Cost / Effect、未実装の汎用Condition評価は[カード能力共通](../対戦画面/カード能力/カード能力共通.md)を参照する。
+`ABILITY_TYPE`は`client/js/constants/ability.js`に`CONTINUOUS` / `AUTO` / `ACT`を定義し、未知値を拒否する。`CardAbility`は`id`, `type`, `keywords`, `text`, `activationTrigger`, `activeZones`, `conditions`, `costs`, `effects`を保持する。`text`は人間向けの表示原文で、構造化データは対応するACT / AUTOの実行基盤が参照する。現行のschema、対応Cost / Effect、AUTOへ接続済みのCondition共通評価とACT未対応範囲は[カード能力共通](../対戦画面/カード能力/カード能力共通.md)を参照する。
 
 入力したplain object / arrayは再帰的にcopyしてfreezeし、元データ変更の影響とnested変更を防ぐ。本体もfreezeする。能力には`used`等のruntime状態を置かない。`activationTrigger`は能力発動契機で、カード印刷上の`CardMaster.triggerIcons`とは別概念である。同種処理の共通化はCardAbility object共有ではなく、Cost / Effectの処理タイプとResolver / Handlerで行う。`Card.toJSON()`には能力固定情報を含めず、復元後にRegistryのmasterから参照する。
 
@@ -159,4 +159,4 @@ MAINのQueryは、選択可否とゲームActionの実行可否を分離する�
 
 ## Pending AUTO描画用Query
 
-`GameEngine.render()`は`getPendingAutoOptions()`で評価した`{ pending, card, ability, usable, disabledReason }[]`をRendererの第2引数`{ pendingAutoOptions }`として渡す。Rendererは提示結果を表示し、使用可否を再計算しない。結果は保存Stateではなく現在Stateからの一時Queryである。再検証時点とCondition未対応ガードは[AUTO能力共通](../対戦画面/カード能力/自動効果/AUTO能力共通.md)を正本とする。
+`GameEngine.render()`は`getPendingAutoOptions()`で評価した`{ pending, card, ability, usable, disabledReason, reasonCategory }[]`をRendererの第2引数`{ pendingAutoOptions }`として渡す。Rendererは提示結果を表示し、使用可否を再計算しない。結果は保存Stateではなく現在Stateからの一時Queryである。再検証時点とCondition Type / runtime安全性は[AUTO能力共通](../対戦画面/カード能力/自動効果/AUTO能力共通.md)を正本とする。
