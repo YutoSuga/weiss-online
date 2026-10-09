@@ -1,11 +1,8 @@
 import { VISIBILITY, ZONE, ZONE_VISIBILITY } from "../constants/zone.js";
 import { PHASE } from "../constants/phase.js";
 import { FACE } from "../models/card.js";
-import { ABILITY_SOURCE, ABILITY_TYPE } from "../constants/ability.js";
+import { ABILITY_TYPE } from "../constants/ability.js";
 import { PENDING_AUTO_STEP, PROCESS_TYPE } from "../constants/process.js";
-import { getRuleAutoAbility } from "../abilities/ruleAbilityProvider.js";
-import { getCostsDisabledReason } from "../abilities/costResolver.js";
-import { getEffectsDisabledReason } from "../abilities/effectResolver.js";
 
 const ABILITY_LABELS = Object.freeze({
   [ABILITY_TYPE.CONTINUOUS]: "【永】",
@@ -61,9 +58,10 @@ export class Renderer {
    * 両プレイヤーの現在状態を描画する。
    *
    * @param {import("../models/gameState.js").GameState|null|undefined} gameState
+   * @param {{pendingAutoOptions?: object[]}} [options] Engineの現在Stateで評価済みの表示候補
    * @returns {void}
    */
-  render(gameState) {
+  render(gameState, { pendingAutoOptions = [] } = {}) {
     if (!this.rootElement) {
       return;
     }
@@ -73,7 +71,7 @@ export class Renderer {
     this.updateMessageOverlay(gameState);
     this.updatePhaseBar(gameState);
     this.updateTurnEndButton(gameState);
-    this.renderPendingAutoSelection(gameState);
+    this.renderPendingAutoSelection(gameState, pendingAutoOptions);
 
     if (!gameState || typeof gameState !== "object") {
       return;
@@ -83,8 +81,8 @@ export class Renderer {
     this.renderPlayer(gameState.players?.opponent, "opponent");
   }
 
-  /** Engine/Processを正本として、1件の場合もPending AUTO選択を表示する。 */
-  renderPendingAutoSelection(gameState) {
+  /** Engineの評価済みoptionsを表示する。使用可否をViewで再計算しない。 */
+  renderPendingAutoSelection(gameState, pendingAutoOptions = []) {
     let dialog = this.rootElement?.querySelector("[data-pending-auto-dialog]");
     if (!(dialog instanceof HTMLElement)) {
       dialog = document.createElement("aside");
@@ -106,28 +104,10 @@ export class Renderer {
     list.hidden = selectingCost;
     list.replaceChildren();
     if (selectingCost) return;
-    const pending = gameState.ruleState.pendingAutos.filter(({ masterPlayerId }) => masterPlayerId === process.playerId);
-    pending.forEach((item) => {
-      let card = null;
-      for (const player of Object.values(gameState.players)) {
-        card = [...player.hand, ...player.stage, ...player.clock, ...player.level, ...player.stock,
-          ...player.waitingRoom, ...player.memory, ...player.resolution, ...player.climax, ...player.deck.cards]
-          .find(({ instanceId }) => instanceId === item.source.cardInstanceId);
-        if (card) break;
-      }
-      const ability = item.source.kind === ABILITY_SOURCE.RULE
-        ? getRuleAutoAbility(item.source.abilityId)
-        : card?.abilities.find(({ id }) => id === item.source.abilityId);
-      let disabledReason = ability ? getCostsDisabledReason(ability.costs, {
-        player: gameState.players[item.masterPlayerId], sourceCard: card,
-      }) ?? getEffectsDisabledReason(ability.effects, {
-        gameState, playerId: item.masterPlayerId, sourceCard: card,
-      }) : "能力定義が見つかりません。";
-      if (item.source.kind === ABILITY_SOURCE.RULE &&
-          (!card || card.zone !== ZONE.WAITING_ROOM)) disabledReason = "アンコール対象が控室にありません。";
+    pendingAutoOptions.forEach(({ pending: item, card, ability, usable, disabledReason }) => {
       const entry = document.createElement("article");
       entry.className = "pending-auto-entry";
-      entry.innerHTML = `<div class="pending-auto-entry__body"><div class="pending-auto-image-frame"><img alt="${card?.name ?? item.source.cardMasterId}のカード画像" data-pending-auto-image hidden><span data-pending-auto-image-placeholder>画像なし</span></div><div class="pending-auto-entry__details"><strong>${card?.name ?? item.source.cardMasterId}</strong><p>${ability?.text ?? item.source.abilityId}</p><p>Cost: ${ability?.costs?.map(({ type, amount }) => `${type}${amount ? ` ${amount}` : ""}`).join(", ") || "なし"}</p>${disabledReason ? `<p class="disabled-reason">${disabledReason}</p>` : ""}</div></div><div class="pending-auto-entry__actions"><button type="button" data-action="resolve-pending-auto" data-pending-auto-id="${item.id}"${disabledReason ? " disabled" : ""}>使用</button><button type="button" data-action="decline-pending-auto" data-pending-auto-id="${item.id}">使用しない</button></div>`;
+      entry.innerHTML = `<div class="pending-auto-entry__body"><div class="pending-auto-image-frame"><img alt="${card?.name ?? item.source.cardMasterId}のカード画像" data-pending-auto-image hidden><span data-pending-auto-image-placeholder>画像なし</span></div><div class="pending-auto-entry__details"><strong>${card?.name ?? item.source.cardMasterId}</strong><p>${ability?.text ?? item.source.abilityId}</p><p>Cost: ${ability?.costs?.map(({ type, amount }) => `${type}${amount ? ` ${amount}` : ""}`).join(", ") || "なし"}</p>${disabledReason ? `<p class="disabled-reason">${disabledReason}</p>` : ""}</div></div><div class="pending-auto-entry__actions"><button type="button" data-action="resolve-pending-auto" data-pending-auto-id="${item.id}"${usable ? "" : " disabled"}>使用</button><button type="button" data-action="decline-pending-auto" data-pending-auto-id="${item.id}">使用しない</button></div>`;
       this.renderImageWithFallback(
         entry.querySelector("[data-pending-auto-image]"),
         entry.querySelector("[data-pending-auto-image-placeholder]"),

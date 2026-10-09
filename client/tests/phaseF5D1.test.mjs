@@ -172,7 +172,6 @@ test("Pending UIは新文言、項目ごとの使用しない、使用不能理�
   const renderer = await readFile(new URL("../js/core/renderer.js", import.meta.url), "utf8");
   const controller = await readFile(new URL("../js/ui/pendingAutoController.js", import.meta.url), "utf8");
   assert.match(renderer, /disabled-reason/);
-  assert.match(renderer, /disabledReason \? " disabled"/);
   assert.match(renderer, /自動効果発動/);
   assert.match(renderer, /発動する自動効果を選択してください/);
   assert.match(renderer, /decline-pending-auto/);

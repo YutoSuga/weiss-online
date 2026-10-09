@@ -66,8 +66,8 @@ NGが見つかった場合は、実機確認をNGにして備考へ内容を記�
 旧`test.md`の備忘を現行実装で確認して移管した。開発用画面では`main.dev.js`が次の変数を`window`へ公開しているため、Chromeの開発者ツールでConsoleを開いて利用できる。
 
 ```js
-// 現在状態で再描画
-renderer.render(gameState);
+// Pending AUTOの最新使用可否を含めて再描画
+gameEngine.render();
 
 // テスト用card1を手札へ追加して再描画（状態整合性を保証しない直接操作）
 gameState.players.self.hand.push(card1);
@@ -78,3 +78,5 @@ gameEngine.nextPhase();
 ```
 
 コマンド自体は現在も公開変数/APIとして有効である。ただし手札への直接`push`はCardのzone/indexや元collectionを更新せず、Game Eventも発行しない古い簡易操作である。通常の結合確認ではDEVパネルまたはGameEngineの正規操作を優先し、このコマンドは表示調査だけに限定する。
+
+Pending AUTOを含む結合確認では`gameEngine.render()`を使用する。`renderer.render(gameState)`だけの呼出しは評価済み候補を渡さないため、盤面表示調査に限定する。

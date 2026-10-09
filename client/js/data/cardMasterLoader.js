@@ -38,6 +38,14 @@ export function validateCardMasterDefinitions(value) {
       throw new TypeError(`CardMaster data[${index}].abilities must be an array.`);
     }
     definition.abilities.forEach((ability, abilityIndex) => {
+      if (ability?.type === ABILITY_TYPE.AUTO) {
+        const conditions = ability.conditions === undefined ? [] : ability.conditions;
+        if (!Array.isArray(conditions) || conditions.length > 0) {
+          throw new TypeError(
+            `CardMaster data[${index}].abilities[${abilityIndex}] AUTO conditions must be an empty array until Condition evaluation is supported.`,
+          );
+        }
+      }
       if (ability?.type === ABILITY_TYPE.AUTO && ability.activationTrigger !== null) {
         try {
           validateAutoAbility(ability);
