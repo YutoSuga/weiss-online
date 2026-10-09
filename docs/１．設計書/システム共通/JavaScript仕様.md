@@ -6,27 +6,36 @@
 client/js/
 ├── constants/
 │   ├── phase.js
-│   └── zone.js
+│   ├── zone.js
+│   ├── ability.js
+│   ├── process.js
+│   └── …
 ├── models/
 │   ├── card.js
 │   ├── cardMaster.js
+│   ├── cardAbility.js
+│   ├── deckDefinition.js
 │   ├── cardMasterRegistry.js
 │   ├── deck.js
 │   ├── player.js
 │   └── gameState.js
 ├── core/
+├── abilities/
+├── data/
 └── ui/
 ```
 
 - `models`: 対戦データを表すクラス
-- `constants`: 複数のモデルや将来のゲーム処理で共有する定数
-- `core`: 将来のGameEngine、Rendererなど
-- `ui`: 将来の画面操作、カード詳細表示など
+- `constants`: 複数のモデルやゲーム処理で共有する定数
+- `core`: GameEngine、ProcessManager、Rendererなど
+- `abilities`: Trigger Detection、Cost / Effectのvalidation・可否判定・解決
+- `data`: CardMaster / DeckDefinitionの取得・検証・展開
+- `ui`: Controller、カード選択表示など
 
 ## 基本方針
 
 モデルを対戦状態の正本とし、DOMを状態の正本にはしません。
-将来のRendererはモデルの状態をHTMLへ反映し、GameEngineはルールに従ってモデルを更新します。
+Rendererはモデルの状態をHTMLへ反映し、GameEngineはルールに従ってモデルを更新します。
 
 ```text
 ユーザー操作
@@ -76,6 +85,7 @@ F-3Aで固定情報をCardMasterへ分離済みです。現在の実装仕様は
 プレイヤー情報、`Deck`、各ゾーンのカード配列を保持します。
 ゾーン配列は実際にカードが置かれた順を維持し、後から置かれたカードほど
 配列の後ろへ追加する方針です。描画時の重なり順はRendererがこの順序から決定します。
+Stock / Waiting RoomのTOPは配列末尾、DeckのTOPは`cards[0]`です。Stageの`row` / `index`は固定slot（front 1〜3、back 1〜2）を表し、配列順ではありません。Stageからカードが離れても残ったCardのslot座標を再採番しません。
 
 ## GameState
 
@@ -117,9 +127,9 @@ MAINのQueryは、選択可否とゲームActionの実行可否を分離する�
 
 ### CardAbility
 
-`ABILITY_TYPE`は`client/js/constants/ability.js`に`CONTINUOUS` / `AUTO` / `ACT`を定義し、未知値を拒否する。`CardAbility`は`id`, `type`, `keywords`, `text`, `activationTrigger`, `conditions`, `costs`, `effects`を保持する。`text`は人間向けの表示原文で、残る4フィールドは後続Phaseの処理用構造化データである。F-3Bはschema列挙や実行処理を実装しない。
+`ABILITY_TYPE`は`client/js/constants/ability.js`に`CONTINUOUS` / `AUTO` / `ACT`を定義し、未知値を拒否する。`CardAbility`は`id`, `type`, `keywords`, `text`, `activationTrigger`, `activeZones`, `conditions`, `costs`, `effects`を保持する。`text`は人間向けの表示原文で、構造化データは対応するACT / AUTOの実行基盤が参照する。現行のschema、対応Cost / Effect、未実装の汎用Condition評価は[カード能力共通](../対戦画面/カード能力/カード能力共通.md)を参照する。
 
-入力したplain object / arrayは再帰的にcopyしてfreezeし、元データ変更の影響とnested変更を防ぐ。本体もfreezeする。能力には`used`等のruntime状態を置かない。`activationTrigger`は能力発動契機で、カード印刷上の`CardMaster.triggerIcons`とは別概念である。同種処理の共通化はCardAbility object共有ではなく、F-4以降に処理タイプと実行処理で行う。`Card.toJSON()`には能力固定情報を含めず、復元後にRegistryのmasterから参照する。
+入力したplain object / arrayは再帰的にcopyしてfreezeし、元データ変更の影響とnested変更を防ぐ。本体もfreezeする。能力には`used`等のruntime状態を置かない。`activationTrigger`は能力発動契機で、カード印刷上の`CardMaster.triggerIcons`とは別概念である。同種処理の共通化はCardAbility object共有ではなく、Cost / Effectの処理タイプとResolver / Handlerで行う。`Card.toJSON()`には能力固定情報を含めず、復元後にRegistryのmasterから参照する。
 
 ## CardMasterLoader / DeckDefinition（F-3C実装）
 
@@ -143,6 +153,6 @@ MAINのQueryは、選択可否とゲームActionの実行可否を分離する�
 
 正式Eventは`CARD_MOVED`、`CARD_POSITION_CHANGED`、`ATTACK_DECLARED`、`PHASE_STARTED`、`PHASE_ENDED`の5種類である。未実装Eventは具体的なカードまたはPhaseで必要になった時に追加し、任意式を扱う巨大なEvent frameworkは先行実装しない。
 
-`GameEngine.moveCard()`はcollection remove / insert、Card表示metadata更新、reindexを完了してから`CARD_MOVED`を発行する。`changeCardPosition()`は値が変わる場合だけ変更完了後に発行する。`enterPhase()`は旧phaseの`PHASE_ENDED`をphase更新前、新phaseの`PHASE_STARTED`を更新後・固有Process開始前に発行する。`declareAttackEvent()`は将来のAttack宣言確定境界用であり、F-5BではAttack Processを実装しない。
+`GameEngine.moveCard()`はcollection remove / insert、Card表示metadata更新、通常Zoneのreindex（Stage座標は維持）を完了してから`CARD_MOVED`を発行する。`changeCardPosition()`は値が変わる場合だけ変更完了後に発行する。`enterPhase()`は旧phaseの`PHASE_ENDED`をphase更新前、新phaseの`PHASE_STARTED`を更新後・固有Process開始前に発行する。`declareAttackEvent()`は将来のAttack宣言確定境界用であり、F-5BではAttack Processを実装しない。
 
 現在位置の正本はPlayer / Deckのcollection membershipである。`locateCard(instanceId)`は全collectionを読み取り、所在がちょうど1件でなければinvariant違反とする。Cardへ`currentLocation` / `previousLocation`は追加しない。`CARD_MOVED.from/to`だけを発生時snapshotとして保持する。
