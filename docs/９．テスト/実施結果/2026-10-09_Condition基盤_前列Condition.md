@@ -1,0 +1,83 @@
+# 結合確認チェックシート：Condition基盤・前列Condition（2026-10-09 UTC）
+
+更新後ひな形を全量コピーした。ユーザー本人の実機確認は未実施で全項目割愛。列の値と採番の定義は[運用README](../README.md)を参照する。今回実行した対応assertionが成功した項目を済とした。Codexブラウザは別記し、ユーザー実機OKへ転記しない。
+
+| # | フェイズ | 分類 | 観点 | 自動確認 | 実機確認 | 備考 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1-1-1 | ゲーム開始 | 初期化 | 両山札がシャッフルされ初期手札が配られる | 割愛 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 1-2-1 | ゲーム開始 | カード交換 | 0枚交換で次プレイヤー/ターンへ進む | 割愛 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 1-2-2 | ゲーム開始 | カード交換 | 1〜5枚を選択し同数交換できる | 割愛 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 2-1-1 | 共通 | Refresh | 山札0枚時に控え室を山札へ戻し進行を再開する | 割愛 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 2-2-1 | 共通 | Level Up | Clock 7枚時にLevel選択後、残りが控え室へ移る | 割愛 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 3-1-1 | Stand Phase | カード状態 | 現在プレイヤーのStageカードがSTANDになる | 割愛 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 4-1-1 | Draw Phase | ドロー | 1枚ドローして次のフェイズへ進む | 割愛 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 5-1-1 | Clock Phase | 選択なし | カードを置かず次へ進める | 割愛 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 5-2-1 | Clock Phase | 選択あり | 手札1枚をClockへ置き2枚引く | 割愛 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 6-1-1 | Main Phase | カード詳細 | 手札/Stageカードを選択し詳細を確認できる | 割愛 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 6-2-1 | Main Phase | カード配置 | 手札CHARACTERを空Stage枠へ置ける | 割愛 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 6-3-1 | Main Phase | 圧殺 | 占有Stage枠で「置き換える（圧殺）」が表示される | 割愛 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 6-3-2 | Main Phase | 圧殺 | 確認後、占有Stage枠へ配置できる | 割愛 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 6-4-1 | Main Phase | Stage移動 | 空枠へのMoveと占有枠とのSwapができる | 割愛 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 6-5-1 | Main Phase | ACT | 使用可否、Cost、Effect、解決後の通常操作復帰が正しい | 割愛 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | 能力ごとの条件も確認する |
+| 6-5-2 | Main Phase | ACT | 効果途中の山札0枚でRefresh・penaltyを解決後、中断したACTへ復帰して最後まで完了する | 割愛 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | 集中開始時に山札3枚以下のケース |
+| 6-5-3 | Main Phase | ACT | 効果の山札検索で山札0枚となってもRefresh・penalty後にACTを正常終了する | 割愛 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | 集中で4枚公開後、検索対象が山札の残り1枚のケース |
+| 6-5-4 | Main Phase | ACT | 解決領域一覧は画像ありカードを縦横比維持で固定枠内に収め、画像なしfallbackも同じ枠寸法で表示する | 割愛 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | 右側のCard Detail画像は対象外 |
+| 2-3-1 | 共通 | AUTOモーダル | 「自動効果発動」モーダルが表示される | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 2-3-2 | 共通 | AUTOモーダル | 説明文とPendingごとの使用/使用しないを表示する | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 2-3-3 | 共通 | AUTOモーダル | source Cardに画像URLがあるPendingでカード画像を表示する | 割愛 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | RULE / PRINTED双方で確認する |
+| 2-3-4 | 共通 | AUTOモーダル | source Cardの画像URL未設定・ロード失敗でも「画像なし」とAUTO操作を表示する | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 2-3-5 | 共通 | AUTOモーダル | PCで複数Pendingを2列表示し、1〜4件を全件操作できる | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | 1件は1列分、3件は2列＋次行1件 |
+| 2-3-6 | 共通 | AUTOモーダル | Pending多数時も一覧内部を縦スクロールして全件操作できる | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | 5件以上で確認する |
+| 2-4-1 | 共通 | AUTO使用 | Cost/Effectを解決し残Pendingを再評価する | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 2-4-2 | 共通 | AUTO使用 | 3コストアンコールを「使用」し、Cost/Effectを解決できる | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | Stock 3枚以上で確認する |
+| 2-4-3 | 共通 | AUTO使用 | 3コストアンコール対象が元slotへRESTで復帰し、対象外Stageカードの位置・状態が変わらない | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | 対象外カードを複数slotに置いて確認する |
+| 2-5-1 | 共通 | AUTO不使用 | 使用可能なAUTOで「使用しない」を選択できる | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | 3コストアンコールはStock 3枚以上でも確認する |
+| 2-5-2 | 共通 | AUTO不使用 | 「使用しない」でCost/Effectなしに対象1件だけを処理する | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 2-6-1 | 共通 | AUTO使用不能 | Stock不足/対象不在の理由を表示する | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 2-6-2 | 共通 | AUTO使用不能 | 使用不能AUTOの「使用」がdisabledになる | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 2-6-3 | 共通 | AUTO使用不能 | Stock不足でも「使用しない」を選択できる | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | 3コストアンコールはStock 0〜2枚で確認する |
+| 2-6-4 | 共通 | AUTO使用不能 | State変更後の再描画で現在の理由と使用可否へ更新され、古い表示結果で使用を確定しない | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | Stock・Effect対象の変化を確認する |
+| 2-6-5 | 共通 | AUTO使用不能 | アンコールsourceが控室から移動してもPendingを残し、理由/disabled/不使用を表示する | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | 所在はcollection membershipで判定する |
+| 2-7-1 | 共通 | 複数Pending AUTO | 1件処理後も残件を再提示する | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 2-8-1 | 共通 | Process復帰 | AUTO使用・正常解決後に中断元Processの通常操作へ戻る | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | カードを再選択できることも確認する |
+| 2-8-2 | 共通 | Process復帰 | AUTO不使用後に中断元Processの通常操作へ戻る | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | カードを再選択できることも確認する |
+| 2-9-1 | 共通 | モーダル | Pending AUTOモーダルに全体の「閉じる」がない | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 2-10-1 | 共通 | PRINTED AUTO | 手札→舞台の同一CARD_MOVEDから2能力が別Pendingになる | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | CHA/W40-026SPで確認する |
+| 2-10-2 | 共通 | PRINTED AUTO | AUTO①は相手Stock 0枚でも表示され、使用不能理由/disabled/不使用が正しい | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 2-10-3 | 共通 | PRINTED AUTO | AUTO①で相手Stock topだけがWaiting Roomへ移動する | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 2-10-4 | 共通 | PRINTED AUTO | Stockから落としたカードを含む相手Waiting Roomからexactly 1枚選べる | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 2-10-5 | 共通 | PRINTED AUTO | 選択カードが相手Stockへ移り、残Pending再提示後に通常操作へ復帰する | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | |
+| 2-10-6 | 共通 | PRINTED AUTO | AUTO②は自分Stock 0/1枚で使用可否表示が変わる | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | 複合Cost開始前の現在Stateで判定する |
+| 2-10-7 | 共通 | PRINTED AUTO | AUTO②使用時にStock 1枚とDeck top 1枚を記載順に支払い、検索画面へ進む | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | Deck topはClockへ置く |
+| 2-10-8 | 共通 | PRINTED AUTO | AUTO②検索でLv1以下Characterだけを0～1枚選べる | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | Lv2以上・Character以外は選択不可 |
+| 2-10-9 | 共通 | PRINTED AUTO | 0枚/1枚のどちらでも検索確定後に山札をshuffleして正常終了する | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | 1枚選択時は公開ログとHand追加も確認する |
+| 2-10-10 | 共通 | PRINTED AUTO | Cost後のDeck 0 / Clock 7を解決してAUTO②検索へ復帰する | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | 同時成立時は処理順を選択できること |
+| 2-10-11 | 共通 | PRINTED AUTO | 検索で最後の1枚をHandへ加えた後、Refresh・penalty・必要なLevel Upを解決してshuffleへ復帰する | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | Cost/Effectの二重実行がないこと |
+| 2-11-1 | 共通 | Stock表示 | 相手Stockが中央線側を起点として、相手手札側へ向かって積み上がって表示される | 割愛 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | 自分Stockの既存表示方向も維持されること |
+| 2-10-12 | 共通 | PRINTED AUTO | 複合Costのitem間ではRule Checkせず、全Cost完了後に開始する | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | Deck 1 / Waiting Room 0 / Stock 1で誤敗北しないこと |
+| 2-10-13 | 共通 | PRINTED AUTO | Deck 0 / Clock 7+同時成立時に順序を画面で選び、全Rule処理後AUTOへ復帰する | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | 盤面へ戻って操作不能にならないこと |
+| 2-10-14 | 共通 | 山札検索UI | スマホ幅で一覧をスクロールし、0/1枚の選択数を確認して決定をタップできる | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | PC/Resolution表示も回帰確認する |
+| 2-10-15 | 共通 | Rule処理順 | Deck 0 / Clock 7+同時成立でRefreshまたはLevel Upのどちらを先に選んでも、残るRule処理を再列挙できる | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | Refresh後はpenaltyとLevel Upも順序選択対象 |
+| 2-10-16 | 共通 | Process復帰 | Rule Process安定後、stackに解決中Abilityがあれば保存位置へresumeする | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | Rule完了とAbility完了を区別する |
+| 2-10-17 | 共通 | Pending AUTO | Ability解決途中に生成・保持したPending AUTOを、Ability完了前には提示しない | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | Pending自体は削除しない |
+| 2-10-18 | 共通 | Effect復帰 | Effect途中の山札0枚をRefresh・penalty後、Pending AUTOより先に元Effectへresumeする | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | 最後の1枚検索と後続shuffleを確認 |
+| 2-12-1 | 共通 | Condition AUTO | source本人が前列にいるPendingは使用可能で、Condition理由なしに解決できる | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | 前列Condition fixtureで確認する |
+| 2-12-2 | 共通 | Condition AUTO | 後列でもPendingを提示し、前列条件の理由・使用disabled・使用しないを表示する | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | 不使用でCost / Effectを実行しない |
+| 2-12-3 | 共通 | Condition AUTO | sourceがStage外へ移動したPendingは条件NGとして提示し、不使用を選べる | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | Hand / Waiting Room等で確認する |
+| 2-12-4 | 共通 | Condition AUTO | Trigger時点によらず、再描画で現在の前列/後列・Stage所属に応じた使用可否へ更新する | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | 前列→後列、後列→前列を確認する |
+| 2-12-5 | 共通 | Condition AUTO | 表示後・Cost準備後に条件NGとなった場合、使用確定せずCostも支払わない | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | 現行Costは選択不要。準備後境界は自動fixtureで確認する |
+| 2-12-6 | 共通 | Condition AUTO | 複数不足時の理由はCondition→Cost→Effectの順になり、解消後は次の不足理由へ更新する | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | 自分Stock不足・相手Stockなしの複合fixture |
+| 2-12-7 | 共通 | Condition AUTO | 同じmasterの別Cardが前列でも、後列のsource本人のPendingは使用不可になる | 済 | [ ] OK / [ ] NG / [x] 割愛 / [ ] 対象外 | instanceを区別する |
+
+## 確認条件とCodex Chromium（ユーザー実機とは別記）
+
+- Condition関連14件成功。Condition + Pending/AUTO関連63件成功。全体128件成功、失敗0件。
+- 自動確認の済はconditionAvailability / pendingAutoAvailability / phaseF5C / phaseF5D1 / D2 / D3の対応assertionに基づく。UI画像・Grid / overflow構造のソース検査を含み、外部画像ロードや全画面操作の保証ではない。外部画像取得の2-3-3は割愛。
+- Chromiumでは既存HTTPサーバーでページを開き、ゲーム開始・初期手札5枚・0枚マリガン完了後、正規Engine操作でMAINへ進めた。HTTP起動方法は一時的な静的サーバーとして扱い、正式仕様へ昇格させていない。
+- ブラウザ内にのみ独立CardMaster / Card fixtureを作り、既存HAND→STAGE Eventを正常Playで発火させた。正式CardMaster JSON、DeckDefinition、本番起動コードにfixtureを追加していない。
+- 2-12-1：前列Pendingのenabled、Condition理由なし、使用でテストEffect実行、MAIN復帰を確認。
+- 2-12-2：後列Pendingの提示、理由、使用disabled・不使用enabled、不使用で正常復帰を確認。
+- 2-12-3 / 4：前列で誘発後にHandへ通常移動し、再描画で最新Condition理由・disabledを確認。不使用でEffectなし・MAIN復帰。
+- PC 1600pxと狭幅390pxでモーダル・理由・ボタンの収まりを画像でも確認。狭幅では表示確認のみ、使用/不使用操作はPCで確認した。
+- fatal JavaScript errorなし。fixtureの画像URLは未設定で画像なしfallbackを表示。外部画像通信は今回のCondition確認の対象外で、過去の証明書・404問題の解決確認はしていない。
+- DEVパネルは既存の折畳み操作を利用。CSS・DEV重なり・スマホ盤面等の別問題を修正していない。

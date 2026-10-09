@@ -12,6 +12,20 @@ export const ABILITY_SOURCE = Object.freeze({
   GRANTED: "GRANTED",
 });
 
+/** CardAbility.conditionsで正式に評価できる必要状態。 */
+export const CONDITION_TYPE = Object.freeze({
+  SOURCE_IS_FRONT_ROW: "SOURCE_IS_FRONT_ROW",
+});
+
+/** Pending AUTO使用不可理由の責務区分。使用可能時はnull。 */
+export const AVAILABILITY_REASON_CATEGORY = Object.freeze({
+  DEFINITION: "DEFINITION",
+  SOURCE: "SOURCE",
+  CONDITION: "CONDITION",
+  COST: "COST",
+  EFFECT: "EFFECT",
+});
+
 /** F-4AでGameEngineが解釈できるAbility Cost。 */
 export const COST_TYPE = Object.freeze({
   PAY_STOCK: "PAY_STOCK",

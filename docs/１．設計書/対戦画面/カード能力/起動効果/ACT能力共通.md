@@ -64,5 +64,5 @@ Stage Card選択時、右上詳細はACTごとに本文、使用/使用不可ボ
 ## 6. 現行の制約
 
 - 正式対応Cost / Effectの最新一覧は[カード能力共通](../カード能力共通.md#3-cost共通設計)のみを正本とし、本書に複製しない。
-- 非空`conditions[]`は未対応である。
+- 非空`conditions[]`はACTのLoader / runtimeでは未対応である。Condition共通Resolverと前列TypeはAUTOへ接続済みだが、ACTには未接続である。対応時は共通Resolverを再利用し、ACTのタイミング・VALIDATE・mutation前再検証とLoader許可を同時に揃える。
 - Effect validationはResolverに共通化済みだが、入力待ちや複数stepを持つACT Effectのexecutionは`GameEngine`のACT分岐に残る。Type増加時に登録型への再分離を検討する。
