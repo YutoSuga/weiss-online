@@ -156,3 +156,7 @@ MAINのQueryは、選択可否とゲームActionの実行可否を分離する�
 `GameEngine.moveCard()`はcollection remove / insert、Card表示metadata更新、通常Zoneのreindex（Stage座標は維持）を完了してから`CARD_MOVED`を発行する。`changeCardPosition()`は値が変わる場合だけ変更完了後に発行する。`enterPhase()`は旧phaseの`PHASE_ENDED`をphase更新前、新phaseの`PHASE_STARTED`を更新後・固有Process開始前に発行する。`declareAttackEvent()`は将来のAttack宣言確定境界用であり、F-5BではAttack Processを実装しない。
 
 現在位置の正本はPlayer / Deckのcollection membershipである。`locateCard(instanceId)`は全collectionを読み取り、所在がちょうど1件でなければinvariant違反とする。Cardへ`currentLocation` / `previousLocation`は追加しない。`CARD_MOVED.from/to`だけを発生時snapshotとして保持する。
+
+## Pending AUTO描画用Query
+
+`GameEngine.render()`は`getPendingAutoOptions()`で評価した`{ pending, card, ability, usable, disabledReason }[]`をRendererの第2引数`{ pendingAutoOptions }`として渡す。Rendererは提示結果を表示し、使用可否を再計算しない。結果は保存Stateではなく現在Stateからの一時Queryである。再検証時点とCondition未対応ガードは[AUTO能力共通](../対戦画面/カード能力/自動効果/AUTO能力共通.md)を正本とする。

@@ -79,7 +79,7 @@ Interrupt Process
 
 F-5BのGame Event / Trigger Detection / Pending生成に続き、F-5Cで単一PendingAutoCollection、Check Timing、Turn / Non-Turn順、1件ずつのAUTO選択、共通Prepared Cost境界、AUTO Processへの移管と選択UIまで完了しました。F-5D-1で標準アンコール、F-5D-2でAUTO①、F-5D-3でAUTO②の複合Cost・山札検索を実装し、Follow-upでCost境界、Rule割り込み後のresume、Pending AUTO提示タイミングを修正しました。F-5全体は未完了です。
 
-**NEXT（推奨）**：Pending AUTOの使用可否判定とRendererの表示責務を整理してから、汎用Condition基盤へ進みます。現在はRendererにもCost / Effect・アンコール対象判定が残り、AUTOの非空`conditions[]`はLoaderで受理されても評価されません。設計上の責務を実装済みと混同しないでください。詳細は[今回の整合確認結果](docs/８．修正方針_テスト方針/現行実装ドキュメント整合_修正結果.md)と[AUTO能力共通](docs/１．設計書/対戦画面/カード能力/自動効果/AUTO能力共通.md)を参照してください。
+**NEXT（推奨）**：汎用Condition基盤へ進みます。Pending AUTOの使用可否はEngineへ集約し、Rendererは評価済み候補の表示のみを担当します。AUTOの非空`conditions[]`は暫定fail-fastで未対応データのsilent ignoreを防ぎますが、Condition評価自体は未実装です。詳細は[責務整理の修正結果](docs/８．修正方針_テスト方針/PendingAUTO_availability責務整理_修正結果.md)と[AUTO能力共通](docs/１．設計書/対戦画面/カード能力/自動効果/AUTO能力共通.md)を参照してください。
 
 現在、CLOCKフェイズの完了後には以下の流れが成立します。
 
@@ -126,7 +126,7 @@ CLIMAX
 - [x] **Phase F-5D-1 RULE AUTO / 標準3コストアンコール（COMPLETE）**
 - [x] **Phase F-5D-2 PRINTED AUTO①代表実装（COMPLETE）**
 - [x] **Phase F-5D-3 PRINTED AUTO②・複合Cost・山札検索とFollow-up（COMPLETE）**
-- [ ] Pending AUTO availability / Renderer責務整理
+- [x] Pending AUTO availability / Renderer責務整理
 - [ ] 汎用Condition基盤
 - [ ] Phase F-6 CONTINUOUS Ability基盤
 
@@ -197,7 +197,7 @@ F-4AでStage上のACT検出、使用可能判定、`ACT_ABILITY` Process、Cost 
 - **F-5B（COMPLETE）**：5種類のGame EventからTriggerを検出し、PRINTED / RULE由来のPending AUTOを生成する基盤
 - **F-5C（COMPLETE）**：Rule Check安定化後のPending AUTO提示、Turn / Non-Turn順、AUTO選択、Prepared CostとAUTO Process移管
 - **F-5D-1 / F-5D-2 / F-5D-3（COMPLETE）**：標準アンコール、AUTO①、AUTO②とFollow-up
-- **次の課題**：Pending AUTO availability / Renderer責務整理、汎用Condition基盤。選択対象を持つCost handlerやGRANTED source等も未実装
+- **次の課題**：汎用Condition基盤。選択対象を持つCost handlerやGRANTED source等も未実装
 - **F-6 CONTINUOUS Ability基盤**：GameStateや盤面状態に応じて継続的に状態を評価する基盤
 
 ## プレイ画面 / Zone

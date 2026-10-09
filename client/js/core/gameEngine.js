@@ -2150,7 +2150,8 @@ export class GameEngine {
       .filter(({ masterPlayerId }) => masterPlayerId === process.playerId)
       .map((pending) => {
         const { card, ability } = this.#resolvePendingAuto(pending);
-        return { pending, card, ability, disabledReason: this.#getPendingAutoDisabledReason(pending, card, ability) };
+        const disabledReason = this.#getPendingAutoDisabledReason(pending, card, ability);
+        return { pending, card, ability, usable: disabledReason === null, disabledReason };
       });
   }
 
@@ -2322,6 +2323,8 @@ export class GameEngine {
 
   #getPendingAutoDisabledReason(pending, card, ability) {
     if (!ability) return "能力定義が見つかりません。";
+    // Loaderを通さず生成された定義も、未実装Conditionを無視して実行しない。
+    if (ability.conditions?.length > 0) return "未対応の使用条件があります。";
     if (pending.source.kind === ABILITY_SOURCE.RULE && pending.source.abilityId === "STANDARD_ENCORE_3") {
       if (!card) return "アンコール対象が見つかりません。";
       const located = this.locateCard(card.instanceId);
@@ -2578,7 +2581,7 @@ export class GameEngine {
    * @returns {void}
    */
   render() {
-    this.renderer.render(this.gameState);
+    this.renderer.render(this.gameState, { pendingAutoOptions: this.getPendingAutoOptions() });
     this.renderListeners.forEach((listener) => listener(this.gameState));
   }
 
