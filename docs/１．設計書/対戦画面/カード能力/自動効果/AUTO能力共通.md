@@ -118,6 +118,8 @@ AUTO解決中のEvent dispatcherは停止しない。追加Pendingは即時生�
 
 Cost Resolver、Prepared Cost、対応Cost Type、複数Costのpayment boundaryは[カード能力共通](../カード能力共通.md#3-cost共通設計)を正本とする。AUTOは`PENDING_AUTO`上で必要な選択をmutationなしで準備し、commit直前に再検証する。Pendingをconsumeして`AUTO_ABILITY`へ移管した後が不可逆境界である。
 
+表示・select・Prepared commit直前に、先行Costによる仮想資源消費を含めて全体を再評価する。全体不足では使用不可理由を表示し、Pendingをconsumeせず、使用しない操作は維持する。AUTO payment直前も同じ全体判定で防御し、item間に再Query / Rule Checkを挟まない。
+
 ## 8. UI責務
 
 Engineの`getPendingAutoOptions()`が現在のSELECT_AUTO候補を評価し、`{ pending, card, ability, usable, disabledReason, reasonCategory }`を返す。`GameEngine.render()`は毎回このQueryを実行し、`renderer.render(gameState, { pendingAutoOptions })`へ渡す。Rendererは評価済み候補からカード名、能力本文、Cost、選択状態を表示するだけで、Cost / Effect Resolver、RULE判定、source探索、collection所在判定を行わない。ControllerはPending ID / Prepared CostをEngineへ渡す。正本はDOMに置かない。各Pendingに「使用」「使用しない」を置き、使用不能理由がある場合は「使用」だけをdisabledにする。「使用しない」は常に選択可能とし、モーダル全体の「閉じる」は置かない。Cost選択では「効果選択に戻る」を提供する。

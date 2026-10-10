@@ -8,8 +8,12 @@ const payStockCostHandler = Object.freeze({
       throw new TypeError("PAY_STOCK amount must be a positive integer.");
     }
   },
-  getDisabledReason(cost, { player }) {
-    return player.stock.length < cost.amount ? "ストックが足りません。" : null;
+  getDisabledReason(cost, { player }, resources) {
+    const count = resources?.stockCount ?? player.stock.length;
+    return count < cost.amount ? "ストックが足りません。" : null;
+  },
+  consumeAvailability(cost, resources) {
+    resources.stockCount -= cost.amount;
   },
   pay(cost, { player }) {
     for (let index = 0; index < cost.amount; index += 1) {
@@ -24,10 +28,14 @@ const payStockCostHandler = Object.freeze({
 
 const restSelfCostHandler = Object.freeze({
   validate() {},
-  getDisabledReason(_cost, { sourceCard }) {
-    return sourceCard?.position !== POSITION.STAND
+  getDisabledReason(_cost, { sourceCard }, resources) {
+    const position = resources ? resources.sourcePosition : sourceCard?.position;
+    return position !== POSITION.STAND
       ? "このカードはスタンドしていません。"
       : null;
+  },
+  consumeAvailability(_cost, resources) {
+    resources.sourcePosition = POSITION.REST;
   },
   pay(_cost, { sourceCard }) {
     sourceCard.setPosition(POSITION.REST);
@@ -40,8 +48,12 @@ const moveDeckTopToClockCostHandler = Object.freeze({
       throw new TypeError("MOVE_DECK_TOP_TO_CLOCK amount must be 1.");
     }
   },
-  getDisabledReason(_cost, { player }) {
-    return player.deck.cards.length === 0 ? "山札にカードがありません。" : null;
+  getDisabledReason(_cost, { player }, resources) {
+    const count = resources?.deckCount ?? player.deck.cards.length;
+    return count === 0 ? "山札にカードがありません。" : null;
+  },
+  consumeAvailability(_cost, resources) {
+    resources.deckCount -= 1;
   },
   pay(_cost, { player }) {
     const card = player.deck.draw();
@@ -67,16 +79,26 @@ export function getCostHandler(cost) {
 }
 
 export function getCostsDisabledReason(costs, context) {
-  for (const cost of costs) {
-    const reason = getCostHandler(cost).getDisabledReason(cost, context);
+  // 全schemaを先に検証し、先行Cost不足で後続の不正定義を隠さない。
+  const handlers = costs.map(getCostHandler);
+  // 判定に必要な値だけを持つローカル状態。実Card / collectionには触れない。
+  const resources = {
+    stockCount: context.player?.stock?.length,
+    deckCount: context.player?.deck?.cards?.length,
+    sourcePosition: context.sourceCard?.position,
+  };
+  for (const [index, cost] of costs.entries()) {
+    const handler = handlers[index];
+    const reason = handler.getDisabledReason(cost, context, resources);
     if (reason) return reason;
+    handler.consumeAvailability(cost, resources);
   }
   return null;
 }
 
 /**
  * mutationせずにCost対象選択を準備する共通境界。
- * 現在のPAY_STOCK / REST_SELFは対象が一意なので選択要求は空になる。
+ * 現在の3Typeは対象が一意なので選択要求は空になる。
  * 将来のACT/AUTO選択Cost handlerはprepareSelectionを実装してここへ合流する。
  */
 export function prepareCostSelections(costs, context) {
@@ -101,7 +123,7 @@ export function getPreparedCostsDisabledReason(costs, preparedCosts, context) {
   return getCostsDisabledReason(costs, context);
 }
 
-/** 呼出側が全Costを先に検証した後だけ使用する。記載順に支払う。 */
+/** 全体をnon-mutatingで再検証してから、Query / Rule Checkを挟まず記載順に支払う。 */
 export function payCosts(costs, context, onPaid = undefined) {
   const reason = getCostsDisabledReason(costs, context);
   if (reason) throw new Error(reason);
