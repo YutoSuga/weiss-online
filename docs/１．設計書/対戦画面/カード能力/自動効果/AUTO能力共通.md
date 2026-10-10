@@ -120,6 +120,8 @@ Cost Resolver、Prepared Cost、対応Cost Type、複数Costのpayment boundary�
 
 表示・select・Prepared commit直前に、先行Costによる仮想資源消費を含めて全体を再評価する。全体不足では使用不可理由を表示し、Pendingをconsumeせず、使用しない操作は維持する。AUTO payment直前も同じ全体判定で防御し、item間に再Query / Rule Checkを挟まない。
 
+Effect schema / AUTO capabilityも共通validatorで検証し、Loader bypassの未対応定義はEFFECT理由で使用不可にする。表示・select・Prepared commitでPendingをconsumeせず、PAY_COST直前にも防御し、Effect実行入口で最後に検証する。BRAINSTORM_REVEAL / EFFECT_GROUPはAUTO未対応、SEARCH_DECKのmaxSelectは数値のみ。ENCORE_RETURNは元slotを持つRULE文脈に限定する。対応範囲の正本は[カード能力共通](../カード能力共通.md#42-effect-resolver--handlerと対応type)であり、共通EffectをPRINTED / RULE別に複製しない。
+
 ## 8. UI責務
 
 Engineの`getPendingAutoOptions()`が現在のSELECT_AUTO候補を評価し、`{ pending, card, ability, usable, disabledReason, reasonCategory }`を返す。`GameEngine.render()`は毎回このQueryを実行し、`renderer.render(gameState, { pendingAutoOptions })`へ渡す。Rendererは評価済み候補からカード名、能力本文、Cost、選択状態を表示するだけで、Cost / Effect Resolver、RULE判定、source探索、collection所在判定を行わない。ControllerはPending ID / Prepared CostをEngineへ渡す。正本はDOMに置かない。各Pendingに「使用」「使用しない」を置き、使用不能理由がある場合は「使用」だけをdisabledにする。「使用しない」は常に選択可能とし、モーダル全体の「閉じる」は置かない。Cost選択では「効果選択に戻る」を提供する。

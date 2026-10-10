@@ -22,7 +22,7 @@ GameEngineは能力の所有と現在の使用可能性を分離する。
 3. sourceが自分のStageに存在。
 4. Ability IDで引いた定義が`ACT`。
 5. `conditions[]`が空（現行は非空Condition未対応）。
-6. 全Costが支払可能で、全Effect schemaが対応範囲。
+6. 全Costが支払可能で、全Effect schemaとACT実行capabilityが対応範囲。
 
 Costは単独itemの可否ではなく、前itemの仮想消費を反映した記載順の全体判定である。Query、VALIDATE、payCosts直前とも[共通Cost契約](../カード能力共通.md#32-複数costとpayment-boundary)を利用し、全体不足ならCost mutationを開始しない。
 
@@ -63,7 +63,11 @@ ACT contextは`sourceCardInstanceId / abilityId / costIndex / effectIndex / effe
 
 Stage Card選択時、右上詳細はACTごとに本文、使用/使用不可ボタン、不可理由を表示する。ControllerはAbility IDをEngineへ渡すだけでCost / Effectを変更しない。完了後のrenderでZone、position、再評価したdisabled状態を反映する。
 
-## 6. 現行の制約
+## 6. Effect capability
+
+ACT Query / VALIDATEとPAY_COST直前に共通Effect validatorで対応範囲を確認する。直接model生成やPAY_COST stepからの開始でも未対応EffectをCost前に拒否する。Effect実行入口にも最終防御を置く。BRAINSTORM_REVEAL / トップレベルEFFECT_GROUPはACT対応、Group内GroupとAUTO専用Effectは未対応。対応表とsingle source of truthは[カード能力共通](../カード能力共通.md#42-effect-resolver--handlerと対応type)を参照する。
+
+## 7. 現行の制約
 
 - 正式対応Cost / Effectの最新一覧は[カード能力共通](../カード能力共通.md#3-cost共通設計)のみを正本とし、本書に複製しない。
 - 非空`conditions[]`はACTのLoader / runtimeでは未対応である。Condition共通Resolverと前列TypeはAUTOへ接続済みだが、ACTには未接続である。対応時は共通Resolverを再利用し、ACTのタイミング・VALIDATE・mutation前再検証とLoader許可を同時に揃える。

@@ -30,7 +30,7 @@ import {
   getEffectsDisabledReason,
   resolveEffect,
   resolveEffectResult,
-  validateEffects,
+  validateAbilityEffects,
 } from "../abilities/effectResolver.js";
 import {
   DEFEAT_REASON,
@@ -807,8 +807,10 @@ export class GameEngine {
     if (!registeredAbility || registeredAbility !== ability) return "起動能力が見つかりません。";
     if (ability.conditions.length > 0) return "未対応の使用条件があります。";
     try {
-      validateEffects(ability.effects);
-      return getCostsDisabledReason(ability.costs, { player, sourceCard: card });
+      const costReason = getCostsDisabledReason(ability.costs, { player, sourceCard: card });
+      return costReason ?? getEffectsDisabledReason(ability.effects, {
+        abilityType: ability.type, gameState: this.gameState, playerId, sourceCard: card,
+      });
     } catch (error) {
       return error instanceof Error ? error.message : "未対応の能力です。";
     }
@@ -871,8 +873,10 @@ export class GameEngine {
           else if (!ability || ability.type !== ABILITY_TYPE.ACT) reason = "起動能力が見つかりません。";
           else if (ability.conditions.length > 0) reason = "未対応の使用条件があります。";
           else {
-            validateEffects(ability.effects);
-            reason = getCostsDisabledReason(ability.costs, { player, sourceCard });
+            reason = getCostsDisabledReason(ability.costs, { player, sourceCard }) ??
+              getEffectsDisabledReason(ability.effects, {
+                abilityType: ability.type, gameState: this.gameState, playerId: process.playerId, sourceCard,
+              });
           }
           if (reason) {
             this.processManager.popProcess();
@@ -899,6 +903,10 @@ export class GameEngine {
           const sourceCard = getSource();
           const ability = getAbility();
           const sourcePosition = sourceCard.position;
+          const effectReason = getEffectsDisabledReason(ability.effects, {
+            abilityType: ability.type, gameState: this.gameState, playerId: process.playerId, sourceCard,
+          });
+          if (effectReason) throw new Error(effectReason);
           // 1件も変更する前に全Costを再検証し、その後だけ記載順に一括支払いする。
           payCosts(ability.costs, { player, sourceCard }, (_cost, index) => {
             process.context.costIndex = index + 1;
@@ -970,9 +978,10 @@ export class GameEngine {
   }
 
   #resolveActEffect(effect, process, player, sourceCard) {
+    validateAbilityEffects([effect], ABILITY_TYPE.ACT);
     const results = process.context.effectResults;
     if (effect.type === EFFECT_TYPE.TEST_LOG) {
-      resolveEffect(effect, { gameEngine: this, player, playerId: process.playerId, sourceCard });
+      resolveEffect(effect, { abilityType: ABILITY_TYPE.ACT, gameEngine: this, player, playerId: process.playerId, sourceCard });
       return true;
     }
     if (effect.type === EFFECT_TYPE.BRAINSTORM_REVEAL) {
@@ -2240,6 +2249,11 @@ export class GameEngine {
     const player = this.gameState.players[process.playerId];
     while (this.processManager.getCurrentProcess() === process) {
       if (process.step === AUTO_ABILITY_STEP.PAY_COST) {
+        const effectReason = getEffectsDisabledReason(ability.effects, {
+          abilityType: ABILITY_TYPE.AUTO, gameState: this.gameState, playerId: process.playerId,
+          sourceCard: card, pendingAuto: process.context.pendingAuto,
+        });
+        if (effectReason) throw new Error(effectReason);
         if (process.context.payCost) {
           const reason = getPreparedCostsDisabledReason(ability.costs, process.context.preparedCosts, { player, sourceCard: card });
           if (reason) throw new Error(reason); // mutation直前の最終再検証
@@ -2259,6 +2273,7 @@ export class GameEngine {
         if (process.context.effectIndex >= ability.effects.length) process.step = AUTO_ABILITY_STEP.COMPLETE;
         else {
           const effect = ability.effects[process.context.effectIndex];
+          validateAbilityEffects([effect], ABILITY_TYPE.AUTO, { sourceKind: process.context.pendingAuto.source.kind });
           if (effect.type === EFFECT_TYPE.REPLACE_OPPONENT_STOCK_TOP) {
             process.context.effectIndex += 1;
             this.#startOpponentStockReplacement(process, effect);
@@ -2284,7 +2299,7 @@ export class GameEngine {
             this.#reindexCards(player.deck.cards);
             process.context.effectResults[effect.id] = { shuffled: true };
           } else {
-            resolveEffect(effect, { gameEngine: this, player, playerId: process.playerId, sourceCard: card, pendingAuto: process.context.pendingAuto });
+            resolveEffect(effect, { abilityType: ABILITY_TYPE.AUTO, gameEngine: this, player, playerId: process.playerId, sourceCard: card, pendingAuto: process.context.pendingAuto });
           }
           process.context.effectIndex += 1;
           process.step = AUTO_ABILITY_STEP.CHECK_POINT_AFTER_EFFECT;
@@ -2341,7 +2356,8 @@ export class GameEngine {
     });
     if (costReason) return unavailable(AVAILABILITY_REASON_CATEGORY.COST, costReason);
     const effectReason = getEffectsDisabledReason(ability.effects, {
-      gameState: this.gameState, playerId: pending.masterPlayerId, sourceCard: card,
+      abilityType: ABILITY_TYPE.AUTO, gameState: this.gameState, playerId: pending.masterPlayerId,
+      sourceCard: card, pendingAuto: pending,
     });
     if (effectReason) return unavailable(AVAILABILITY_REASON_CATEGORY.EFFECT, effectReason);
     return { usable: true, disabledReason: null, reasonCategory: null };

@@ -75,7 +75,7 @@ Interrupt Process
 
 ## 現在地点
 
-**Phase F-5 AUTO Ability：完了前Follow-up対応中（複合Cost全体判定を修正）**
+**Phase F-5 AUTO Ability：完了前Follow-up対応中（複合Cost・Effect実行範囲を修正）**
 
 F-5BのGame Event / Trigger Detection / Pending生成に続き、F-5Cで単一PendingAutoCollection、Check Timing、Turn / Non-Turn順、1件ずつのAUTO選択、共通Prepared Cost境界、AUTO Processへの移管と選択UIまで完了しました。F-5D-1で標準アンコール、F-5D-2でAUTO①、F-5D-3でAUTO②の複合Cost・山札検索を実装し、Follow-upでCost境界、Rule割り込み後のresume、Pending AUTO提示タイミングを修正しました。F-5全体は未完了です。
 
@@ -86,10 +86,12 @@ Condition共通Resolverと最初の`SOURCE_IS_FRONT_ROW`を実装しました。
 ### F-5 COMPLETE前Follow-up
 
 - [x] 複合Cost全体の支払可能性（記載順のnon-mutating事前判定・部分支払い防止）
-- [ ] Ability Typeの定義とEffect runtime対応範囲の整合
+- [x] Ability Typeの定義とEffect runtime対応範囲の整合
 - [ ] Phase AUTOの提示・Phase終了後のresume
 - [ ] turn boundary Eventの手番snapshot
 - [ ] mutation / Game Event発行範囲の整合
+
+Effect実行範囲の詳細は[修正結果](docs/８．修正方針_テスト方針/AbilityEffect実行範囲整合_修正結果.md)を参照してください。F-5全体は引き続き未完了です。
 
 今回のCost修正の詳細は[修正結果](docs/８．修正方針_テスト方針/複合Cost全体判定_修正結果.md)を参照してください。ACTの非空Conditionや新しい個別Typeは別のFollow-upとし、F-5完了条件と混同しません。
 
