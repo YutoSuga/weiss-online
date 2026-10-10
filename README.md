@@ -75,13 +75,23 @@ Interrupt Process
 
 ## 現在地点
 
-**Phase F-5D-3：CHA/W40-026SP AUTO②とFollow-up修正まで COMPLETE**
+**Phase F-5 AUTO Ability：完了前Follow-up対応中（複合Cost全体判定を修正）**
 
 F-5BのGame Event / Trigger Detection / Pending生成に続き、F-5Cで単一PendingAutoCollection、Check Timing、Turn / Non-Turn順、1件ずつのAUTO選択、共通Prepared Cost境界、AUTO Processへの移管と選択UIまで完了しました。F-5D-1で標準アンコール、F-5D-2でAUTO①、F-5D-3でAUTO②の複合Cost・山札検索を実装し、Follow-upでCost境界、Rule割り込み後のresume、Pending AUTO提示タイミングを修正しました。F-5全体は未完了です。
 
 Condition共通Resolverと最初の`SOURCE_IS_FRONT_ROW`を実装しました。Pending AUTOはCondition → Cost → Effectを現在Stateで再評価し、Rendererは評価結果だけを表示します。ACTの非空Conditionと代表実カード能力全体は未実装です。
 
-**NEXT（推奨）**：代表実カードの公式本文を確認し、Condition以外に不足する相手Phase Trigger・指定カードCost・一時的能力付与等を分解して段階的に実装します。追加Condition Typeを先行して増やす必要はありません。詳細は[Condition基盤の修正結果](docs/８．修正方針_テスト方針/Condition基盤_前列Condition_修正結果.md)と[AUTO能力共通](docs/１．設計書/対戦画面/カード能力/自動効果/AUTO能力共通.md)を参照してください。
+**NEXT**：F-5完了前Follow-upを解消し、完了レビューで対応範囲を確定します。個別カード能力の網羅より、既存基盤の実行契約とゲーム進行の完成を優先します。
+
+### F-5 COMPLETE前Follow-up
+
+- [x] 複合Cost全体の支払可能性（記載順のnon-mutating事前判定・部分支払い防止）
+- [ ] Ability Typeの定義とEffect runtime対応範囲の整合
+- [ ] Phase AUTOの提示・Phase終了後のresume
+- [ ] turn boundary Eventの手番snapshot
+- [ ] mutation / Game Event発行範囲の整合
+
+今回のCost修正の詳細は[修正結果](docs/８．修正方針_テスト方針/複合Cost全体判定_修正結果.md)を参照してください。ACTの非空Conditionや新しい個別Typeは別のFollow-upとし、F-5完了条件と混同しません。
 
 現在、CLOCKフェイズの完了後には以下の流れが成立します。
 
@@ -200,8 +210,14 @@ F-4AでStage上のACT検出、使用可能判定、`ACT_ABILITY` Process、Cost 
 - **F-5B（COMPLETE）**：5種類のGame EventからTriggerを検出し、PRINTED / RULE由来のPending AUTOを生成する基盤
 - **F-5C（COMPLETE）**：Rule Check安定化後のPending AUTO提示、Turn / Non-Turn順、AUTO選択、Prepared CostとAUTO Process移管
 - **F-5D-1 / F-5D-2 / F-5D-3（COMPLETE）**：標準アンコール、AUTO①、AUTO②とFollow-up
-- **次の課題**：代表実カードに必要なTrigger / Cost / Effect基盤の分解、ACTの非空Condition対応。選択対象を持つCost handlerやGRANTED source等も未実装
+- **次の課題**：上記F-5完了前Follow-upと完了レビュー。ACTの非空Condition、選択Cost、GRANTED source等は別途必要になった時点で拡張
 - **F-6 CONTINUOUS Ability基盤**：GameStateや盤面状態に応じて継続的に状態を評価する基盤
+
+### 中期開発方針
+
+F-5の残課題解消・完了レビュー → 正式ロードマップ更新 → 最小CONTINUOUS基盤 → CLIMAX / ATTACK / Damage / Battle / Encore / ENDのゲーム進行 → 1ターン完走 → Local Full Match → Deck / Game Setup → Online基盤 → 友人同士のOnline Match、の順を基本方針とします。
+
+最小CONTINUOUSはゲーム進行に必要な範囲から着手し、全カード能力の網羅・本格的Deck Builder・スマホUIのPolishを前提にしません。F-7以降のPhase番号と詳細な分割・完了条件は、F-5完了レビュー後に正式化します。
 
 ## プレイ画面 / Zone
 

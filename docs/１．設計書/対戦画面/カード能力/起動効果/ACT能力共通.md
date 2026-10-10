@@ -24,6 +24,8 @@ GameEngineは能力の所有と現在の使用可能性を分離する。
 5. `conditions[]`が空（現行は非空Condition未対応）。
 6. 全Costが支払可能で、全Effect schemaが対応範囲。
 
+Costは単独itemの可否ではなく、前itemの仮想消費を反映した記載順の全体判定である。Query、VALIDATE、payCosts直前とも[共通Cost契約](../カード能力共通.md#32-複数costとpayment-boundary)を利用し、全体不足ならCost mutationを開始しない。
+
 これは現行実装の対応範囲であり、ACTを永久にMAIN専用と定義するものではない。
 
 ## 3. ACT_ABILITY Process
