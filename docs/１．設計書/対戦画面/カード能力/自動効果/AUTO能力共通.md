@@ -172,3 +172,11 @@ Loaderは対応Typeだけを許可し、runtimeでも未知/不正Conditionを�
 - 相手Attack開始を扱う場合、既存`PHASE_STARTED`とturnPlayerIdの利用・相手手番照合を設計する。現在のphase照合だけでは相手/自分を区別しない。Attack処理本体を今回追加したものと扱わない。
 - 指定カードDiscard Cost、正面キャラ選択、一時的能力付与・期限管理、攻撃制約は各基盤の独立タスクとする。山札検索は既存filter / selection / result経路の適用範囲を確認する。
 - 追加Condition Typeは次の実カードが要求したものだけを追加する。ACT対応も実際の対象能力とタイミングを確定して行う。
+
+## Phase開始 / 終了AUTOと通常進行へのresume
+
+PHASE_ENDEDは終了操作確定後・Phase値切替前、PHASE_STARTEDは新Phase値確定後・固有処理開始前に発行する。各EventはPending生成までを行い、提示は続くCheck Timingで扱う。終了Eventの全Pending処理後に新Phaseへ入り、開始Eventの全Pending処理後に固有Process / 入力待ちを開始する。
+
+この間[PHASE_TRANSITION](../../../システム共通/プロセス.md#phase_transition-processphase-auto--resume)が進行を保持する。使用・不使用、使用不可Pending、複数Pending、解決中追加、Turn / Non-Turn順は通常AUTOと同じ。Rule割り込み中も親AUTOへ先に戻し、Ability中の新Pending提示抑止を緩めない。全件処理後のresumeは一度だけで、Game Overなら進行を停止する。Renderer / ControllerへPhase専用の提示判定は置かない。
+
+Phase Trigger schema拡張、END境界の手番snapshot、mutation / CARD_MOVED整合は別タスクとする。CLIMAX / ATTACK等の固有処理も未実装のままである。
