@@ -160,3 +160,7 @@ MAINのQueryは、選択可否とゲームActionの実行可否を分離する�
 ## Pending AUTO描画用Query
 
 `GameEngine.render()`は`getPendingAutoOptions()`で評価した`{ pending, card, ability, usable, disabledReason, reasonCategory }[]`をRendererの第2引数`{ pendingAutoOptions }`として渡す。Rendererは提示結果を表示し、使用可否を再計算しない。結果は保存Stateではなく現在Stateからの一時Queryである。再検証時点とCondition Type / runtime安全性は[AUTO能力共通](../対戦画面/カード能力/自動効果/AUTO能力共通.md)を正本とする。
+
+## Ability Effect capability API
+
+Effect HandlerのsupportedAbilityTypesと必要なvalidateCapabilityが実行対応情報の正本である。validateEffectsはschemaだけ、validateAbilityEffectsはschema後にAbility Type / Group深度 / source / 対応parameter形式を検証する。LoaderとEngineのavailability・payment前・Effect実行防御は同じ情報を使い、Rendererへ判断を追加しない。resolveEffectのcontextはabilityTypeを必須とし、対応表は[カード能力共通](../対戦画面/カード能力/カード能力共通.md#42-effect-resolver--handlerと対応type)を参照する。

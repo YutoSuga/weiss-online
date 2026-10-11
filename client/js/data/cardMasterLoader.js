@@ -3,7 +3,7 @@ import { CardMasterRegistry } from "../models/cardMasterRegistry.js";
 import { ABILITY_KEYWORD, ABILITY_TYPE } from "../constants/ability.js";
 import { getCostHandler } from "../abilities/costResolver.js";
 import { validateConditions } from "../abilities/conditionResolver.js";
-import { validateEffects } from "../abilities/effectResolver.js";
+import { validateAbilityEffects } from "../abilities/effectResolver.js";
 import { AUTO_TRIGGER_SUBJECT, GAME_EVENT_TYPE } from "../constants/gameEvent.js";
 import { PHASE_VALUES } from "../constants/phase.js";
 import { ZONE_VALUES } from "../constants/zone.js";
@@ -39,6 +39,9 @@ export function validateCardMasterDefinitions(value) {
       throw new TypeError(`CardMaster data[${index}].abilities must be an array.`);
     }
     definition.abilities.forEach((ability, abilityIndex) => {
+      if (!Object.values(ABILITY_TYPE).includes(ability?.type)) {
+        throw new RangeError(`CardMaster data[${index}].abilities[${abilityIndex}] has an unsupported Ability Type: ${String(ability?.type)}.`);
+      }
       if (ability?.type === ABILITY_TYPE.AUTO) {
         const conditions = ability.conditions === undefined ? [] : ability.conditions;
         try {
@@ -63,25 +66,32 @@ export function validateCardMasterDefinitions(value) {
           throw new TypeError("AUTO costs and effects must be arrays.");
         }
         ability.costs.forEach(getCostHandler);
-        validateEffects(ability.effects);
       }
-      if (ability?.type !== ABILITY_TYPE.ACT) return;
+      if (ability?.type === ABILITY_TYPE.ACT) {
+        try {
+          const keywords = ability.keywords ?? [];
+          if (!Array.isArray(keywords) || keywords.some((keyword) => !Object.values(ABILITY_KEYWORD).includes(keyword))) {
+            throw new RangeError("ACT keywords contain an unsupported value.");
+          }
+          if (!Array.isArray(ability.conditions) || ability.conditions.length > 0) {
+            throw new RangeError("ACT conditions must be an empty array in F-4A.");
+          }
+          if (!Array.isArray(ability.costs) || !Array.isArray(ability.effects)) {
+            throw new TypeError("ACT costs and effects must be arrays.");
+          }
+          ability.costs.forEach(getCostHandler);
+        } catch (error) {
+          throw new TypeError(
+            `CardMaster data[${index}].abilities[${abilityIndex}] is not executable: ${error.message}`,
+            { cause: error },
+          );
+        }
+      }
       try {
-        const keywords = ability.keywords ?? [];
-        if (!Array.isArray(keywords) || keywords.some((keyword) => !Object.values(ABILITY_KEYWORD).includes(keyword))) {
-          throw new RangeError("ACT keywords contain an unsupported value.");
-        }
-        if (!Array.isArray(ability.conditions) || ability.conditions.length > 0) {
-          throw new RangeError("ACT conditions must be an empty array in F-4A.");
-        }
-        if (!Array.isArray(ability.costs) || !Array.isArray(ability.effects)) {
-          throw new TypeError("ACT costs and effects must be arrays.");
-        }
-        ability.costs.forEach(getCostHandler);
-        validateEffects(ability.effects);
+        validateAbilityEffects(ability.effects === undefined ? [] : ability.effects, ability.type);
       } catch (error) {
         throw new TypeError(
-          `CardMaster data[${index}].abilities[${abilityIndex}] is not executable: ${error.message}`,
+          `CardMaster data[${index}].abilities[${abilityIndex}] Ability "${ability.id}" (${ability.type}) has invalid effects: ${error.message}`,
           { cause: error },
         );
       }
