@@ -21,6 +21,7 @@ import {
   SELECT_ZONE_CARD_STEP,
   SWAP_STAGE_STEP,
   PENDING_AUTO_STEP,
+  PHASE_TRANSITION_STEP,
 } from "../constants/process.js";
 import { ABILITY_SOURCE, ABILITY_TYPE, AVAILABILITY_REASON_CATEGORY, EFFECT_TYPE } from "../constants/ability.js";
 import { getConditionsDisabledReason } from "../abilities/conditionResolver.js";
@@ -291,19 +292,7 @@ export class GameEngine {
    * @returns {void}
    */
   nextPhase() {
-    if (this.gameState.gameResult.finished) {
-      throw new Error("Cannot advance phases after the game has finished.");
-    }
-    if (this.gameState.mulliganState.active) {
-      throw new Error("Cannot advance phases during mulligan.");
-    }
-
-    if (this.#isWaitingForProcessInput()) {
-      throw new Error("Cannot advance phases while a Process is waiting for input.");
-    }
-    if (this.#hasPendingInterruptSelection()) {
-      throw new Error("Cannot advance phases while interrupt order is pending.");
-    }
+    this.#assertPhaseProgression();
 
     const nextPhase = this.getNextPhase();
     this.enterPhase(nextPhase);
@@ -331,16 +320,17 @@ export class GameEngine {
   }
 
   /**
-   * 指定フェイズへ入り、そのフェイズ固有の開始処理後に再描画する。
+   * 指定フェイズへの継続を保持し、Phase AUTO処理後に固有処理を開始する。
    *
    * @private
    * ENDからSTANDへ入る場合は、先にターン交代を行う。
    *
    * @param {string} phase
    * @param {{turnTransitionHandled?: boolean}} [options]
-   * @returns {void}
+   * @returns {import("./processManager.js").Process|undefined}
    */
   enterPhase(phase, { turnTransitionHandled = false } = {}) {
+    this.#assertPhaseProgression();
     if (!PHASE_VALUES.includes(phase)) {
       throw new RangeError(`Unknown phase: ${phase}.`);
     }
@@ -354,42 +344,77 @@ export class GameEngine {
       return;
     }
 
-    const previousPhase = this.gameState.phase;
-    if (previousPhase !== phase) {
-      this.emitGameEvent(GAME_EVENT_TYPE.PHASE_ENDED, this.gameState.turn.player, {
-        phase: previousPhase,
-        turnPlayerId: this.gameState.turn.player,
-        turnNumber: this.gameState.turn.number,
-      });
-    }
-    this.gameState.phase = phase;
-    this.#updatePhaseMessageOverlay(phase);
-    if (previousPhase !== phase) {
-      this.emitGameEvent(GAME_EVENT_TYPE.PHASE_STARTED, this.gameState.turn.player, {
-        phase,
-        turnPlayerId: this.gameState.turn.player,
-        turnNumber: this.gameState.turn.number,
-      });
-    }
+    const process = this.processManager.pushProcess({
+      type: PROCESS_TYPE.PHASE_TRANSITION,
+      playerId: this.gameState.turn.player,
+      step: PHASE_TRANSITION_STEP.END_PHASE,
+      status: PROCESS_STATUS.RUNNING,
+      context: { fromPhase: this.gameState.phase, toPhase: phase },
+    });
+    this.executePhaseTransitionProcess();
+    return process;
+  }
 
-    switch (phase) {
-      case PHASE.STAND:
-        this.startStandPhase();
-        break;
-      case PHASE.DRAW:
-        this.startDrawPhase();
-        break;
-      case PHASE.CLOCK:
-        this.startClockPhase();
-        break;
-      case PHASE.MAIN:
-        this.startMainPhase();
-        break;
-      default:
-        break;
+  /** Phase Event後のCheck Timingから、保存した継続位置へ戻る。 */
+  executePhaseTransitionProcess() {
+    const process = this.processManager.getCurrentProcess();
+    if (process?.type !== PROCESS_TYPE.PHASE_TRANSITION || this.gameState.gameResult.finished) return process;
+    const { fromPhase, toPhase } = process.context;
+    while (this.processManager.getCurrentProcess() === process && !this.gameState.gameResult.finished) {
+      switch (process.step) {
+        case PHASE_TRANSITION_STEP.END_PHASE:
+          // 終了操作が確定済み。Eventの再発行を防ぐため次stepを先に保存する。
+          process.step = PHASE_TRANSITION_STEP.CHECK_POINT_AFTER_END;
+          if (fromPhase !== toPhase) {
+            this.emitGameEvent(GAME_EVENT_TYPE.PHASE_ENDED, process.playerId, {
+              phase: fromPhase, turnPlayerId: this.gameState.turn.player, turnNumber: this.gameState.turn.number,
+            });
+          }
+          break;
+        case PHASE_TRANSITION_STEP.CHECK_POINT_AFTER_END:
+          process.step = PHASE_TRANSITION_STEP.ENTER_PHASE;
+          if (this.resolveCheckPoint() !== RULE_CHECK_RESULT.CONTINUE) return process;
+          break;
+        case PHASE_TRANSITION_STEP.ENTER_PHASE:
+          this.gameState.phase = toPhase;
+          this.#updatePhaseMessageOverlay(toPhase);
+          process.step = PHASE_TRANSITION_STEP.CHECK_POINT_AFTER_START;
+          if (fromPhase !== toPhase) {
+            this.emitGameEvent(GAME_EVENT_TYPE.PHASE_STARTED, process.playerId, {
+              phase: toPhase, turnPlayerId: this.gameState.turn.player, turnNumber: this.gameState.turn.number,
+            });
+          }
+          break;
+        case PHASE_TRANSITION_STEP.CHECK_POINT_AFTER_START:
+          process.step = PHASE_TRANSITION_STEP.START_PHASE_PROCESS;
+          if (this.resolveCheckPoint() !== RULE_CHECK_RESULT.CONTINUE) return process;
+          break;
+        case PHASE_TRANSITION_STEP.START_PHASE_PROCESS:
+          // 継続を使い切ってから固有Processを開始。旧transitionを親として残さない。
+          this.processManager.popProcess();
+          switch (toPhase) {
+            case PHASE.STAND: this.startStandPhase(); break;
+            case PHASE.DRAW: this.startDrawPhase(); break;
+            case PHASE.CLOCK: this.startClockPhase(); break;
+            case PHASE.MAIN: this.startMainPhase(); break;
+            default: break; // CLIMAX以降は既存の遷移のみ。固有処理は未実装。
+          }
+          this.render();
+          return process;
+        default:
+          throw new RangeError(`Unknown PHASE_TRANSITION step: ${process.step}.`);
+      }
     }
+    return process;
+  }
 
-    this.render();
+  /** 進行中Processを別のPhase遷移で上書きしない。 */
+  #assertPhaseProgression() {
+    if (this.gameState.gameResult.finished) throw new Error("Cannot advance phases after the game has finished.");
+    if (this.gameState.mulliganState.active) throw new Error("Cannot advance phases during mulligan.");
+    if (this.#isWaitingForProcessInput()) throw new Error("Cannot advance phases while a Process is waiting for input.");
+    if (this.processManager.getCurrentProcess()) throw new Error("Cannot advance phases while a Process is active.");
+    if (this.#hasPendingInterruptSelection()) throw new Error("Cannot advance phases while interrupt order is pending.");
   }
 
   /**
@@ -1389,17 +1414,11 @@ export class GameEngine {
         case MAIN_STEP.END_MAIN:
           this.processManager.updateStep(MAIN_STEP.COMPLETE);
           break;
-        case MAIN_STEP.COMPLETE: {
-          const result = this.completeCurrentProcess();
-          if (
-            result === RULE_CHECK_RESULT.CONTINUE &&
-            !this.gameState.gameResult.finished &&
-            this.gameState.phase === PHASE.MAIN
-          ) {
-            this.nextPhase();
-          }
+        case MAIN_STEP.COMPLETE:
+          // 完了したPhaseをtransitionへ引き継ぎ、Check Timingを継続内に保持する。
+          this.processManager.popProcess();
+          this.nextPhase();
           return mainProcess;
-        }
         default:
           throw new RangeError(`Unknown MAIN_PHASE step: ${mainProcess.step}.`);
       }
@@ -1525,17 +1544,11 @@ export class GameEngine {
           }
           break;
         }
-        case CLOCK_STEP.COMPLETE: {
-          const result = this.completeCurrentProcess();
-          if (
-            result === RULE_CHECK_RESULT.CONTINUE &&
-            !this.gameState.gameResult.finished &&
-            this.gameState.phase === PHASE.CLOCK
-          ) {
-            this.nextPhase();
-          }
+        case CLOCK_STEP.COMPLETE:
+          // 完了したPhaseをtransitionへ引き継ぎ、Check Timingを継続内に保持する。
+          this.processManager.popProcess();
+          this.nextPhase();
           return clockProcess;
-        }
         default:
           throw new RangeError(`Unknown CLOCK_PHASE step: ${clockProcess.step}.`);
       }
@@ -2453,10 +2466,12 @@ export class GameEngine {
 
   /** 現在の既知Processを保存済みstepから再開する。 */
   executeCurrentProcess() {
+    if (this.gameState.gameResult.finished) return null;
     const process = this.processManager.getCurrentProcess();
     if (!process || process.status === PROCESS_STATUS.WAITING_INPUT) {
       return process;
     }
+    if (process.type === PROCESS_TYPE.PHASE_TRANSITION) return this.executePhaseTransitionProcess();
     if (process.type === PROCESS_TYPE.REFRESH) {
       return this.executeRefreshProcess();
     }
@@ -2579,6 +2594,7 @@ export class GameEngine {
    * @returns {void}
    */
   endTurn() {
+    this.#assertPhaseProgression();
     const { first, second } = this.gameState.turnOrder;
     const currentPlayer = this.gameState.turn.player;
 

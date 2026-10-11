@@ -153,7 +153,7 @@ MAINのQueryは、選択可否とゲームActionの実行可否を分離する�
 
 正式Eventは`CARD_MOVED`、`CARD_POSITION_CHANGED`、`ATTACK_DECLARED`、`PHASE_STARTED`、`PHASE_ENDED`の5種類である。未実装Eventは具体的なカードまたはPhaseで必要になった時に追加し、任意式を扱う巨大なEvent frameworkは先行実装しない。
 
-`GameEngine.moveCard()`はcollection remove / insert、Card表示metadata更新、通常Zoneのreindex（Stage座標は維持）を完了してから`CARD_MOVED`を発行する。`changeCardPosition()`は値が変わる場合だけ変更完了後に発行する。`enterPhase()`は旧phaseの`PHASE_ENDED`をphase更新前、新phaseの`PHASE_STARTED`を更新後・固有Process開始前に発行する。`declareAttackEvent()`は将来のAttack宣言確定境界用であり、F-5BではAttack Processを実装しない。
+`GameEngine.moveCard()`はcollection remove / insert、Card表示metadata更新、通常Zoneのreindex（Stage座標は維持）を完了してから`CARD_MOVED`を発行する。`changeCardPosition()`は値が変わる場合だけ変更完了後に発行する。`enterPhase()`が作る`PHASE_TRANSITION`は旧phase終了確定後の`PHASE_ENDED`をphase更新前、新phaseの`PHASE_STARTED`を更新後・固有Process開始前に発行し、それぞれの後でCheck Timingを通る。`declareAttackEvent()`は将来のAttack宣言確定境界用であり、F-5BではAttack Processを実装しない。
 
 現在位置の正本はPlayer / Deckのcollection membershipである。`locateCard(instanceId)`は全collectionを読み取り、所在がちょうど1件でなければinvariant違反とする。Cardへ`currentLocation` / `previousLocation`は追加しない。`CARD_MOVED.from/to`だけを発生時snapshotとして保持する。
 
@@ -164,3 +164,7 @@ MAINのQueryは、選択可否とゲームActionの実行可否を分離する�
 ## Ability Effect capability API
 
 Effect HandlerのsupportedAbilityTypesと必要なvalidateCapabilityが実行対応情報の正本である。validateEffectsはschemaだけ、validateAbilityEffectsはschema後にAbility Type / Group深度 / source / 対応parameter形式を検証する。LoaderとEngineのavailability・payment前・Effect実行防御は同じ情報を使い、Rendererへ判断を追加しない。resolveEffectのcontextはabilityTypeを必須とし、対応表は[カード能力共通](../対戦画面/カード能力/カード能力共通.md#42-effect-resolver--handlerと対応type)を参照する。
+
+## Phase transition / resume API
+
+`PROCESS_TYPE.PHASE_TRANSITION`と`PHASE_TRANSITION_STEP`（END_PHASE / CHECK_POINT_AFTER_END / ENTER_PHASE / CHECK_POINT_AFTER_START / START_PHASE_PROCESS）を定義する。`enterPhase()`は継続Process（END → STAND委譲時はundefined）を返す。`executePhaseTransitionProcess()`が保存済みstepを実行し、`executeCurrentProcess()`が共通出口から再開する。contextはfromPhase / toPhaseだけで、UI callbackや新しいworkflow基盤は持たない。詳細は[Process正本](プロセス.md#phase_transition-processphase-auto--resume)を参照する。

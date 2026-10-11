@@ -3,6 +3,7 @@
  * 各プロセスの具体的なルール処理はGameEngine側で実装する。
  */
 export const PROCESS_TYPE = Object.freeze({
+  PHASE_TRANSITION: "phase_transition",
   CLOCK_ACTION: "clock_action",
   CLOCK_PHASE: "clock_phase",
   DRAW_PHASE: "draw_phase",
@@ -36,6 +37,15 @@ export const PROCESS_STATUS = Object.freeze({
 export const PROCESS_STATUS_VALUES = Object.freeze(
   Object.values(PROCESS_STATUS),
 );
+
+/** Phase境界のEvent / Check Timingと一度だけの通常処理開始。 */
+export const PHASE_TRANSITION_STEP = Object.freeze({
+  END_PHASE: "end_phase",
+  CHECK_POINT_AFTER_END: "check_point_after_end",
+  ENTER_PHASE: "enter_phase",
+  CHECK_POINT_AFTER_START: "check_point_after_start",
+  START_PHASE_PROCESS: "start_phase_process",
+});
 
 /** DRAW_PHASE Processで次に実行する処理。 */
 export const DRAW_STEP = Object.freeze({

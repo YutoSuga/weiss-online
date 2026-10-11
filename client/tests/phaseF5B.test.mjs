@@ -97,7 +97,9 @@ test("PHASE_STARTED / PHASE_ENDEDはPhase境界でPendingを生成する", () =>
   engine.enterPhase(PHASE.MAIN);
   const ids = gameState.ruleState.pendingAutos.map(({ source }) => source.abilityId);
   assert.ok(ids.includes("CLOCK_END"));
-  assert.ok(ids.includes("MAIN_START"));
+  assert.equal(ids.includes("MAIN_START"), false, "CLOCK終了AUTOの処理前にMAIN開始Eventを発行しない");
+  for (const option of engine.getPendingAutoOptions()) engine.declinePendingAuto(option.pending.id);
+  assert.ok(gameState.ruleState.pendingAutos.some(({ source }) => source.abilityId === "MAIN_START"));
   assert.equal(gameState.phase, PHASE.MAIN);
 });
 
